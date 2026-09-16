@@ -1,0 +1,785 @@
+[
+  {
+    "id": "p1",
+    "title": "Sea-Facing 3BHK Apartment",
+    "type": "Apartment",
+    "purpose": "Buy",
+    "price": 21500000,
+    "priceLabel": "₹2.15 Cr",
+    "city": "Mumbai",
+    "locality": "Bandra West",
+    "address": "Carter Road, Bandra West, Mumbai",
+    "lat": 19.0596,
+    "lng": 72.8295,
+    "beds": 3,
+    "baths": 3,
+    "areaSqft": 1450,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2019,
+    "agentId": "a1",
+    "featured": true,
+    "verified": true,
+    "reraId": "P51800012345",
+    "possessionStatus": "Ready to Move",
+    "videoTour": true,
+    "postedDate": "2026-09-01",
+    "images": [
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200",
+      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200"
+    ],
+    "floorPlans": [
+      "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=1200"
+    ],
+    "amenities": [
+      "Sea View",
+      "Gym",
+      "Swimming Pool",
+      "24x7 Security",
+      "Power Backup",
+      "Covered Parking"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "St. Stanislaus High School",
+        "distance": "0.8 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Lilavati Hospital",
+        "distance": "1.5 km"
+      },
+      {
+        "type": "Metro",
+        "name": "Bandra Metro Station",
+        "distance": "1.2 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Linking Road Market",
+        "distance": "1.0 km"
+      }
+    ],
+    "description": "Stunning sea-facing 3BHK in the heart of Bandra West with panoramic Arabian Sea views, premium modular kitchen, and access to a private residents' club.",
+    "active": true
+  },
+  {
+    "id": "p2",
+    "title": "Modern 2BHK Rental Flat",
+    "type": "Apartment",
+    "purpose": "Rent",
+    "price": 45000,
+    "priceLabel": "₹45,000/mo",
+    "city": "Bangalore",
+    "locality": "Indiranagar",
+    "address": "100 Feet Road, Indiranagar, Bangalore",
+    "lat": 12.9716,
+    "lng": 77.6412,
+    "beds": 2,
+    "baths": 2,
+    "areaSqft": 1100,
+    "furnishing": "Fully-Furnished",
+    "yearBuilt": 2021,
+    "agentId": "a2",
+    "featured": true,
+    "verified": true,
+    "reraId": null,
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-05",
+    "images": [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Clubhouse",
+      "Gym",
+      "Kids Play Area",
+      "Lift",
+      "Power Backup"
+    ],
+    "nearby": [
+      {
+        "type": "Metro",
+        "name": "Indiranagar Metro Station",
+        "distance": "0.5 km"
+      },
+      {
+        "type": "Mall",
+        "name": "100 Feet Road Cafes",
+        "distance": "0.3 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Manipal Hospital",
+        "distance": "2.0 km"
+      }
+    ],
+    "description": "Fully-furnished 2BHK in the buzzing Indiranagar neighborhood, walking distance to cafes, metro, and tech parks.",
+    "active": true
+  },
+  {
+    "id": "p3",
+    "title": "Luxury Villa with Private Garden",
+    "type": "Villa",
+    "purpose": "Buy",
+    "price": 48000000,
+    "priceLabel": "₹4.8 Cr",
+    "city": "Delhi",
+    "locality": "Vasant Vihar",
+    "address": "Vasant Vihar, New Delhi",
+    "lat": 28.5679,
+    "lng": 77.1587,
+    "beds": 5,
+    "baths": 5,
+    "areaSqft": 4200,
+    "furnishing": "Fully-Furnished",
+    "yearBuilt": 2017,
+    "agentId": "a3",
+    "featured": true,
+    "verified": true,
+    "reraId": "DLRERA2017P0009",
+    "possessionStatus": "Ready to Move",
+    "videoTour": true,
+    "postedDate": "2026-08-20",
+    "images": [
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200",
+      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200",
+      "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=1200"
+    ],
+    "floorPlans": [
+      "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=1200"
+    ],
+    "amenities": [
+      "Private Garden",
+      "Home Theatre",
+      "Servant Quarters",
+      "4 Car Parking",
+      "Solar Panels"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "American Embassy School",
+        "distance": "1.1 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Max Hospital, Panchsheel",
+        "distance": "2.3 km"
+      },
+      {
+        "type": "Metro",
+        "name": "Vasant Vihar Bus Terminal",
+        "distance": "0.9 km"
+      }
+    ],
+    "description": "An elegant 5BHK independent villa in the diplomatic enclave of Vasant Vihar, featuring a landscaped private garden and premium interiors.",
+    "active": true
+  },
+  {
+    "id": "p4",
+    "title": "Compact Studio Apartment",
+    "type": "Studio",
+    "purpose": "Rent",
+    "price": 22000,
+    "priceLabel": "₹22,000/mo",
+    "city": "Pune",
+    "locality": "Baner",
+    "address": "Baner Road, Pune",
+    "lat": 18.559,
+    "lng": 73.7868,
+    "beds": 1,
+    "baths": 1,
+    "areaSqft": 550,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2020,
+    "agentId": "a4",
+    "featured": false,
+    "verified": false,
+    "reraId": null,
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-10",
+    "images": [
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Wi-Fi Ready",
+      "Lift",
+      "Security"
+    ],
+    "nearby": [
+      {
+        "type": "Hospital",
+        "name": "Sahyadri Hospital, Baner",
+        "distance": "1.4 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Xion Mall",
+        "distance": "1.8 km"
+      }
+    ],
+    "description": "Cozy studio apartment ideal for young professionals, located close to IT parks in Baner.",
+    "active": true
+  },
+  {
+    "id": "p5",
+    "title": "Commercial Office Space",
+    "type": "Commercial",
+    "purpose": "Rent",
+    "price": 180000,
+    "priceLabel": "₹1,80,000/mo",
+    "city": "Gurugram",
+    "locality": "Cyber City",
+    "address": "DLF Cyber City, Gurugram",
+    "lat": 28.495,
+    "lng": 77.089,
+    "beds": 0,
+    "baths": 2,
+    "areaSqft": 3200,
+    "furnishing": "Bare Shell",
+    "yearBuilt": 2016,
+    "agentId": "a2",
+    "featured": false,
+    "verified": true,
+    "reraId": "HRERA-GGM-0456-2016",
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-08-28",
+    "images": [
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200",
+      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Central AC",
+      "24x7 Access",
+      "Cafeteria",
+      "Parking",
+      "Conference Rooms"
+    ],
+    "nearby": [
+      {
+        "type": "Metro",
+        "name": "Cyber City Rapid Metro",
+        "distance": "0.2 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Ambience Mall",
+        "distance": "1.6 km"
+      }
+    ],
+    "description": "Grade-A office space in DLF Cyber City with floor-to-ceiling glass facade and ready infrastructure.",
+    "active": true
+  },
+  {
+    "id": "p6",
+    "title": "Riverside 4BHK Penthouse",
+    "type": "Penthouse",
+    "purpose": "Buy",
+    "price": 65000000,
+    "priceLabel": "₹6.5 Cr",
+    "city": "Hyderabad",
+    "locality": "Jubilee Hills",
+    "address": "Road No. 36, Jubilee Hills, Hyderabad",
+    "lat": 17.431,
+    "lng": 78.4073,
+    "beds": 4,
+    "baths": 4,
+    "areaSqft": 3800,
+    "furnishing": "Fully-Furnished",
+    "yearBuilt": 2022,
+    "agentId": "a3",
+    "featured": true,
+    "verified": true,
+    "reraId": "P02400003210",
+    "possessionStatus": "Ready to Move",
+    "videoTour": true,
+    "postedDate": "2026-09-12",
+    "images": [
+      "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200",
+      "https://images.unsplash.com/photo-1600210492493-0946911123ea?w=1200",
+      "https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=1200"
+    ],
+    "floorPlans": [
+      "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=1200"
+    ],
+    "amenities": [
+      "Private Terrace",
+      "Jacuzzi",
+      "Smart Home",
+      "Concierge",
+      "Valet Parking"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "Oakridge International School",
+        "distance": "2.1 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Apollo Hospital, Jubilee Hills",
+        "distance": "1.3 km"
+      },
+      {
+        "type": "Mall",
+        "name": "GVK One Mall",
+        "distance": "2.5 km"
+      }
+    ],
+    "description": "Ultra-luxury penthouse in Jubilee Hills with a private terrace, smart home automation, and skyline views.",
+    "active": true
+  },
+  {
+    "id": "p7",
+    "title": "Affordable 1BHK Flat",
+    "type": "Apartment",
+    "purpose": "Buy",
+    "price": 3200000,
+    "priceLabel": "₹32 Lakh",
+    "city": "Pune",
+    "locality": "Wagholi",
+    "address": "Wagholi, Pune",
+    "lat": 18.5793,
+    "lng": 73.989,
+    "beds": 1,
+    "baths": 1,
+    "areaSqft": 620,
+    "furnishing": "Unfurnished",
+    "yearBuilt": 2023,
+    "agentId": "a4",
+    "featured": false,
+    "verified": false,
+    "reraId": "P52100029876",
+    "possessionStatus": "Under Construction",
+    "videoTour": false,
+    "postedDate": "2026-09-13",
+    "images": [
+      "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=1200",
+      "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=1200"
+    ],
+    "floorPlans": [
+      "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=1200"
+    ],
+    "amenities": [
+      "Lift",
+      "Garden",
+      "Security",
+      "Rainwater Harvesting"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "Vibgyor High School",
+        "distance": "1.7 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Noble Hospital, Wagholi",
+        "distance": "2.2 km"
+      }
+    ],
+    "description": "Budget-friendly 1BHK in a newly-constructed society, perfect for first-time home buyers.",
+    "active": true
+  },
+  {
+    "id": "p8",
+    "title": "Independent House with Terrace",
+    "type": "House",
+    "purpose": "Rent",
+    "price": 60000,
+    "priceLabel": "₹60,000/mo",
+    "city": "Chennai",
+    "locality": "Adyar",
+    "address": "Adyar, Chennai",
+    "lat": 13.0067,
+    "lng": 80.257,
+    "beds": 3,
+    "baths": 3,
+    "areaSqft": 2100,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2015,
+    "agentId": "a1",
+    "featured": false,
+    "verified": true,
+    "reraId": null,
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-08-15",
+    "images": [
+      "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=1200",
+      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Private Terrace",
+      "Parking",
+      "Garden",
+      "Bore Well"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "Adarsh Vidyalaya",
+        "distance": "0.6 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Apollo Hospital, Greams Road",
+        "distance": "4.5 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Besant Nagar Beach Market",
+        "distance": "1.2 km"
+      }
+    ],
+    "description": "Spacious independent house in a quiet Adyar lane, with an open terrace and dedicated parking for two cars.",
+    "active": true
+  },
+  {
+    "id": "p9",
+    "title": "Lakeview 2BHK in Powai",
+    "type": "Apartment",
+    "purpose": "Rent",
+    "price": 52000,
+    "priceLabel": "₹52,000/mo",
+    "city": "Mumbai",
+    "locality": "Powai",
+    "address": "Hiranandani Gardens, Powai, Mumbai",
+    "lat": 19.1197,
+    "lng": 72.9051,
+    "beds": 2,
+    "baths": 2,
+    "areaSqft": 1050,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2018,
+    "agentId": "a1",
+    "featured": false,
+    "verified": true,
+    "reraId": null,
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-08",
+    "images": [
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200",
+      "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Lake View",
+      "Gym",
+      "Clubhouse",
+      "Lift",
+      "Power Backup"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "Hiranandani Foundation School",
+        "distance": "0.7 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Powai Hospital",
+        "distance": "1.1 km"
+      },
+      {
+        "type": "Mall",
+        "name": "R City Mall",
+        "distance": "3.2 km"
+      }
+    ],
+    "description": "Bright 2BHK overlooking Powai Lake, close to tech parks and top schools, with resort-style society amenities.",
+    "active": true
+  },
+  {
+    "id": "p10",
+    "title": "Whitefield Garden Villa",
+    "type": "Villa",
+    "purpose": "Buy",
+    "price": 32000000,
+    "priceLabel": "₹3.2 Cr",
+    "city": "Bangalore",
+    "locality": "Whitefield",
+    "address": "ITPL Main Road, Whitefield, Bangalore",
+    "lat": 12.9698,
+    "lng": 77.75,
+    "beds": 4,
+    "baths": 4,
+    "areaSqft": 2900,
+    "furnishing": "Unfurnished",
+    "yearBuilt": 2021,
+    "agentId": "a2",
+    "featured": true,
+    "verified": true,
+    "reraId": "PRM/KA/RERA/1251/446/PR/210315/003890",
+    "possessionStatus": "Ready to Move",
+    "videoTour": true,
+    "postedDate": "2026-09-07",
+    "images": [
+      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=1200",
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200"
+    ],
+    "floorPlans": [
+      "https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=1200"
+    ],
+    "amenities": [
+      "Private Garden",
+      "Gym",
+      "Clubhouse",
+      "4 Car Parking",
+      "Power Backup"
+    ],
+    "nearby": [
+      {
+        "type": "School",
+        "name": "Vydehi School of Excellence",
+        "distance": "1.2 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Vydehi Hospital",
+        "distance": "1.5 km"
+      },
+      {
+        "type": "Metro",
+        "name": "Whitefield Metro Station",
+        "distance": "2.0 km"
+      }
+    ],
+    "description": "Spacious 4BHK villa near the ITPL tech corridor, ideal for families working in Whitefield's IT campuses.",
+    "active": true
+  },
+  {
+    "id": "p11",
+    "title": "Dwarka Sector 12 Apartment",
+    "type": "Apartment",
+    "purpose": "Buy",
+    "price": 9500000,
+    "priceLabel": "₹95 Lakh",
+    "city": "Delhi",
+    "locality": "Dwarka",
+    "address": "Sector 12, Dwarka, New Delhi",
+    "lat": 28.5921,
+    "lng": 77.046,
+    "beds": 3,
+    "baths": 2,
+    "areaSqft": 1350,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2020,
+    "agentId": "a3",
+    "featured": false,
+    "verified": true,
+    "reraId": "DLRERA2020P0142",
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-11",
+    "images": [
+      "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=1200",
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Lift",
+      "Power Backup",
+      "Security",
+      "Covered Parking"
+    ],
+    "nearby": [
+      {
+        "type": "Metro",
+        "name": "Dwarka Sector 12 Metro",
+        "distance": "0.4 km"
+      },
+      {
+        "type": "School",
+        "name": "Delhi Public School, Dwarka",
+        "distance": "1.0 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Venkateshwar Hospital",
+        "distance": "1.8 km"
+      }
+    ],
+    "description": "Well-connected 3BHK in Dwarka with direct metro access, close to schools and hospitals in the sub-city.",
+    "active": true
+  },
+  {
+    "id": "p12",
+    "title": "Gachibowli Tech Residency",
+    "type": "Apartment",
+    "purpose": "Rent",
+    "price": 38000,
+    "priceLabel": "₹38,000/mo",
+    "city": "Hyderabad",
+    "locality": "Gachibowli",
+    "address": "Nanakramguda Road, Gachibowli, Hyderabad",
+    "lat": 17.4401,
+    "lng": 78.3489,
+    "beds": 2,
+    "baths": 2,
+    "areaSqft": 1150,
+    "furnishing": "Fully-Furnished",
+    "yearBuilt": 2020,
+    "agentId": "a3",
+    "featured": false,
+    "verified": true,
+    "reraId": null,
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-09",
+    "images": [
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Gym",
+      "Swimming Pool",
+      "Clubhouse",
+      "Lift",
+      "Power Backup"
+    ],
+    "nearby": [
+      {
+        "type": "Business Hub",
+        "name": "Financial District",
+        "distance": "1.5 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Continental Hospital",
+        "distance": "1.0 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Inorbit Mall",
+        "distance": "3.5 km"
+      }
+    ],
+    "description": "Fully-furnished 2BHK in Gachibowli's IT corridor, minutes from the Financial District and major tech campuses.",
+    "active": true
+  },
+  {
+    "id": "p13",
+    "title": "Andheri East 2BHK Apartment",
+    "type": "Apartment",
+    "purpose": "Buy",
+    "price": 17500000,
+    "priceLabel": "₹1.75 Cr",
+    "city": "Mumbai",
+    "locality": "Andheri East",
+    "address": "Marol, Andheri East, Mumbai",
+    "lat": 19.1136,
+    "lng": 72.8697,
+    "beds": 2,
+    "baths": 2,
+    "areaSqft": 950,
+    "furnishing": "Unfurnished",
+    "yearBuilt": 2022,
+    "agentId": "a1",
+    "featured": false,
+    "verified": true,
+    "reraId": "P51800045210",
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-06",
+    "images": [
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Gym",
+      "Lift",
+      "Power Backup",
+      "Covered Parking"
+    ],
+    "nearby": [
+      {
+        "type": "Metro",
+        "name": "Marol Naka Metro Station",
+        "distance": "0.5 km"
+      },
+      {
+        "type": "Business Hub",
+        "name": "SEEPZ IT Park",
+        "distance": "1.8 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "Kokilaben Hospital",
+        "distance": "3.0 km"
+      }
+    ],
+    "description": "Well-connected 2BHK in Andheri East, close to SEEPZ and the Metro, ideal for working professionals.",
+    "active": true
+  },
+  {
+    "id": "p14",
+    "title": "Koramangala 2BHK Apartment",
+    "type": "Apartment",
+    "purpose": "Buy",
+    "price": 14000000,
+    "priceLabel": "₹1.4 Cr",
+    "city": "Bangalore",
+    "locality": "Koramangala",
+    "address": "80 Feet Road, Koramangala, Bangalore",
+    "lat": 12.9352,
+    "lng": 77.6146,
+    "beds": 2,
+    "baths": 2,
+    "areaSqft": 1150,
+    "furnishing": "Semi-Furnished",
+    "yearBuilt": 2019,
+    "agentId": "a2",
+    "featured": false,
+    "verified": true,
+    "reraId": "PRM/KA/RERA/1251/309/PR/190822/002140",
+    "possessionStatus": "Ready to Move",
+    "videoTour": false,
+    "postedDate": "2026-09-04",
+    "images": [
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200"
+    ],
+    "floorPlans": [],
+    "amenities": [
+      "Clubhouse",
+      "Gym",
+      "Lift",
+      "Power Backup",
+      "Covered Parking"
+    ],
+    "nearby": [
+      {
+        "type": "Business Hub",
+        "name": "Koramangala Startup Hub",
+        "distance": "0.6 km"
+      },
+      {
+        "type": "Hospital",
+        "name": "St. John's Medical College",
+        "distance": "1.4 km"
+      },
+      {
+        "type": "Mall",
+        "name": "Forum Mall",
+        "distance": "1.0 km"
+      }
+    ],
+    "description": "Contemporary 2BHK in the heart of Koramangala, walking distance to cafes, startups, and the Forum Mall.",
+    "active": true
+  }
+]

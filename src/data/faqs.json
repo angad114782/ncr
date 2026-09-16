@@ -1,0 +1,27 @@
+[
+  {
+    "id": "f1",
+    "question": "Is the RERA registration number verified for every listing?",
+    "answer": "Yes, every under-construction and newly-built property on NCR Estates displays its RERA registration number, verified against the respective state RERA authority records."
+  },
+  {
+    "id": "f2",
+    "question": "Do I need to pay brokerage to use NCR Estates?",
+    "answer": "Browsing, saving properties, and contacting agents is completely free. Brokerage, where applicable, is disclosed upfront by the listing agent before any agreement."
+  },
+  {
+    "id": "f3",
+    "question": "How accurate is the EMI calculator?",
+    "answer": "Our EMI calculator uses the standard reducing-balance formula based on the loan amount, interest rate, and tenure you enter. Actual bank offers may vary slightly based on your credit profile."
+  },
+  {
+    "id": "f4",
+    "question": "Can I schedule a site visit before making an inquiry?",
+    "answer": "Absolutely — use the inquiry form on any property page or tap the WhatsApp button to message the listing agent directly and arrange a convenient time."
+  },
+  {
+    "id": "f5",
+    "question": "How do I compare multiple properties?",
+    "answer": "Tap the compare icon on any property card (up to 3 at a time) — a comparison bar appears at the bottom of the screen letting you view them side-by-side."
+  }
+]

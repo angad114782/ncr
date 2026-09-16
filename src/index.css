@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  --font-text: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+
+  --radius-glass-sm: 16px;
+  --radius-glass-md: 22px;
+  --radius-glass-lg: 28px;
+  --radius-glass-pill: 999px;
+}
+
+/* Brand palette — warm mocha brown + cream, in place of iOS's default
+   system blue. Status colors (success/danger/warning) stay the standard
+   green/red/gold since those carry universal meaning (verified, delete,
+   pending) that shouldn't be re-themed. Each color still has a distinct
+   light/dark pair, same principle as Apple's system colors: dark mode
+   needs a brighter/lighter variant of the same hue to read against a
+   near-black surface, not the identical value reused. */
+:root {
+  color-scheme: light;
+
+  --color-accent: #674E40;    /* mocha brown */
+  --color-accent-2: #A9603C;  /* terracotta */
+  --color-success: #34C759;   /* systemGreen */
+  --color-danger: #FF3B30;    /* systemRed */
+  --color-warning: #D9A441;   /* warm gold */
+  --color-purple: #AF52DE;    /* systemPurple */
+  --color-indigo: #5856D6;    /* systemIndigo */
+  --color-teal: #5AC8FA;      /* systemTeal */
+  --color-pink: #FF2D55;      /* systemPink */
+
+  --bg-base: #EFE3D7;         /* cream */
+  --bg-base-2: #E4D3C0;       /* deeper cream */
+  --text-primary: #2A2118;    /* warm near-black */
+  --text-secondary: rgba(42, 33, 24, 0.62);
+  --text-tertiary: rgba(42, 33, 24, 0.32);
+
+  --glass-surface: rgba(255, 251, 246, 0.55);
+  --glass-surface-strong: rgba(255, 251, 246, 0.74);
+  --glass-surface-weak: rgba(255, 251, 246, 0.35);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 8px 32px rgba(42, 33, 24, 0.12), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  --glass-blur: blur(28px) saturate(180%);
+
+  --nav-surface: rgba(255, 251, 246, 0.65);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-accent: #D9A876;    /* light caramel */
+  --color-accent-2: #C97B4F;  /* bright terracotta */
+  --color-success: #30D158;   /* systemGreen */
+  --color-danger: #FF453A;    /* systemRed */
+  --color-warning: #E0B04A;   /* warm gold */
+  --color-purple: #BF5AF2;    /* systemPurple */
+  --color-indigo: #5E5CE6;    /* systemIndigo */
+  --color-teal: #64D2FF;      /* systemTeal */
+  --color-pink: #FF375F;      /* systemPink */
+
+  --bg-base: #15100C;         /* deep warm brown-black */
+  --bg-base-2: #221B15;       /* secondary warm dark surface */
+  --text-primary: #F5ECE1;    /* warm off-white */
+  --text-secondary: rgba(245, 236, 225, 0.62);
+  --text-tertiary: rgba(245, 236, 225, 0.32);
+
+  --glass-surface: rgba(50, 42, 34, 0.55);
+  --glass-surface-strong: rgba(62, 52, 42, 0.74);
+  --glass-surface-weak: rgba(50, 42, 34, 0.35);
+  --glass-border: rgba(245, 236, 225, 0.12);
+  --glass-highlight: rgba(245, 236, 225, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(245, 236, 225, 0.06) inset;
+  --glass-blur: blur(28px) saturate(180%);
+
+  --nav-surface: rgba(34, 27, 21, 0.65);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-accent: #D9A876;
+    --color-accent-2: #C97B4F;
+    --color-success: #30D158;
+    --color-danger: #FF453A;
+    --color-warning: #E0B04A;
+    --color-purple: #BF5AF2;
+    --color-indigo: #5E5CE6;
+    --color-teal: #64D2FF;
+    --color-pink: #FF375F;
+
+    --bg-base: #15100C;
+    --bg-base-2: #221B15;
+    --text-primary: #F5ECE1;
+    --text-secondary: rgba(245, 236, 225, 0.62);
+    --text-tertiary: rgba(245, 236, 225, 0.32);
+
+    --glass-surface: rgba(50, 42, 34, 0.55);
+    --glass-surface-strong: rgba(62, 52, 42, 0.74);
+    --glass-surface-weak: rgba(50, 42, 34, 0.35);
+    --glass-border: rgba(245, 236, 225, 0.12);
+    --glass-highlight: rgba(245, 236, 225, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(245, 236, 225, 0.06) inset;
+
+    --nav-surface: rgba(34, 27, 21, 0.65);
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-text);
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+body {
+  /* One soft, single-source warm glow in the brand accent — not the
+     multi-color rainbow wash this had before. Restrained enough to keep
+     the glass cards reading clearly, warm enough to feel branded. */
+  background-image: radial-gradient(circle at 85% 0%, color-mix(in srgb, var(--color-accent) 14%, transparent), transparent 55%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: var(--glass-surface-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- Liquid Glass primitives ---- */
+
+.glass {
+  background: var(--glass-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+/* Deepen the glass tint on hover for anything actually clickable (buttons,
+   links) — not plain `<div class="glass">` cards, which already get their
+   own lift/scale hover via framer-motion and shouldn't also shimmer.
+   Needs element+class specificity to win over the plain `.glass` rule
+   above (same source file, so source order alone wouldn't decide it). */
+button.glass:hover,
+a.glass:hover {
+  background: var(--glass-surface-strong);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--glass-highlight), transparent 40%, transparent 70%, var(--glass-highlight));
+  opacity: 0.5;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-strong {
+  background: var(--glass-surface-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-weak {
+  background: var(--glass-surface-weak);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--glass-border);
+}
+
+.spring {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+/* ---- Leaflet map theming ---- */
+.leaflet-container {
+  background: var(--bg-base-2);
+  font-family: var(--font-text);
+}
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: var(--glass-shadow) !important;
+  overflow: hidden;
+  border-radius: 14px !important;
+}
+.leaflet-control-zoom a {
+  background: var(--glass-surface-strong) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  color: var(--text-primary) !important;
+  border: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+.leaflet-control-zoom a:first-child { border-radius: 14px 14px 0 0 !important; }
+.leaflet-control-zoom a:last-child { border-radius: 0 0 14px 14px !important; border-top: 1px solid var(--glass-border) !important; }
+.leaflet-popup-content-wrapper {
+  border-radius: 14px !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.25) !important;
+}
+.leaflet-popup-content { margin: 10px 14px !important; }
+
+.map-dark-filter .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.8);
+}
+
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.bg-base { background: var(--bg-base); }
+.bg-base-2 { background: var(--bg-base-2); }

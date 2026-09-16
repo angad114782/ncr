@@ -1,0 +1,20 @@
+[
+  {
+    "id": "u1",
+    "name": "Admin User",
+    "email": "admin@ncrestates.in",
+    "phone": "8619930583",
+    "role": "admin",
+    "avatar": "https://i.pravatar.cc/150?img=68",
+    "city": "Delhi"
+  },
+  {
+    "id": "u2",
+    "name": "Kabir Singh",
+    "email": "kabir@example.com",
+    "phone": "9820011122",
+    "role": "user",
+    "avatar": "https://i.pravatar.cc/150?img=15",
+    "city": "Mumbai"
+  }
+]

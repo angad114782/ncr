@@ -1,0 +1,110 @@
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { LayoutDashboard, MessageSquare, User as UserIcon, Heart } from 'lucide-react'
+import { Building2, Settings, Users as UsersIcon } from 'lucide-react'
+import { ThemeProvider } from './context/ThemeContext'
+import { AuthProvider } from './context/AuthContext'
+import { DataProvider } from './context/DataContext'
+import { SettingsProvider } from './context/SettingsContext'
+
+import PublicLayout from './components/layout/PublicLayout'
+import PanelShell from './components/layout/PanelShell'
+import ProtectedRoute from './components/layout/ProtectedRoute'
+import TrackingScripts from './components/layout/TrackingScripts'
+
+import Home from './pages/public/Home'
+import Listings from './pages/public/Listings'
+import PropertyDetail from './pages/public/PropertyDetail'
+import Agents from './pages/public/Agents'
+import AgentProfile from './pages/public/AgentProfile'
+import About from './pages/public/About'
+import Contact from './pages/public/Contact'
+import Compare from './pages/public/Compare'
+import ThankYou from './pages/public/ThankYou'
+import NotFound from './pages/public/NotFound'
+
+import DashboardHome from './pages/dashboard/DashboardHome'
+import Saved from './pages/dashboard/Saved'
+import MyInquiries from './pages/dashboard/MyInquiries'
+import Profile from './pages/dashboard/Profile'
+
+import AdminHome from './pages/admin/AdminHome'
+import ManageListings from './pages/admin/ManageListings'
+import ManageUsers from './pages/admin/ManageUsers'
+import ManageInquiries from './pages/admin/ManageInquiries'
+import AdminSettings from './pages/admin/AdminSettings'
+
+const dashboardNav = [
+  { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/dashboard/saved', label: 'Saved', icon: Heart },
+  { to: '/dashboard/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/dashboard/profile', label: 'Profile', icon: UserIcon },
+]
+
+const adminNav = [
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/admin/listings', label: 'Listings', icon: Building2 },
+  { to: '/admin/users', label: 'Users', icon: UsersIcon },
+  { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/profile', label: 'Profile', icon: UserIcon },
+]
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <DataProvider>
+          <SettingsProvider>
+            <BrowserRouter>
+              <TrackingScripts />
+              <Routes>
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/listings" element={<Listings />} />
+                  <Route path="/property/:id" element={<PropertyDetail />} />
+                  <Route path="/agents" element={<Agents />} />
+                  <Route path="/agents/:id" element={<AgentProfile />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/compare" element={<Compare />} />
+                  <Route path="/thank-you" element={<ThankYou />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <PanelShell title="Dashboard" navItems={dashboardNav} />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<DashboardHome />} />
+                  <Route path="/dashboard/saved" element={<Saved />} />
+                  <Route path="/dashboard/inquiries" element={<MyInquiries />} />
+                  <Route path="/dashboard/profile" element={<Profile />} />
+                </Route>
+
+                <Route
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <PanelShell title="Admin Panel" navItems={adminNav} />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/admin" element={<AdminHome />} />
+                  <Route path="/admin/listings" element={<ManageListings />} />
+                  <Route path="/admin/users" element={<ManageUsers />} />
+                  <Route path="/admin/inquiries" element={<ManageInquiries />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route path="/admin/profile" element={<Profile />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </SettingsProvider>
+        </DataProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  )
+}
+
+export default App

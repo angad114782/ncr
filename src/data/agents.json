@@ -1,0 +1,67 @@
+[
+  {
+    "id": "a1",
+    "name": "Aarav Mehta",
+    "role": "Senior Property Consultant",
+    "city": "Mumbai",
+    "phone": "+91 98200 11223",
+    "email": "aarav.mehta@ncrestates.in",
+    "avatar": "https://i.pravatar.cc/150?img=12",
+    "rating": 4.8,
+    "dealsClosed": 132,
+    "status": "approved",
+    "bio": "Aarav specializes in premium coastal and luxury residential properties across Mumbai and Chennai with over 9 years of experience."
+  },
+  {
+    "id": "a2",
+    "name": "Priya Nair",
+    "role": "Commercial Leasing Expert",
+    "city": "Bangalore",
+    "phone": "+91 98450 33221",
+    "email": "priya.nair@ncrestates.in",
+    "avatar": "https://i.pravatar.cc/150?img=47",
+    "rating": 4.9,
+    "dealsClosed": 210,
+    "status": "approved",
+    "bio": "Priya focuses on rental and commercial spaces in Bangalore and Gurugram's top tech and business corridors."
+  },
+  {
+    "id": "a3",
+    "name": "Rohan Kapoor",
+    "role": "Luxury Homes Specialist",
+    "city": "Delhi",
+    "phone": "+91 99110 44556",
+    "email": "rohan.kapoor@ncrestates.in",
+    "avatar": "https://i.pravatar.cc/150?img=33",
+    "rating": 4.7,
+    "dealsClosed": 98,
+    "status": "approved",
+    "bio": "Rohan has closed some of Delhi and Hyderabad's most prestigious villa and penthouse transactions."
+  },
+  {
+    "id": "a4",
+    "name": "Sneha Deshpande",
+    "role": "Residential Sales Associate",
+    "city": "Pune",
+    "phone": "+91 97640 55667",
+    "email": "sneha.deshpande@ncrestates.in",
+    "avatar": "https://i.pravatar.cc/150?img=45",
+    "rating": 4.6,
+    "dealsClosed": 76,
+    "status": "approved",
+    "bio": "Sneha helps first-time buyers and young professionals find affordable homes across Pune's growing suburbs."
+  },
+  {
+    "id": "a5",
+    "name": "Vikram Chauhan",
+    "role": "Residential Sales Associate",
+    "city": "Hyderabad",
+    "phone": "+91 96330 88712",
+    "email": "vikram.chauhan@ncrestates.in",
+    "avatar": "https://i.pravatar.cc/150?img=53",
+    "rating": 0,
+    "dealsClosed": 0,
+    "status": "pending",
+    "bio": "Vikram has applied to join NCR Estates as a residential sales associate covering Hyderabad."
+  }
+]

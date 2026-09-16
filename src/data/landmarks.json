@@ -1,0 +1,37 @@
+{
+  "Mumbai": [
+    { "type": "Airport", "name": "Chhatrapati Shivaji Airport", "lat": 19.0896, "lng": 72.8656 },
+    { "type": "Railway", "name": "Mumbai Central Station", "lat": 18.9696, "lng": 72.8205 },
+    { "type": "Business Hub", "name": "Bandra Kurla Complex", "lat": 19.0662, "lng": 72.8686 }
+  ],
+  "Bangalore": [
+    { "type": "Airport", "name": "Kempegowda Airport", "lat": 13.1986, "lng": 77.7066 },
+    { "type": "Railway", "name": "Bangalore City Station", "lat": 12.9767, "lng": 77.5713 },
+    { "type": "Business Hub", "name": "Whitefield IT Park", "lat": 12.9698, "lng": 77.75 }
+  ],
+  "Delhi": [
+    { "type": "Airport", "name": "Indira Gandhi Int'l Airport", "lat": 28.5562, "lng": 77.1 },
+    { "type": "Railway", "name": "New Delhi Railway Station", "lat": 28.6435, "lng": 77.2197 },
+    { "type": "Business Hub", "name": "Connaught Place", "lat": 28.6315, "lng": 77.2167 }
+  ],
+  "Pune": [
+    { "type": "Airport", "name": "Pune Airport", "lat": 18.5822, "lng": 73.9197 },
+    { "type": "Railway", "name": "Pune Railway Station", "lat": 18.5285, "lng": 73.8744 },
+    { "type": "Business Hub", "name": "Hinjewadi IT Park", "lat": 18.5912, "lng": 73.7389 }
+  ],
+  "Hyderabad": [
+    { "type": "Airport", "name": "Rajiv Gandhi Int'l Airport", "lat": 17.2403, "lng": 78.4294 },
+    { "type": "Railway", "name": "Secunderabad Station", "lat": 17.4344, "lng": 78.5017 },
+    { "type": "Business Hub", "name": "HITEC City", "lat": 17.4483, "lng": 78.3915 }
+  ],
+  "Chennai": [
+    { "type": "Airport", "name": "Chennai Int'l Airport", "lat": 12.9941, "lng": 80.1709 },
+    { "type": "Railway", "name": "Chennai Central Station", "lat": 13.0827, "lng": 80.2707 },
+    { "type": "Business Hub", "name": "OMR IT Corridor", "lat": 12.8996, "lng": 80.2209 }
+  ],
+  "Gurugram": [
+    { "type": "Airport", "name": "IGI Airport", "lat": 28.5562, "lng": 77.1 },
+    { "type": "Railway", "name": "Gurugram Railway Station", "lat": 28.4744, "lng": 77.0119 },
+    { "type": "Business Hub", "name": "Udyog Vihar", "lat": 28.5, "lng": 77.0879 }
+  ]
+}

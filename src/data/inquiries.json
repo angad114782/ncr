@@ -1,0 +1,33 @@
+[
+  {
+    "id": "i1",
+    "propertyId": "p1",
+    "userId": "u2",
+    "userName": "Kabir Singh",
+    "userEmail": "kabir@example.com",
+    "phone": "+91 90000 11122",
+    "message": "Interested in scheduling a site visit this weekend.",
+    "status": "Pending",
+    "date": "2026-09-10"
+  },
+  {
+    "id": "i2",
+    "propertyId": "p3",
+    "userName": "Meera Iyer",
+    "userEmail": "meera.iyer@example.com",
+    "phone": "+91 90111 22233",
+    "message": "Can you share the floor plan and society maintenance charges?",
+    "status": "Responded",
+    "date": "2026-09-08"
+  },
+  {
+    "id": "i3",
+    "propertyId": "p6",
+    "userName": "Arjun Rao",
+    "userEmail": "arjun.rao@example.com",
+    "phone": "+91 90222 33344",
+    "message": "Looking for a home loan pre-approved property in this budget.",
+    "status": "Pending",
+    "date": "2026-09-13"
+  }
+]
