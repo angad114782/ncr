@@ -73,6 +73,12 @@ _Last updated: 2026-09-21_
 
 ---
 
+### Immersive UI (2026-09-22)
+- [x] **Mobile menu** — full-screen off-canvas drawer that slides in from the right, freezes the page behind it, Esc / link / X / resize close it, focus returns to the hamburger, sub-menus expand, sign-in / call / WhatsApp / theme pinned at the bottom (`MobileMenu`, rendered in a portal)
+- [x] **3D home showcase** on Home (three.js + react-three-fiber + drei): procedural modern house with pool, garden and trees; drag to orbit, leans toward the cursor, glowing hotspots with hover/tap cards, Day ↔ Night lighting. Lazy-loaded when scrolled near; pauses off-screen; WebGL / reduced-motion fallbacks. Section text, button and the 4 hotspots are editable in Admin → Site Content → Home blocks; the section can be hidden/re-ordered
+- [x] **Cursor effects:** property cards + "why choose us" cards tilt in 3D with a moving glare; hero has a cursor spotlight; a soft cursor ring follows the mouse (desktop mouse only)
+- [x] React pinned to 19.2.x (react-three-fiber's peer range is <19.3)
+
 ### UX fixes (2026-09-22)
 - [x] **Scroll:** every page change starts at the top; Back/Forward restores position; #anchors work; filters on /listings don't jump the page (`ScrollToTop`)
 - [x] **Listings inputs:** search and max-price no longer drop characters (debounced URL sync, replace-not-push)

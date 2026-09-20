@@ -46,6 +46,8 @@
 | 2026-09-22 | Blog body uses a tiny safe markup (not HTML / a WYSIWYG lib) | Easy manual writing + one CSV cell; no XSS surface; no new dependency |
 | 2026-09-22 | FAQs pick their pages (Home/About/Contact); testimonials/agents/posts have `active` | One FAQ system instead of three hard-coded lists |
 | 2026-09-22 | Sample testimonials ship inactive | Fake reviews must not be public |
+| 2026-09-22 | "4 chaand lagao" read as: make the site feel premium with 3D + cursor interactivity | User wants visitors to feel a real-estate showcase; built a lazy 3D house + tilt/spotlight/cursor ring |
+| 2026-09-22 | Mobile menu = full-screen slide-in drawer with page lock | User request; modern app-like feel |
 
 ## 3. Lessons learned (bugs & gotchas)
 
@@ -128,6 +130,15 @@ Typing "bandra" in the listings search produced "aa": the input's value came fro
 
 ### 3.21 Hero looked unfinished (fixed 2026-09-22)
 The hero was a bare section with `overflow-hidden`: the blurred glows were clipped into a hard rectangle, text touched the top edge, and a teal glow clashed with the brown/cream brand. It is now a rounded, padded, tinted panel with two brand-coloured glows.
+
+### 3.22 R3F vs React 19.3 (2026-09-22)
+`npm i @react-three/fiber` failed with ERESOLVE: fiber 9.7 peers React `>=19 <19.3` and the lockfile had React 19.3.0. Fixed by pinning `react`/`react-dom` to `~19.2.8` (not `--legacy-peer-deps`, so `npm ci` on the VPS stays clean). Revisit when R3F widens its range.
+
+### 3.23 A `fixed` overlay inside the navbar wasn't full-screen (design note)
+The navbar is `-translate-x-1/2`; any `position: fixed` descendant is sized to the navbar, not the viewport. The mobile menu is therefore rendered with `createPortal(…, document.body)`.
+
+### 3.24 Testing 3D in headless Chrome
+Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. `readPixels` on the canvas returns zeros (no `preserveDrawingBuffer`), so verify by screenshot. Programmatic `window.scrollBy` bypasses `overflow: hidden` — use `mouse.wheel` to test a page lock.
 
 ## 4. Working preferences (user)
 

@@ -23,6 +23,7 @@ import BudgetFinder from '../../components/home/BudgetFinder'
 import PopularSearches from '../../components/home/PopularSearches'
 import PromoTicker from '../../components/home/PromoTicker'
 import LatestPosts from '../../components/home/LatestPosts'
+import HomeShowcase from '../../components/home/HomeShowcase'
 import CeoSpotlight from '../../components/home/CeoSpotlight'
 import Reveal from '../../components/glass/Reveal'
 import Seo, { SITE_URL } from '../../components/layout/Seo'
@@ -113,6 +114,7 @@ export default function Home() {
         </div>
       </section>
     ),
+    showcase: <HomeShowcase />,
     budget: <BudgetFinder />,
     newest: <NewestListings excludeIds={featured.map((p) => p.id)} />,
     cities: <ExploreCities />,
@@ -143,8 +145,22 @@ export default function Home() {
 
       {/* Hero */}
       {/* A real panel: rounded, padded, softly tinted — the glow is clipped by its corners */}
-      <section className="relative isolate overflow-hidden text-center rounded-[32px] border border-[var(--glass-border)] bg-[color-mix(in_srgb,var(--glass-surface)_60%,transparent)] px-4 sm:px-8 pt-12 pb-10 md:pt-16 md:pb-14 mb-12">
+      <section
+        onPointerMove={(e) => {
+          // cursor spotlight: a soft light that follows the mouse inside the hero
+          if (e.pointerType !== 'mouse') return
+          const r = e.currentTarget.getBoundingClientRect()
+          e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`)
+          e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`)
+        }}
+        className="group/hero relative isolate overflow-hidden text-center rounded-[32px] border border-[var(--glass-border)] bg-[color-mix(in_srgb,var(--glass-surface)_60%,transparent)] px-4 sm:px-8 pt-12 pb-10 md:pt-16 md:pb-14 mb-12"
+      >
         <HeroBlobs />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover/hero:opacity-100"
+          style={{ background: 'radial-gradient(420px circle at var(--mx, 50%) var(--my, 40%), color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 62%)' }}
+        />
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

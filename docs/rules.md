@@ -116,6 +116,16 @@
 9. **Admin edits are per-browser until a backend exists.** Say so in UI copy; offer backup/restore; don't claim visitors see a change made in another browser.
 10. **Generate files with the Write tool, not shell heredocs / `node -e` with template literals** — escapes like `\d` and backticks were silently mangled (a broken phone regex and a broken URL regex shipped from this).
 
+## 12. 3D & cursor effects
+
+1. **three.js is lazy.** Import 3D components only through `React.lazy`, mount them when near the viewport (IntersectionObserver), and stop the render loop when off-screen (`frameloop: 'never'`). Never import three at the top of an always-loaded file.
+2. **Always ship a fallback**: no WebGL → message; runtime error → `SceneBoundary`; `prefers-reduced-motion` → no autorotate / pointer lean.
+3. **Don't hijack scrolling.** Zoom is off; on touch the canvas uses `touch-action: pan-y` so vertical swipes scroll the page.
+4. **Cursor effects are mouse-only** (`(hover: hover) and (pointer: fine)`) and skipped for reduced motion. They write styles straight to the DOM (no React re-render per move), never block clicks, and never hide the real cursor.
+5. **Scene copy is admin-editable** (`siteContent.showcase`); the model itself is procedural — don't add heavy model files without agreeing a size budget.
+6. **Full-screen overlays** (menu drawers, sheets) that must cover the screen go through a **portal** — an ancestor with `transform` turns `position: fixed` into "fixed to that ancestor".
+7. Page lock for overlays = a class on `<html>` (`menu-open`) with `overflow: hidden`; don't use `position: fixed` on body (it fights scroll restoration).
+
 ## 11. Navigation, scroll & URL-driven inputs
 
 1. **Every page change starts at the top.** `ScrollToTop` (mounted in `App.jsx`) resets scroll on each navigation, restores the old position on Back/Forward, and scrolls to #anchors. Don't add per-page `scrollTo` hacks.

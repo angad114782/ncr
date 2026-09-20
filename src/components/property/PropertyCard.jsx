@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BadgeCheck, BedDouble, Bath, GitCompare, Heart, MapPin, Ruler } from 'lucide-react'
+import Tilt from '../effects/Tilt'
 import { useData } from '../../context/DataContext'
 
 export default function PropertyCard({ property }) {
@@ -9,6 +10,7 @@ export default function PropertyCard({ property }) {
   const isComparing = compareIds.includes(property.id)
 
   return (
+    <Tilt className="h-full rounded-[24px]" max={6}>
     <motion.div
       className="glass rounded-[24px] overflow-hidden group"
       whileHover={{ y: -6 }}
@@ -87,5 +89,6 @@ export default function PropertyCard({ property }) {
         </div>
       </Link>
     </motion.div>
+    </Tilt>
   )
 }

@@ -95,6 +95,12 @@ Surface tokens: `--glass-surface`, `--glass-surface-strong`, `--glass-surface-we
 
 **Property detail** — gallery → key facts → tabs (details / floor plan) → EMI calculator → map → Price Insight → Distance to Hubs → cross-link sections. Lead form sits in a sticky side column on desktop.
 
+## 7a. Immersive layer
+
+- **Mobile menu:** full-screen panel (`z-[80]`) sliding from the right on a spring; large 26 px links with a stagger, active link shows an accent dot, sub-menu chevron in a glass circle, sticky bottom action area (sign in / account, Call + WhatsApp, appearance). Page behind is frozen; backdrop dims/blur while it animates.
+- **3D showcase:** two-column on desktop (copy left, rounded 32 px canvas right), stacked on mobile. Day gradient sky ↔ night gradient; warm window glow, fireflies at night; glass chip "Drag to look around", pill button "Day / Night". Hotspots are glowing accent-amber dots with pulse rings and a glass label card.
+- **Cursor:** hero spotlight (radial accent glow at the pointer), card tilt ≤ 7° with a soft-light glare, and a 26 px accent ring that swells to 46 px over interactive elements.
+
 ## 8. Map design
 
 - Custom **price-label pin** for the property (shows `priceLabel`), colored amenity markers by type.

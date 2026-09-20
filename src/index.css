@@ -253,3 +253,10 @@ a.glass:hover {
   .ticker { overflow-x: auto; }
   .ticker-track { animation: none; }
 }
+
+/* ---- Mobile menu: freeze the page behind the off-canvas panel ---- */
+html.menu-open,
+html.menu-open body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}

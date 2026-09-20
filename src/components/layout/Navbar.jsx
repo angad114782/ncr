@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck, X } from 'lucide-react'
+import { Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
+import MobileMenu from './MobileMenu'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import Avatar from '../common/Avatar'
@@ -12,13 +13,14 @@ export default function Navbar({ onAuthOpen }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState(null)
-  const [mobileExpanded, setMobileExpanded] = useState(null)
+  const hamburgerRef = useRef(null)
   const { user, isAdmin, logout } = useAuth()
   const { siteContent, company } = useSettings()
   // Menu comes from Admin → Site Content → Menu & Footer (hidden items are skipped).
   const links = siteContent.nav.filter((l) => l.visible !== false && l.label)
   const navigate = useNavigate()
   const location = useLocation()
+  const closeMobile = useCallback(() => setMobileOpen(false), [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -26,12 +28,9 @@ export default function Navbar({ onAuthOpen }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Always close the mobile menu on navigation, regardless of which link
-  // or programmatic action triggered it — more reliable than wiring an
-  // onClick handler on every individual link.
+  // Always close the mobile menu on navigation, whichever link or action caused it.
   useEffect(() => {
     setMobileOpen(false)
-    setMobileExpanded(null)
   }, [location.pathname, location.search])
 
   return (
@@ -120,7 +119,7 @@ export default function Navbar({ onAuthOpen }) {
               <GlassButton variant="glass" size="sm" icon={LayoutDashboard} onClick={() => navigate('/dashboard')}>
                 Dashboard
               </GlassButton>
-              <button onClick={logout} className="w-10 h-10 rounded-full overflow-hidden glass spring hover:scale-105">
+              <button onClick={logout} aria-label="Sign out" className="w-10 h-10 rounded-full overflow-hidden glass spring hover:scale-105">
                 <Avatar src={user.avatar} name={user.name} className="w-full h-full" />
               </button>
             </div>
@@ -132,86 +131,18 @@ export default function Navbar({ onAuthOpen }) {
         </div>
 
         <button
-          className="md:hidden glass w-10 h-10 rounded-full flex items-center justify-center"
-          onClick={() => setMobileOpen((v) => !v)}
+          ref={hamburgerRef}
+          className="md:hidden glass w-11 h-11 rounded-full flex items-center justify-center spring active:scale-90"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+          aria-haspopup="dialog"
         >
-          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+          <Menu size={20} />
         </button>
       </div>
 
-      {mobileOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-strong rounded-[24px] mt-2 p-4 flex flex-col gap-1 md:hidden max-h-[70vh] overflow-y-auto"
-        >
-          {links.map((l) => (
-            <div key={l.to}>
-              <div className="flex items-center">
-                <NavLink
-                  to={l.to}
-                  className={({ isActive }) =>
-                    `flex-1 px-4 py-3 rounded-[16px] text-sm font-medium ${isActive ? 'glass text-[var(--color-accent)]' : 'text-secondary'}`
-                  }
-                >
-                  {l.label}
-                </NavLink>
-                {l.children?.length > 0 && (
-                  <button
-                    onClick={() => setMobileExpanded((prev) => (prev === l.to ? null : l.to))}
-                    className="w-10 h-10 shrink-0 flex items-center justify-center text-secondary"
-                    aria-label={`Toggle ${l.label} submenu`}
-                  >
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform ${mobileExpanded === l.to ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                )}
-              </div>
-
-              {l.children?.length > 0 && (
-                <AnimatePresence>
-                  {mobileExpanded === l.to && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
-                      className="overflow-hidden pl-3"
-                    >
-                      {l.children.map((c) => (
-                        <Link
-                          key={c.label}
-                          to={c.to}
-                          onClick={() => setMobileOpen(false)}
-                          className="block px-4 py-2.5 rounded-[14px] text-sm text-secondary"
-                        >
-                          {c.label}
-                        </Link>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-            </div>
-          ))}
-          <div className="flex items-center justify-between px-4 py-3">
-            <ThemeToggle />
-            {user ? (
-              <div className="flex gap-2">
-                <GlassButton size="sm" variant="glass" onClick={() => { setMobileOpen(false); navigate('/dashboard') }}>
-                  Dashboard
-                </GlassButton>
-              </div>
-            ) : (
-              <GlassButton size="sm" onClick={() => { setMobileOpen(false); onAuthOpen() }}>
-                Sign In
-              </GlassButton>
-            )}
-          </div>
-        </motion.div>
-      )}
+      <MobileMenu open={mobileOpen} onClose={closeMobile} links={links} onAuthOpen={onAuthOpen} returnFocusRef={hamburgerRef} />
     </motion.header>
   )
 }

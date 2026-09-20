@@ -13,6 +13,7 @@
 | Animation | framer-motion 13 |
 | Icons | lucide-react |
 | Maps | leaflet + react-leaflet 5 |
+| 3D | three + @react-three/fiber 9 + @react-three/drei 10 (lazy chunk; requires React 19.2.x) |
 | CSV | papaparse |
 | SEO | react-helmet-async |
 | Lint | oxlint |
@@ -46,6 +47,8 @@ ncr/
    │  │                         ThemeToggle, Reveal, motionComponent.js (cached motion.create)
    │  ├─ admin/              ← CollectionAdmin, SchemaForm, CsvToolbar, ImageField(+List), BlogBodyEditor, Toggle
    │  ├─ blog/               ← BlogBody (markup renderer)
+   │  ├─ three/              ← HouseScene (procedural 3D home; lazy)
+   │  ├─ effects/            ← Tilt (cursor 3D tilt + glare), CursorFollower (ring)
    │  ├─ common/             ← Avatar
    │  ├─ company/            ← CeoAvatar (photo if set, else initials)
    │  ├─ listings/           ← ListingsSeoContent (localities, budgets, FAQs, related links)

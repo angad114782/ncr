@@ -6,6 +6,7 @@ import AuthSheet from './AuthSheet'
 import ContactRail from './ContactRail'
 import TopBanner from './TopBanner'
 import CompareBar from '../property/CompareBar'
+import CursorFollower from '../effects/CursorFollower'
 
 export default function PublicLayout() {
   const [authOpen, setAuthOpen] = useState(false)
@@ -21,6 +22,7 @@ export default function PublicLayout() {
       <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} />
       <ContactRail />
       <CompareBar />
+      <CursorFollower />
     </div>
   )
 }

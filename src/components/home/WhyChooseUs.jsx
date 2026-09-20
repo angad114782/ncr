@@ -1,4 +1,5 @@
 import GlassCard from '../glass/GlassCard'
+import Tilt from '../effects/Tilt'
 import { useSettings } from '../../context/SettingsContext'
 import { getIcon } from '../../utils/icons'
 
@@ -17,13 +18,15 @@ export default function WhyChooseUs() {
         {items.map((f, i) => {
           const Icon = getIcon(f.icon)
           return (
-            <GlassCard key={i} className="p-6">
+            <Tilt key={i} className="h-full rounded-[22px]" max={8}>
+            <GlassCard className="p-6 h-full">
               <div className="w-11 h-11 rounded-full glass-weak flex items-center justify-center mb-4">
                 <Icon className="text-[var(--color-accent)]" size={20} />
               </div>
               <h3 className="font-semibold mb-1.5">{f.title}</h3>
               <p className="text-secondary text-sm leading-relaxed">{fill(f.desc)}</p>
             </GlassCard>
+            </Tilt>
           )
         })}
       </div>

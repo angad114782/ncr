@@ -5,6 +5,7 @@
 
 export const HOME_SECTION_LABELS = {
   stats: 'Live stats',
+  showcase: '3D home showcase',
   featured: 'Featured properties',
   budget: 'Budget finder (what can you afford?)',
   newest: 'Newest listings',
@@ -57,6 +58,21 @@ export const SITE_DEFAULTS = {
     heroSubtitle:
       'Buy or rent 1, 2 & 3 BHK flats, villas and commercial spaces in Mumbai, Delhi, Bangalore, Gurugram & more — verified listings and free expert guidance.',
     sections: Object.keys(HOME_SECTION_LABELS).map((id) => ({ id, enabled: true })),
+  },
+
+  showcase: {
+    eyebrow: 'Interactive 3D',
+    title: 'Step Inside a Modern Home',
+    subtitle:
+      'Drag to look around, tap the glowing dots to explore, and switch to night to see the house light up. Then browse real homes like this one on {brand}.',
+    ctaLabel: 'Browse Homes',
+    ctaLink: '/listings',
+    hotspots: [
+      { label: 'Open living space', text: 'Floor-to-ceiling glass and lots of natural light.' },
+      { label: 'Private pool', text: 'Unwind at home — a pool right outside the living room.' },
+      { label: 'Landscaped garden', text: 'Green space for kids, pets and family time.' },
+      { label: 'Master suite', text: 'A calm upper-floor bedroom with garden views.' },
+    ],
   },
 
   why: {
@@ -199,10 +215,15 @@ export function fillTokens(text, company) {
 
 /** Keeps any home section the admin's saved order doesn't know about yet. */
 export function normalizeSections(saved = []) {
-  const known = new Set(saved.map((s) => s.id))
-  const valid = saved.filter((s) => s.id in HOME_SECTION_LABELS)
-  const missing = Object.keys(HOME_SECTION_LABELS)
-    .filter((id) => !known.has(id))
-    .map((id) => ({ id, enabled: true }))
-  return [...valid, ...missing]
+  const result = saved.filter((s) => s.id in HOME_SECTION_LABELS)
+  const canonical = Object.keys(HOME_SECTION_LABELS)
+  // A section added in a later release (e.g. the 3D showcase) is slotted in right after the
+  // section that precedes it by default, instead of being dumped at the very bottom.
+  canonical.forEach((id, i) => {
+    if (result.some((s) => s.id === id)) return
+    const prevId = canonical[i - 1]
+    const at = prevId ? result.findIndex((s) => s.id === prevId) : -1
+    result.splice(at + 1, 0, { id, enabled: true })
+  })
+  return result
 }
