@@ -41,6 +41,11 @@
 | 2026-09-21 | Sitemap generated at build by script | Property/blog/city URLs change; hand-editing drifts |
 | 2026-09-22 | Running strip lives on Home only (between navbar and hero); default messages are truthful nudges | User asked for an admin-run strip there ("physical" in the request was read as a scrolling / persuasive strip); no invented scarcity |
 | 2026-09-22 | OTP-flow buttons use benefit-first wording + reassurance line | User asked for more psychological CTAs; keep it honest (no fake urgency) |
+| 2026-09-22 | Whole site is admin-controlled: blog, FAQs, testimonials, agents, users, listings, company/CEO, page copy, menu, sections | User: "complete website dynamic, no hard-core any more" |
+| 2026-09-22 | Images = upload from device **or** paste a link; CSV = links only | User's explicit rule; uploads are compressed data URLs in localStorage until a backend |
+| 2026-09-22 | Blog body uses a tiny safe markup (not HTML / a WYSIWYG lib) | Easy manual writing + one CSV cell; no XSS surface; no new dependency |
+| 2026-09-22 | FAQs pick their pages (Home/About/Contact); testimonials/agents/posts have `active` | One FAQ system instead of three hard-coded lists |
+| 2026-09-22 | Sample testimonials ship inactive | Fake reviews must not be public |
 
 ## 3. Lessons learned (bugs & gotchas)
 
@@ -104,6 +109,15 @@ Searched buying-intent queries ("3 BHK flats for sale in Noida", "ready to move 
 **Cause:** `grid lg:grid-cols-3` has no mobile column template, so the implicit `auto` column grew to its widest child (long address/title, map row, price rows).
 **Fix:** `grid-cols-1` (= `minmax(0,1fr)`) + `min-w-0` on the column wrappers, `break-words` on title/address. **Check:** compare `scrollWidth` vs `clientWidth` at 360/390/414 px — pass `MSYS_NO_PATHCONV=1` to Node scripts on Git Bash or `/property/p1` gets rewritten to a Windows path.
 
+### 3.16 Shell-generated code corrupted escapes (2026-09-22)
+Files written through `node -e "…"` / heredocs with template literals lost backslashes and backticks: a phone regex became `/^d{10}$/` (every admin "Add user" failed) and a URL regex lost its `\/\/` (syntax error). Found by the browser test, not the build. **Rule:** create/patch code with the Write/Edit tools; if a script must patch a file, verify with `grep` and run the flow in a browser.
+
+### 3.17 Uploaded images live in localStorage (2026-09-22)
+Data URLs are ~100–200 KB each after compression (≤1000 px, JPEG 0.72) and localStorage is ~5 MB, so ~25–40 uploads fill it. `usePersistedState` now reports quota failures (admin banner), the Backup tab shows usage, CSV skips uploads, and **links remain the recommended path**. Meta tags / JSON-LD must never carry data URLs. `<img src="">` re-downloads the page — use `Avatar`/placeholders.
+
+### 3.18 `textarea` was clipped to one line (fixed 2026-09-22)
+`GlassInput` wrapped every field in a fixed `h-12` shell, so multi-line fields (Contact message, lead-form message) showed a single line. Textareas now grow (`min-h`, `items-start`).
+
 ## 4. Working preferences (user)
 
 - Writes in Hinglish; comfortable with technical English. Answer in the same register.
@@ -114,6 +128,7 @@ Searched buying-intent queries ("3 BHK flats for sale in Noida", "ready to move 
 - Verified-in-browser results preferred over "it builds".
 - Dictates requests in Hinglish (speech-to-text: "physical" ≈ psychological / running). When a word looks wrong, pick the most sensible reading, say which one was used, and keep it easy to change.
 - Wants "commit and push, then tell me" after a batch of work.
+- Wants **nothing hard-coded**: any text, list, image or setting a business owner might change should be editable in the admin (add / edit / active-inactive), with manual **and** CSV entry, and images by upload **or** link.
 - For SEO/content work: wants competitor-driven changes — search buying-intent keywords, inspect competitor sites, apply the findings to **every** page (keywords, sections, content). Wants Google E-E-A-T trust signals (real CEO, experience, team, blog).
 - Gave real facts for the CEO only (Angad Yadav, 5 years). Everything else (address, RERA ID, photo, reviews) still needs to come from them — never fill gaps with invented details.
 
@@ -139,6 +154,7 @@ Searched buying-intent queries ("3 BHK flats for sale in Noida", "ready to move 
 18. **Polish** — hardcoded blue removal, hover states.
 19. **Home redesign + SEO + TopBanner + admin-managed cities/types** *(uncommitted — see [tasks.md](tasks.md))*
 20. **Site-wide review** — found the GlassCard remount bug, double conversions, canonical bug, contact form that saved nothing (§3.11–3.13).
+22. **Fully admin-controlled CMS** — generic admin engine, Blog/FAQ/Reviews/Agents/Users/Listings/Site-Content admin, image upload-or-link, CSV everywhere, backup/restore (§3.16–3.18).
 21. **Competitor-driven content & SEO pass** — Team, Blog, long-form About/Contact, listing SEO blocks + BHK/possession filters, Seo on every page, generated sitemap (§3.14)..
 
 ## 6. Reference: localStorage keys

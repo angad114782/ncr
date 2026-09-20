@@ -66,14 +66,26 @@ Auth is **phone + OTP only** (no email/password). Demo numbers: `8619930583` (ad
 Overview, Saved properties, My Inquiries (with budget + verified badge), Profile (editable name / phone / city; phone must be a unique 10-digit number).
 
 ### 4.4 Admin panel `/admin`
+Every list screen shares one pattern: **search · Active/Inactive filter · add · edit · duplicate · delete (with confirm) · active toggle · bulk activate/deactivate/delete · CSV template / export / import (with a review step) · restore sample content.**
+
 | Page | Requirement |
 |---|---|
-| **Overview** | Analytics summary. |
-| **Listings** | CRUD, per-row Active/Inactive toggle, **CSV template download** (built from live p1/p2 samples), **CSV import** with per-row error review, bulk add. |
-| **Users** | User list (incl. runtime signups), **Pending Agent Approvals** (approve / reject), disapprove / re-approve approved agents. |
-| **Inquiries** | Lead list with budget and verified badge, **Export Leads CSV**. |
-| **Settings** | Site contact info (phone + email); WhatsApp Cloud API config (OTP / lead-notification / lead-thank-you templates); SMTP mail config; Meta Pixel + Google Ads config; manageable cities and property types; top-banner text/link; **running strip** (up to 10 messages, optional link each, speed, on/off, live preview). |
+| **Overview** | Live counts (active listings, approved agents, pending inquiries, portfolio value of *active* listings). |
+| **Listings** | Full editor: price (number), auto price label, city/type/possession/furnishing from admin lists, agent, lat/lng, description, **photos + floor plans (upload from device or paste link)**, amenities, nearby places, video link, featured / verified / active. CSV with `id` column (round-trip update) — images are **links only**. |
+| **Blog** | Manual editor with a formatting toolbar (headings, bold, lists, links, tables, quotes), **inline images (upload or link)**, live preview, cover image (upload or link), SEO description, FAQs, related posts, featured, **Published / Draft**. CSV template / export / import (upsert by slug). |
+| **FAQs** | Question, answer, category, **pages to show on (Home / About / Contact)**, active, order. CSV. |
+| **Reviews** (testimonials) | Name, city, rating, text, photo, active. Sample reviews stay inactive. CSV. |
+| **Agents** | Full CRUD, photo (upload/link), approval status + active, bio, rating. Quick-approve. CSV. |
+| **Users** | Add / edit / activate / deactivate / delete (runtime accounts). Deactivated users are signed out. The last active admin can never be removed. |
+| **Inquiries** | Search + status filter, status change, delete, **Export Leads CSV**. Contact-form enquiries appear as "General enquiry". |
+| **Site Content** | Tabs: **Company & CEO** (name, tagline, RERA no., address, hours, socials, CEO name/title/years/photo/bio/expertise/quote) · **Home page** (hero words + sub-text, show/hide + re-order 16 sections) · **Home blocks** (why-choose-us, how-it-works, CTA banner) · **About** (every block) · **Team & Contact** (text, steps, form options) · **Menu & Footer** (nav items, dropdowns, visibility, footer text) · **Forms & options** (budget choices, possession, furnishing) · **Backup & reset**. |
+| **Settings** | Site contact info; WhatsApp Cloud API config; SMTP mail config; Meta Pixel + Google Ads; cities and property types; top banner; running strip. |
 | **Profile** | Shared profile page inside the admin shell. |
+
+### 4.4a Everything is admin-controlled (and the honest limit)
+No page copy, menu, FAQ, review, article, agent, listing image or company fact is hard-coded any more — defaults ship in `src/data/*` and the admin overrides them. Copy supports tokens `{brand} {ceoName} {ceoTitle} {years}`.
+
+**Limit until a backend exists:** the admin's edits are saved in *that browser's* storage, so visitors on other devices still see the shipped defaults. Use **Site Content → Backup & reset** to download/restore a JSON backup, and treat the backend (see [tasks.md](tasks.md)) as the step that makes admin changes reach every visitor.
 
 ### 4.5 Integrations — real vs demo
 | Integration | Status | Why |

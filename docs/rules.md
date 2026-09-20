@@ -6,7 +6,7 @@
 ## 1. Data & domain
 
 1. **India only.** Currency is ₹ (lakh / crore formatting). Use Indian cities, localities and phone formats. No USD or generic placeholder data.
-2. **Public pages use filtered lists.** Use `activeProperties` and `approvedAgents` from `DataContext`. Raw `properties` / `agents` are for admin screens (and the single viewed-property lookup in `PropertyDetail`).
+2. **Public pages use filtered lists.** Use `activeProperties`, `approvedAgents`, `activeBlogPosts`, `activeFaqs`, `activeTestimonials` from `DataContext`. Raw `properties` / `agents` are for admin screens (and the single viewed-property lookup in `PropertyDetail`).
 3. **Same-city comparisons only.** Any "vs average", estimate or insight feature compares within the same city (and same type when possible). If no local peer exists, **render nothing** — never fall back to a national / cross-city average.
 4. **Users are keyed by `user.id` (or `user.phone`)**, never by email. Email is optional, legacy, display-only.
 5. **Auth is phone + OTP.** No email/password paths.
@@ -102,3 +102,16 @@
 5. Claims must map to a real feature (agent approval, Verified badge, RERA number shown, same-city price insight). Don't promise "every listing RERA-checked" or "24x7 support" unless it is operationally true.
 6. Legal / tax / finance articles: hedge ("varies by state", "confirm with…"), avoid quoting rates that change, always include the disclaimer, and show **published + updated** dates and the author.
 7. Blog posts live in `src/data/blog.json`; add `related` slugs so posts interlink, and re-run `npm run sitemap`.
+
+## 10. Admin-controlled content (no hard-coding)
+
+1. **No page copy in components.** Text that a business owner might change lives in `src/data/siteDefaults.js` (or a collection) and is read via `useSettings().siteContent` / `company`. Wrap admin copy in `fill()` so `{brand} {ceoName} {ceoTitle} {years}` work.
+2. **New content type = new collection**, not a JSON import: add it to `DataContext` with `makeCrud`, give it an `active` flag, add a `derived active list` for public pages, build the admin page with `CollectionAdmin` + a `schema`, and (when it makes sense) a CSV config in `utils/contentCsv.js`.
+3. **Every managed item has `active`.** Treat `active !== false` as visible. Public pages must never read the raw list.
+4. **Images: upload *or* link, always both.** Use `ImageField` / `ImageListField`. CSV import/export carries **links only** — uploaded (data:) images are exported blank and preserved on re-import.
+5. **Never put a `data:` URL in meta tags, Open Graph or JSON-LD** — crawlers can't fetch it. Use `crawlableImage()`.
+6. **Never render a bare `<img src="">`** (use `Avatar` or a placeholder) — browsers re-download the whole page.
+7. Uploads are compressed to ≤1000 px JPEG; prefer links for production. Anything that can fail to persist must go through `usePersistedState` so the storage-full alert works.
+8. CSV import must **preview before it changes anything**, list skipped rows with reasons, and update (not duplicate) rows whose id / slug already exists.
+9. **Admin edits are per-browser until a backend exists.** Say so in UI copy; offer backup/restore; don't claim visitors see a change made in another browser.
+10. **Generate files with the Write tool, not shell heredocs / `node -e` with template literals** — escapes like `\d` and backticks were silently mangled (a broken phone regex and a broken URL regex shipped from this).

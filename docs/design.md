@@ -62,6 +62,8 @@ Surface tokens: `--glass-surface`, `--glass-surface-strong`, `--glass-surface-we
 | `PropertyCard` | Image, price label, badges, save + compare actions, hover lift. |
 | `StatusBadge` | "Active" / "Not configured" pattern — a local helper inside `AdminSettings.jsx`, not a shared component. |
 | `CeoAvatar` | Real photo when `COMPANY.ceo.photo` is set, otherwise accent-coloured initials in a glass circle. Never a stock photo. |
+| Admin list screen | `CollectionAdmin`: title + counts, header actions (Restore samples · Add · CSV Template/Export/Import), search + All/Active/Inactive pills, bulk bar when rows are ticked, glass table (checkbox · custom columns · status switch · actions), edit sheet with sticky Cancel/Save footer, confirm sheet for destructive actions. |
+| Image picker | `ImageField`: thumbnail + link input + **Choose from device** + Remove; `ImageListField`: thumbnails (first = Cover, ★ make cover, 🗑 remove) + upload + "paste link → Add". |
 | Article layout | `BlogPost`: narrow (`max-w-3xl`) column, breadcrumb, byline + updated date + reading time, cover, TOC card, H2 sections with `scroll-mt-28`, glass table, FAQ cards, author card, disclaimer, CTA, related grid. |
 | SEO content block | `ListingsSeoContent`: intro card → two-column localities table + budget links → FAQ cards → related-search chips, all under the results. |
 

@@ -34,6 +34,7 @@ ncr/
    ├─ main.jsx               ← HelmetProvider + <App/>
    ├─ App.jsx                ← providers + all routes + panel nav arrays
    ├─ index.css              ← design tokens, .glass primitives, leaflet theming
+   ├─ hooks/                 ← usePersistedState (deep-merge defaults, quota-error reporting)
    ├─ context/               ← global state (Theme, Auth, Data, Settings)
    ├─ data/                  ← seed JSON: properties, agents, users, inquiries,
    │                           testimonials, faqs, landmarks, blog.json
@@ -43,6 +44,9 @@ ncr/
    ├─ components/
    │  ├─ glass/              ← GlassButton, GlassCard, GlassInput, GlassSheet,
    │  │                         ThemeToggle, Reveal, motionComponent.js (cached motion.create)
+   │  ├─ admin/              ← CollectionAdmin, SchemaForm, CsvToolbar, ImageField(+List), BlogBodyEditor, Toggle
+   │  ├─ blog/               ← BlogBody (markup renderer)
+   │  ├─ common/             ← Avatar
    │  ├─ company/            ← CeoAvatar (photo if set, else initials)
    │  ├─ listings/           ← ListingsSeoContent (localities, budgets, FAQs, related links)
    │  ├─ layout/             ← Navbar, Footer, PublicLayout, PanelShell,
@@ -91,8 +95,8 @@ All state lives in React context and is mirrored to `localStorage` under `re-*` 
 |---|---|---|
 | Theme | `re-theme` | `light` / `dark` |
 | Auth | `re-user`, `re-extra-users`, `re-user-overrides` | current user; runtime signups; per-id patches over seed users |
-| Data | `re-properties`, `re-inquiries`, `re-saved`, `re-compare`, `re-recent`, `re-agents` | domain data + user-scoped lists |
-| Settings | `re-whatsapp-config`, `re-mail-config`, `re-marketing-config`, `re-cities`, `re-property-types`, `re-top-banner`, `re-ticker` | admin-managed config |
+| Data | `re-properties`, `re-inquiries`, `re-saved`, `re-compare`, `re-recent`, `re-agents`, `re-blog`, `re-faqs`, `re-testimonials` | domain data + user-scoped lists |
+| Settings | `re-whatsapp-config`, `re-mail-config`, `re-marketing-config`, `re-cities`, `re-property-types`, `re-top-banner`, `re-ticker`, `re-company`, `re-site-content` | admin-managed config & page copy |
 | TopBanner | `re-banner-dismissed` | per-visitor: exact banner text dismissed |
 
 ### Derived lists (important)
@@ -120,10 +124,27 @@ description, active?, images[], floorPlans[], amenities[], nearby[{type,name,dis
 **Agent** — `id, name, role, city, phone, email, avatar, rating, dealsClosed, status("approved"|"pending"|"rejected"), bio`
 **User** — `id, name, phone (auth key), email? (legacy, display only), role, city`
 **Inquiry** — `id, propertyId|null, userId|null, userName, userEmail?, phone, budget?, intent?, city?, source?("contact_page"), message, status, date, phoneVerified`
-**BlogPost** (`src/data/blog.json`) — `slug, title, description, category, cover, date, updated, intro, sections[{heading, body[], list[], ordered?, table?{head,rows}}], faqs[{question,answer}], related[slugs]`
-**COMPANY** (`src/data/company.js`) — `name, domain, tagline, foundedYear, reraAgentId, address{}, officeHours, social{}, showTestimonials, ceo{name,title,experienceYears,photo,summary,expertise[],quote}`
+**BlogPost** (seed `src/data/blog.json`, live in `re-blog`) — `id, slug, title, description, category, author, cover, date, updated, intro, body (markup, see utils/blogBody.js), media{key: dataURL}, faqs[{question,answer}], related[slugs], featured, active`
+**Faq** — `id, question, answer, category, pages[home|about|contact], active` (array order = display order)
+**Testimonial** — `id, name, city, rating, text, avatar, active` (seeds are inactive samples)
+**Company** (defaults `src/data/company.js` → live in `re-company`, read with `useSettings().company`) — `name, domain, tagline, foundedYear, reraAgentId, address{}, officeHours, social{}, ceo{name,title,experienceYears,photo,summary,expertise[],quote}`
+**Site content** (defaults `src/data/siteDefaults.js` → live in `re-site-content`, read with `useSettings().siteContent`, tokens via `fill()`) — `nav[], home{hero…, sections[{id,enabled}]}, why, how, cta, about, team, contact, footer, forms{buyBudgets,rentBudgets}, options{possession,furnishing}`
+**Agent / Property** also carry `active` (hidden when `false`).
 
 Property CSV column order is `PROPERTY_CSV_COLUMNS` in `src/utils/csv.js`. Arrays flatten to `a;b;c`; `nearby` flattens to `Type:Name:Distance;…`.
+
+## 6a. Admin CMS layer
+
+| Piece | Role |
+|---|---|
+| `context/DataContext.makeCrud` | One CRUD API per collection (`upsert, upsertMany, patch, remove, removeMany, setActive, toggleActive, move`); exposed as `propertyCrud, agentCrud, blogCrud, faqCrud, testimonialCrud, inquiryCrud`. Derived public lists: `activeProperties, approvedAgents, activeBlogPosts, activeFaqs, activeTestimonials`. |
+| `components/admin/CollectionAdmin` | The generic list + editor screen (search, filters, bulk, reorder, CSV, restore samples). Entity pages only pass `schema`, `columns`, `csv` config. |
+| `components/admin/SchemaForm` | Renders fields from data: text · url · number · date · textarea · select · toggle · multiselect · image · imageList · stringList · objectList (nested) · icon · custom. Dotted keys (`ceo.name`). |
+| `components/admin/ImageField / ImageListField` | **Choose from device** (resized to ≤1000 px JPEG via canvas, stored as a data URL) **or paste a link**. |
+| `utils/contentCsv.js`, `utils/csv.js` | Per-entity CSV template/export/parse with row validation. **Links only** for images; upserts by id/slug. |
+| `utils/blogBody.js` + `components/blog/BlogBody` | Safe markup → React (no raw HTML): `##`, `###`, lists, tables, `>`, `![alt](url \| media:key)`, `**bold**`, `[link](url)`. |
+| `utils/backup.js` | Whole-site JSON backup/restore (secrets stripped). |
+| `utils/storageStatus.js` | Reports localStorage write failures; admin shows a "storage full" alert. |
 
 ## 7. Key modules
 

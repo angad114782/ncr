@@ -73,10 +73,23 @@ _Last updated: 2026-09-21_
 
 ---
 
+### Fully admin-controlled site (2026-09-22)
+- [x] Generic admin engine: `CollectionAdmin` + `SchemaForm` + `CsvToolbar` (search, filters, bulk actions, reorder, duplicate, confirm-delete, restore samples, CSV template/export/import with preview)
+- [x] **Blog** admin — markup editor with toolbar, inline images (upload/link), preview, cover image, FAQs, related posts, featured, Published/Draft, CSV
+- [x] **FAQs** admin — per-page placement (Home/About/Contact), order, active, CSV; About/Contact/Home FAQs now come from here
+- [x] **Testimonials** admin (samples inactive), **Agents** admin (full CRUD, photo, approval, CSV), **Users** admin (add/edit/deactivate/delete, last-admin guard)
+- [x] **Listings** admin rewritten — full editor (fixes the price-0 "Add listing" bug), photo/floor-plan upload **or** link, nearby places, video link, CSV with id round-trip and links-only images
+- [x] **Site Content** admin — company & CEO, hero, home section order/visibility, why/how/CTA, About, Team, Contact, menu & footer, budgets & options, backup/restore
+- [x] All public pages read that content (Home, About, Team, Contact, Blog, Footer, Navbar, forms); inactive items never reach visitors
+- [x] Storage-full alert; `textarea` fields no longer clipped to one line; agent/CEO avatars fall back to initials; price labels drop trailing zeros
+- [x] 42-step browser test of the whole flow (upload/link images, CSV, active toggles, site content, users, backup) + mobile overflow sweep of 14 pages
+
+---
+
 ## 🔄 In progress
 
 - [~] Everything above is **uncommitted** (plus the earlier Home redesign / TopBanner / Admin Settings work). Review in light + dark + mobile, then commit in chunks (glass fix · SEO infra · pages · content).
-- [ ] 🔴 **Owner inputs needed** (pages hide these until filled — edit `src/data/company.js`):
+- [ ] 🔴 **Owner inputs needed** (pages hide these until filled — now edited in **Admin → Site Content → Company & CEO**):
   - CEO photo (`/public/angad-yadav.jpg` → `ceo.photo`), and review the drafted bio / expertise / quote
   - Office address, office hours, founding year
   - RERA real-estate-agent registration number
@@ -88,7 +101,10 @@ _Last updated: 2026-09-21_
 
 ## 📋 Backlog
 
-### 🔴 Backend (next phase)
+### 🔴 Backend (next phase) — this is what makes admin edits reach every visitor
+- [ ] **Move the admin CMS collections to an API** (`re-blog, re-faqs, re-testimonials, re-agents, re-properties, re-inquiries, re-company, re-site-content, re-ticker, re-top-banner, re-cities, re-property-types`). The `makeCrud` API and `usePersistedState` are the only two seams to swap.
+- [ ] Image storage (Cloudinary / S3) so uploads stop living in browser storage; keep the "paste a link" option
+- [ ] Server-side admin auth (today admin = a flag in localStorage)
 - [ ] Choose stack + hosting (Node/Express + MongoDB Atlas suggested)
 - [ ] Mongoose schemas mirroring the JSON shapes in [architecture.md](architecture.md) §6
 - [ ] REST API: properties CRUD, agents, users, inquiries, settings
