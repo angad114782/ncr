@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Search, SlidersHorizontal, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
@@ -23,6 +23,37 @@ const sortOptions = [
 
 const BHK_OPTIONS = ['1', '2', '3', '4']
 
+/**
+ * Text inputs whose value lives in the URL (?q=, ?maxPrice=) must not be driven by the URL
+ * directly: React Router applies URL updates in a low-priority transition, so fast typing
+ * dropped characters ("bandra" → "aa"). Keep the text locally, push it to the URL after a
+ * short pause, and only accept URL changes that didn't come from us (Clear all, links).
+ */
+function useUrlField(urlValue, push, delay = 250) {
+  const [text, setText] = useState(urlValue)
+  const lastPushed = useRef(urlValue)
+  const pushRef = useRef(push)
+  pushRef.current = push
+
+  useEffect(() => {
+    if (urlValue !== lastPushed.current) {
+      lastPushed.current = urlValue
+      setText(urlValue)
+    }
+  }, [urlValue])
+
+  useEffect(() => {
+    if (text === lastPushed.current) return undefined
+    const t = setTimeout(() => {
+      lastPushed.current = text
+      pushRef.current(text)
+    }, delay)
+    return () => clearTimeout(t)
+  }, [text, delay])
+
+  return [text, setText]
+}
+
 export default function Listings() {
   const { activeProperties: properties } = useData()
   const { cities, propertyTypes: types, siteContent, company } = useSettings()
@@ -42,19 +73,22 @@ export default function Listings() {
 
   // Changing any filter drops the page param so results never land on an
   // out-of-range page (the page lives in the URL, not in component state).
-  const updateParam = (key, value) => {
+  const updateParam = (key, value, options = {}) => {
     const next = new URLSearchParams(params)
     if (value) next.set(key, value)
     else next.delete(key)
     next.delete('page')
-    setParams(next)
+    setParams(next, { state: { keepScroll: true }, ...options })
   }
+
+  const [qText, setQText] = useUrlField(q, (v) => updateParam('q', v, { replace: true }))
+  const [maxPriceText, setMaxPriceText] = useUrlField(maxPrice, (v) => updateParam('maxPrice', v, { replace: true }))
 
   const setPage = (n) => {
     const next = new URLSearchParams(params)
     if (n > 1) next.set('page', String(n))
     else next.delete('page')
-    setParams(next)
+    setParams(next, { state: { keepScroll: true } })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -143,7 +177,7 @@ export default function Listings() {
               {activeFilterCount > 0 && (
                 <button
                   className="text-xs text-[var(--color-accent)] font-medium"
-                  onClick={() => setParams({})}
+                  onClick={() => setParams({}, { state: { keepScroll: true } })}
                 >
                   Clear all
                 </button>
@@ -154,8 +188,8 @@ export default function Listings() {
               <GlassInput
                 icon={Search}
                 placeholder="Search locality, project..."
-                value={q}
-                onChange={(e) => updateParam('q', e.target.value)}
+                value={qText}
+                onChange={(e) => setQText(e.target.value)}
               />
 
               <div>
@@ -235,8 +269,8 @@ export default function Listings() {
                 label="Max Price (₹)"
                 type="number"
                 placeholder="e.g. 5000000"
-                value={maxPrice}
-                onChange={(e) => updateParam('maxPrice', e.target.value)}
+                value={maxPriceText}
+                onChange={(e) => setMaxPriceText(e.target.value)}
               />
             </div>
           </GlassCard>

@@ -7,6 +7,7 @@ import Seo from './Seo'
 import { useStorageErrors } from '../../utils/storageStatus'
 import { useSettings } from '../../context/SettingsContext'
 import { useAuth } from '../../context/AuthContext'
+import Avatar from '../common/Avatar'
 
 export default function PanelShell({ title, navItems }) {
   const { user, isAdmin, logout } = useAuth()
@@ -38,7 +39,7 @@ export default function PanelShell({ title, navItems }) {
         </Link>
 
         <Link to={profilePath} className="glass rounded-[20px] p-4 flex items-center gap-3 spring hover:scale-[1.02]">
-          <img src={user?.avatar} alt={user?.name} className="w-11 h-11 rounded-full object-cover" />
+          <Avatar src={user?.avatar} name={user?.name} className="w-11 h-11 rounded-full" />
           <div className="min-w-0">
             <p className="font-medium truncate">{user?.name}</p>
             <p className="text-tertiary text-xs truncate">{user?.phone ? `+91 ${user.phone}` : user?.email}</p>

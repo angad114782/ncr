@@ -4,6 +4,7 @@ import GlassCard from '../../components/glass/GlassCard'
 import GlassInput from '../../components/glass/GlassInput'
 import GlassButton from '../../components/glass/GlassButton'
 import { useAuth } from '../../context/AuthContext'
+import Avatar from '../../components/common/Avatar'
 
 export default function Profile() {
   const { user, updateProfile } = useAuth()
@@ -28,7 +29,7 @@ export default function Profile() {
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Profile Settings</h1>
 
       <GlassCard hover={false} className="p-6 mb-6 flex items-center gap-4">
-        <img src={user?.avatar} alt={user?.name} className="w-16 h-16 rounded-full object-cover" />
+        <Avatar src={user?.avatar} name={user?.name} className="w-16 h-16 rounded-full" />
         <div>
           <p className="font-semibold text-lg">{user?.name}</p>
           <p className="text-secondary text-sm flex items-center gap-1">

@@ -142,7 +142,8 @@ export default function Home() {
       <PromoTicker />
 
       {/* Hero */}
-      <section className="relative isolate overflow-hidden text-center pt-6 pb-10">
+      {/* A real panel: rounded, padded, softly tinted — the glow is clipped by its corners */}
+      <section className="relative isolate overflow-hidden text-center rounded-[32px] border border-[var(--glass-border)] bg-[color-mix(in_srgb,var(--glass-surface)_60%,transparent)] px-4 sm:px-8 pt-12 pb-10 md:pt-16 md:pb-14 mb-12">
         <HeroBlobs />
         <motion.h1
           initial={{ opacity: 0, y: 20 }}

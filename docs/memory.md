@@ -118,6 +118,17 @@ Data URLs are ~100–200 KB each after compression (≤1000 px, JPEG 0.72) and l
 ### 3.18 `textarea` was clipped to one line (fixed 2026-09-22)
 `GlassInput` wrapped every field in a fixed `h-12` shell, so multi-line fields (Contact message, lead-form message) showed a single line. Textareas now grow (`min-h`, `items-start`).
 
+### 3.19 Pages opened mid-scroll + Back button (fixed 2026-09-22)
+**Symptom:** after clicking a link the new page appeared at the old scroll position, not at the top.
+**Cause:** `BrowserRouter` doesn't reset scroll (only data routers' `<ScrollRestoration>` does).
+**Fix:** `components/layout/ScrollToTop.jsx` — top on navigation, saved position on Back/Forward, #anchor support, `keepScroll` state to opt out. **Gotcha found while testing Back:** the browser's URL changes the instant a link is clicked but React swaps the page later; scroll events in that gap (offset collapsing to 0) belong to the OLD page, so positions are only recorded while `window.location` matches the URL React has rendered.
+
+### 3.20 URL-bound text inputs dropped characters (fixed 2026-09-22)
+Typing "bandra" in the listings search produced "aa": the input's value came from `?q=` and Router updates the URL in a low-priority transition, so the controlled value lagged behind keystrokes. `useUrlField` keeps local text + debounced push. Same for the Max Price box.
+
+### 3.21 Hero looked unfinished (fixed 2026-09-22)
+The hero was a bare section with `overflow-hidden`: the blurred glows were clipped into a hard rectangle, text touched the top edge, and a teal glow clashed with the brown/cream brand. It is now a rounded, padded, tinted panel with two brand-coloured glows.
+
 ## 4. Working preferences (user)
 
 - Writes in Hinglish; comfortable with technical English. Answer in the same register.

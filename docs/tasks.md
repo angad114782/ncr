@@ -73,6 +73,12 @@ _Last updated: 2026-09-21_
 
 ---
 
+### UX fixes (2026-09-22)
+- [x] **Scroll:** every page change starts at the top; Back/Forward restores position; #anchors work; filters on /listings don't jump the page (`ScrollToTop`)
+- [x] **Listings inputs:** search and max-price no longer drop characters (debounced URL sync, replace-not-push)
+- [x] **Hero:** proper rounded, padded panel with brand-coloured glows (was a hard-edged box with cramped text); checked in light, dark and mobile
+- [x] Signed-in user avatars fall back to initials (no empty `src`)
+
 ### Fully admin-controlled site (2026-09-22)
 - [x] Generic admin engine: `CollectionAdmin` + `SchemaForm` + `CsvToolbar` (search, filters, bulk actions, reorder, duplicate, confirm-delete, restore samples, CSV template/export/import with preview)
 - [x] **Blog** admin — markup editor with toolbar, inline images (upload/link), preview, cover image, FAQs, related posts, featured, Published/Draft, CSV

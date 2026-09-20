@@ -6,6 +6,7 @@ import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
+import Avatar from '../common/Avatar'
 
 export default function Navbar({ onAuthOpen }) {
   const [scrolled, setScrolled] = useState(false)
@@ -120,7 +121,7 @@ export default function Navbar({ onAuthOpen }) {
                 Dashboard
               </GlassButton>
               <button onClick={logout} className="w-10 h-10 rounded-full overflow-hidden glass spring hover:scale-105">
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                <Avatar src={user.avatar} name={user.name} className="w-full h-full" />
               </button>
             </div>
           ) : (

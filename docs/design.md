@@ -89,6 +89,8 @@ Surface tokens: `--glass-surface`, `--glass-surface-strong`, `--glass-surface-we
 - Desktop: glass sidebar with nav + user card (links to the role's profile page).
 - Mobile: floating **bottom tab bar** with the same nav icons (Profile included for both roles).
 
+**Home hero** — a rounded (`32px`), padded, softly tinted panel (`--glass-surface` at 60%) with a 1px `--glass-border`; two blurred brand glows (accent top-left, accent-2 bottom-right) clipped by the panel; heading → sub-text → glass search card → type pills, all centred with `py-12 md:py-16`.
+
 **Listings** — sticky filter sidebar (`md:sticky md:top-28 md:self-start` on the wrapper `<aside>`), results grid, sort, pagination.
 
 **Property detail** — gallery → key facts → tabs (details / floor plan) → EMI calculator → map → Price Insight → Distance to Hubs → cross-link sections. Lead form sits in a sticky side column on desktop.

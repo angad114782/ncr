@@ -10,6 +10,7 @@ import PublicLayout from './components/layout/PublicLayout'
 import PanelShell from './components/layout/PanelShell'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import TrackingScripts from './components/layout/TrackingScripts'
+import ScrollToTop from './components/layout/ScrollToTop'
 
 import Home from './pages/public/Home'
 import Listings from './pages/public/Listings'
@@ -69,6 +70,7 @@ function App() {
         <DataProvider>
           <SettingsProvider>
             <BrowserRouter>
+              <ScrollToTop />
               <TrackingScripts />
               <Routes>
                 <Route element={<PublicLayout />}>

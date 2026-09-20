@@ -115,3 +115,11 @@
 8. CSV import must **preview before it changes anything**, list skipped rows with reasons, and update (not duplicate) rows whose id / slug already exists.
 9. **Admin edits are per-browser until a backend exists.** Say so in UI copy; offer backup/restore; don't claim visitors see a change made in another browser.
 10. **Generate files with the Write tool, not shell heredocs / `node -e` with template literals** — escapes like `\d` and backticks were silently mangled (a broken phone regex and a broken URL regex shipped from this).
+
+## 11. Navigation, scroll & URL-driven inputs
+
+1. **Every page change starts at the top.** `ScrollToTop` (mounted in `App.jsx`) resets scroll on each navigation, restores the old position on Back/Forward, and scrolls to #anchors. Don't add per-page `scrollTo` hacks.
+2. **In-page navigations that only change filters must keep the scroll**: call `setSearchParams(next, { state: { keepScroll: true } })`. Pagination scrolls to the top itself.
+3. **Never bind a text input straight to a URL param.** React Router applies URL updates in a transition, so fast typing dropped characters. Keep the text in local state and push it to the URL after a pause (`useUrlField` in `Listings.jsx`), using `replace` so typing doesn't spam history.
+4. **Hero / feature blocks sit in a real panel**: rounded, padded, softly tinted (`rounded-[32px]`, `px-4 sm:px-8`, `py-12 md:py-16`). Decorative glows must be clipped by that panel (`overflow-hidden`) — a glow clipped by a bare section produced a hard rectangular edge. Brand colours only (accent / accent-2).
+
