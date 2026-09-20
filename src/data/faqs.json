@@ -2,36 +2,135 @@
   {
     "id": "f1",
     "question": "Are the properties on NCR Estates RERA registered?",
-    "answer": "Where a project has a RERA registration, we display the registration number on the listing so you can check it yourself on your state RERA portal. We recommend verifying the number and the project's approvals before you pay any token amount — our guide on how to check RERA registration explains the steps."
+    "answer": "Where a project has a RERA registration, we display the registration number on the listing so you can check it yourself on your state RERA portal. We recommend verifying the number and the project's approvals before you pay any token amount — our guide on how to check RERA registration explains the steps.",
+    "category": "Trust",
+    "pages": [
+      "home"
+    ],
+    "active": true
   },
   {
     "id": "f2",
     "question": "Do I need to pay brokerage to use NCR Estates?",
-    "answer": "Browsing, saving properties, and contacting our team is completely free. Brokerage, where applicable, is explained and agreed with you upfront before any agreement."
+    "answer": "Browsing, saving properties, and contacting our team is completely free. Brokerage, where applicable, is explained and agreed with you upfront before any agreement.",
+    "category": "Pricing",
+    "pages": [
+      "home",
+      "about",
+      "contact"
+    ],
+    "active": true
   },
   {
     "id": "f3",
     "question": "How accurate is the EMI calculator?",
-    "answer": "Our EMI calculator uses the standard reducing-balance formula based on the loan amount, interest rate, and tenure you enter. Actual bank offers may vary based on your credit profile."
+    "answer": "Our EMI calculator uses the standard reducing-balance formula based on the loan amount, interest rate, and tenure you enter. Actual bank offers may vary based on your credit profile.",
+    "category": "Loans",
+    "pages": [
+      "home"
+    ],
+    "active": true
   },
   {
     "id": "f4",
     "question": "How do I buy a flat for the first time in India?",
-    "answer": "Fix your budget, check your credit score and loan eligibility, shortlist localities, visit properties, verify RERA registration and documents, then register the sale deed. Our first-time home buyer guide walks through every step."
+    "answer": "Fix your budget, check your credit score and loan eligibility, shortlist localities, visit properties, verify RERA registration and documents, then register the sale deed. Our first-time home buyer guide walks through every step.",
+    "category": "Buying",
+    "pages": [
+      "home"
+    ],
+    "active": true
   },
   {
     "id": "f5",
     "question": "What is the difference between ready-to-move and under-construction flats?",
-    "answer": "Ready-to-move flats are completed and can be inspected and occupied soon after registration. Under-construction flats are usually priced lower at launch but carry delivery-timeline risk and GST. Use the Possession filter on the listings page to see both."
+    "answer": "Ready-to-move flats are completed and can be inspected and occupied soon after registration. Under-construction flats are usually priced lower at launch but carry delivery-timeline risk and GST. Use the Possession filter on the listings page to see both.",
+    "category": "Buying",
+    "pages": [
+      "home"
+    ],
+    "active": true
   },
   {
     "id": "f6",
     "question": "Can I schedule a site visit before making an inquiry?",
-    "answer": "Yes — use the enquiry form on any property page or tap the WhatsApp button to message us directly and arrange a convenient time."
+    "answer": "Yes — use the enquiry form on any property page or tap the WhatsApp button to message us directly and arrange a convenient time.",
+    "category": "General",
+    "pages": [
+      "home",
+      "contact"
+    ],
+    "active": true
   },
   {
     "id": "f7",
     "question": "How do I compare multiple properties?",
-    "answer": "Tap the compare icon on any property card (up to 3 at a time) — a comparison bar appears at the bottom of the screen letting you view them side-by-side."
+    "answer": "Tap the compare icon on any property card (up to 3 at a time) — a comparison bar appears at the bottom of the screen letting you view them side-by-side.",
+    "category": "General",
+    "pages": [
+      "home"
+    ],
+    "active": true
+  },
+  {
+    "id": "f8",
+    "question": "Who is behind NCR Estates?",
+    "answer": "NCR Estates is led by Angad Yadav, CEO, who has 5+ years of experience in the real estate market. You can read more on our Team page.",
+    "category": "About",
+    "pages": [
+      "about"
+    ],
+    "active": true
+  },
+  {
+    "id": "f9",
+    "question": "Which cities do you cover?",
+    "answer": "We list properties to buy and rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram, and we keep adding cities based on demand.",
+    "category": "About",
+    "pages": [
+      "about"
+    ],
+    "active": true
+  },
+  {
+    "id": "f10",
+    "question": "How do I list my property with you?",
+    "answer": "Use the Contact page, choose “I want to sell / list my property”, and share the basics — city, type, expected price and your phone number. Our team will call you to take it forward.",
+    "category": "Selling",
+    "pages": [
+      "about",
+      "contact"
+    ],
+    "active": true
+  },
+  {
+    "id": "f11",
+    "question": "Do you guarantee the accuracy of every listing?",
+    "answer": "We work to keep information accurate and show verification badges only where earned, but details such as price and availability can change. Please confirm final details, RERA registration and documents directly before you pay.",
+    "category": "Trust",
+    "pages": [
+      "about"
+    ],
+    "active": true
+  },
+  {
+    "id": "f12",
+    "question": "How quickly will someone respond?",
+    "answer": "We aim to respond within 24 hours on working days. For urgent requirements, call or WhatsApp us directly.",
+    "category": "Contact",
+    "pages": [
+      "contact"
+    ],
+    "active": true
+  },
+  {
+    "id": "f13",
+    "question": "Do I need to create an account to contact you?",
+    "answer": "No. You only need your name and mobile number. Creating an account is optional and lets you save properties and track enquiries.",
+    "category": "Contact",
+    "pages": [
+      "contact"
+    ],
+    "active": true
   }
 ]

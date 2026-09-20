@@ -1,0 +1,61 @@
+import {
+  Award,
+  BadgeCheck,
+  Briefcase,
+  Building2,
+  Calculator,
+  CalendarCheck,
+  Clock,
+  FileCheck2,
+  HeadphonesIcon,
+  HeartHandshake,
+  Home,
+  KeyRound,
+  Landmark,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  Wallet,
+} from 'lucide-react'
+
+// Icons an admin can pick for content blocks (Why choose us, services, steps…).
+// Stored by name in the content, so adding one here makes it selectable everywhere.
+export const ICONS = {
+  Award,
+  BadgeCheck,
+  Briefcase,
+  Building2,
+  Calculator,
+  CalendarCheck,
+  Clock,
+  FileCheck2,
+  Headphones: HeadphonesIcon,
+  HeartHandshake,
+  Home,
+  KeyRound,
+  Landmark,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  Wallet,
+}
+
+export const ICON_NAMES = Object.keys(ICONS)
+
+export const getIcon = (name, fallback = Sparkles) => ICONS[name] ?? fallback

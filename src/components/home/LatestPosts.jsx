@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
-import { allPosts, formatDate, readingMinutes } from '../../utils/blog'
+import { useData } from '../../context/DataContext'
+import { formatDate, readingMinutes } from '../../utils/blog'
 
 export default function LatestPosts() {
-  const posts = allPosts.slice(0, 3)
+  const { activeBlogPosts } = useData()
+  const posts = activeBlogPosts.slice(0, 3)
   if (posts.length === 0) return null
 
   return (
@@ -16,11 +18,11 @@ export default function LatestPosts() {
         </div>
         <Link to="/blog"><GlassButton variant="glass" size="sm">All Articles</GlassButton></Link>
       </div>
-      <div className="grid md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {posts.map((post) => (
-          <Link key={post.slug} to={`/blog/${post.slug}`}>
+          <Link key={post.id} to={`/blog/${post.slug}`}>
             <GlassCard className="overflow-hidden h-full flex flex-col">
-              <img src={post.cover} alt={post.title} loading="lazy" className="w-full h-40 object-cover" />
+              {post.cover && <img src={post.cover} alt={post.title} loading="lazy" className="w-full h-40 object-cover" />}
               <div className="p-5 flex flex-col flex-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)] mb-1.5">{post.category}</span>
                 <h3 className="font-semibold mb-2">{post.title}</h3>

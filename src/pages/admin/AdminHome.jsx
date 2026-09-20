@@ -3,15 +3,15 @@ import GlassCard from '../../components/glass/GlassCard'
 import { useData } from '../../context/DataContext'
 
 export default function AdminHome() {
-  const { properties, inquiries, agents } = useData()
+  const { properties, inquiries, agents, blogPosts, faqs } = useData()
 
-  const totalValue = properties.reduce((sum, p) => sum + (p.purpose === 'Buy' ? p.price : 0), 0)
+  const totalValue = properties.reduce((sum, p) => sum + (p.active !== false && p.purpose === 'Buy' ? p.price : 0), 0)
   const pendingInquiries = inquiries.filter((i) => i.status === 'Pending').length
 
   const stats = [
-    { icon: Building2, label: 'Total Listings', value: properties.length, color: 'text-[var(--color-accent)]' },
+    { icon: Building2, label: 'Active Listings', value: `${properties.filter((p) => p.active !== false).length} / ${properties.length}`, color: 'text-[var(--color-accent)]' },
     { icon: MessageSquare, label: 'Pending Inquiries', value: pendingInquiries, color: 'text-[var(--color-warning)]' },
-    { icon: Users, label: 'Active Agents', value: agents.length, color: 'text-[var(--color-success)]' },
+    { icon: Users, label: 'Approved Agents', value: agents.filter((a) => a.active !== false && a.status === 'approved').length, color: 'text-[var(--color-success)]' },
     { icon: IndianRupee, label: 'Portfolio Value (Buy)', value: `₹${(totalValue / 10000000).toFixed(1)} Cr`, color: 'text-[var(--color-accent-2)]' },
   ]
 

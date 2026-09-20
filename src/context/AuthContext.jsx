@@ -61,6 +61,11 @@ export function AuthProvider({ children }) {
     }
   }, [overrides])
 
+  // A deactivated account is signed out immediately, even if it is currently logged in.
+  useEffect(() => {
+    if (user && overrides[user.id]?.active === false) setUser(null)
+  }, [user, overrides])
+
   const withOverrides = (u) => (u && overrides[u.id] ? { ...u, ...overrides[u.id] } : u)
 
   const allUsers = [...usersData, ...extraUsers].map(withOverrides)
@@ -70,6 +75,9 @@ export function AuthProvider({ children }) {
     const found = findByPhone(phone)
     if (!found) {
       return { ok: false, error: "No account found with this number. Let's sign you up instead." }
+    }
+    if (found.active === false) {
+      return { ok: false, error: 'This account has been deactivated. Please contact support.' }
     }
     setUser(found)
     return { ok: true, user: found }
@@ -110,6 +118,57 @@ export function AuthProvider({ children }) {
     return { ok: true }
   }
 
+  // ---- Admin user management -------------------------------------------------
+  const validatePhone = (phone, ignoreId) => {
+    if (!/^\d{10}$/.test(phone)) return 'Enter a valid 10-digit mobile number.'
+    if (allUsers.some((u) => u.phone === phone && u.id !== ignoreId)) return 'This number is already linked to another account.'
+    return ''
+  }
+
+  const addUser = ({ name, phone, city = '', role = 'user' }) => {
+    if (String(name ?? '').trim().length < 2) return { ok: false, error: 'Please enter a name.' }
+    const error = validatePhone(phone)
+    if (error) return { ok: false, error }
+    const newUser = {
+      id: `u${Date.now().toString(36)}`,
+      name: name.trim(),
+      phone,
+      role,
+      city,
+      active: true,
+      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(phone)}`,
+    }
+    setExtraUsers((prev) => [...prev, newUser])
+    return { ok: true, user: newUser }
+  }
+
+  const updateUserById = (id, patch) => {
+    if (patch.phone !== undefined) {
+      const error = validatePhone(patch.phone, id)
+      if (error) return { ok: false, error }
+    }
+    if (patch.name !== undefined && String(patch.name).trim().length < 2) return { ok: false, error: 'Please enter a name.' }
+    // Never let the last active admin be demoted or deactivated (would lock everyone out).
+    const target = allUsers.find((u) => u.id === id)
+    const wouldLoseAdmin = target?.role === 'admin' && (patch.role === 'user' || patch.active === false)
+    if (wouldLoseAdmin && allUsers.filter((u) => u.role === 'admin' && u.active !== false).length <= 1) {
+      return { ok: false, error: 'At least one active admin is required.' }
+    }
+    setOverrides((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))
+    if (user?.id === id) setUser((prev) => ({ ...prev, ...patch }))
+    return { ok: true }
+  }
+
+  const setUserActive = (id, active) => updateUserById(id, { active })
+
+  // Seed accounts can only be deactivated; accounts created at runtime can be deleted.
+  const deleteUser = (id) => {
+    if (id === user?.id) return { ok: false, error: 'You cannot delete the account you are signed in with.' }
+    if (!extraUsers.some((u) => u.id === id)) return { ok: false, error: 'Built-in accounts can only be deactivated.' }
+    setExtraUsers((prev) => prev.filter((u) => u.id !== id))
+    return { ok: true }
+  }
+
   const logout = () => setUser(null)
 
   return (
@@ -120,6 +179,10 @@ export function AuthProvider({ children }) {
         loginWithPhone,
         signupWithPhone,
         updateProfile,
+        addUser,
+        updateUserById,
+        setUserActive,
+        deleteUser,
         findByPhone,
         logout,
         isAdmin: user?.role === 'admin',

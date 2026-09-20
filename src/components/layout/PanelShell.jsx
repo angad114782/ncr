@@ -4,12 +4,16 @@ import { Building2, LogOut } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import ContactRail from './ContactRail'
 import Seo from './Seo'
+import { useStorageErrors } from '../../utils/storageStatus'
+import { useSettings } from '../../context/SettingsContext'
 import { useAuth } from '../../context/AuthContext'
 
 export default function PanelShell({ title, navItems }) {
   const { user, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { company } = useSettings()
+  const storageErrors = useStorageErrors()
   const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile'
 
   const handleLogout = () => {
@@ -30,7 +34,7 @@ export default function PanelShell({ title, navItems }) {
           <span className="w-9 h-9 rounded-[12px] bg-[var(--color-accent)] flex items-center justify-center text-white">
             <Building2 size={18} />
           </span>
-          NCR Estates
+          {company.name}
         </Link>
 
         <Link to={profilePath} className="glass rounded-[20px] p-4 flex items-center gap-3 spring hover:scale-[1.02]">
@@ -41,7 +45,7 @@ export default function PanelShell({ title, navItems }) {
           </div>
         </Link>
 
-        <nav className="glass rounded-[20px] p-2 flex flex-col gap-1 flex-1">
+        <nav className="glass rounded-[20px] p-2 flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
           <p className="text-tertiary text-xs font-semibold uppercase tracking-wide px-4 pt-3 pb-1">{title}</p>
           {navItems.map((item) => (
             <NavLink
@@ -72,8 +76,14 @@ export default function PanelShell({ title, navItems }) {
       </motion.aside>
 
       <div className="flex-1 min-w-0">
-        <MobileTabBar navItems={navItems} onLogout={handleLogout} />
+        <MobileTabBar navItems={navItems} onLogout={handleLogout} brand={company.name} />
         <main className="p-4 md:p-8 pb-28 md:pb-8 max-w-6xl mx-auto">
+          {storageErrors.length > 0 && (
+            <div role="alert" className="glass-strong rounded-[18px] p-4 mb-6 text-sm border border-[var(--color-danger)]">
+              <p className="font-semibold text-[var(--color-danger)]">Browser storage is full — recent changes are NOT being saved.</p>
+              <p className="text-secondary mt-1">Uploaded images take a lot of space. Delete some uploads, switch to image links, and download a backup (Site Content → Backup & reset).</p>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>
@@ -83,7 +93,7 @@ export default function PanelShell({ title, navItems }) {
   )
 }
 
-function MobileTabBar({ navItems, onLogout }) {
+function MobileTabBar({ navItems, onLogout, brand }) {
   return (
     <>
       <div className="md:hidden flex items-center justify-between p-4">
@@ -91,20 +101,20 @@ function MobileTabBar({ navItems, onLogout }) {
           <span className="w-8 h-8 rounded-[10px] bg-[var(--color-accent)] flex items-center justify-center text-white">
             <Building2 size={16} />
           </span>
-          NCR Estates
+          {brand}
         </Link>
         <div className="flex items-center gap-2">
           <ThemeToggle />
         </div>
       </div>
-      <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 glass-strong rounded-full px-2 py-2 flex items-center gap-1">
+      <nav className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 glass-strong rounded-full px-2 py-2 flex items-center gap-1 max-w-[94vw] overflow-x-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `w-11 h-11 rounded-full flex items-center justify-center spring ${
+              `w-11 h-11 shrink-0 rounded-full flex items-center justify-center spring ${
                 isActive ? 'glass text-[var(--color-accent)]' : 'text-secondary'
               }`
             }

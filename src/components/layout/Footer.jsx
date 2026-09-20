@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Building2, Mail, MapPin, Phone } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
-import { COMPANY, formatAddress, hasAddress } from '../../data/company'
+import { formatAddress, hasAddress } from '../../data/company'
 
 const socialLabels = { facebook: 'Facebook', instagram: 'Instagram', linkedin: 'LinkedIn', youtube: 'YouTube' }
 
 export default function Footer() {
-  const { cities, propertyTypes, whatsappConfig, mailConfig } = useSettings()
-  const socials = Object.entries(COMPANY.social).filter(([, url]) => url)
+  const { cities, propertyTypes, whatsappConfig, mailConfig, company, siteContent, fill } = useSettings()
+  const socials = Object.entries(company.social ?? {}).filter(([, url]) => url)
 
   return (
     <footer className="mt-24 px-4 pb-28 md:pb-8">
@@ -17,12 +17,9 @@ export default function Footer() {
             <span className="w-9 h-9 rounded-[12px] bg-[var(--color-accent)] flex items-center justify-center text-white">
               <Building2 size={18} />
             </span>
-            {COMPANY.name}
+            {company.name}
           </div>
-          <p className="text-secondary text-sm leading-relaxed mb-4">
-            Discover verified homes, rentals and commercial spaces across India. Led by {COMPANY.ceo.name}, {COMPANY.ceo.title}
-            {' '}— {COMPANY.ceo.experienceYears}+ years in real estate.
-          </p>
+          <p className="text-secondary text-sm leading-relaxed mb-4">{fill(siteContent.footer.blurb)}</p>
           <ul className="flex flex-col gap-2 text-sm text-secondary">
             <li className="flex items-center gap-2">
               <Phone size={14} className="text-[var(--color-accent)]" />
@@ -32,9 +29,9 @@ export default function Footer() {
               <Mail size={14} className="text-[var(--color-accent)]" />
               <a href={`mailto:${mailConfig.fromEmail}`} className="hover:text-[var(--color-accent)]">{mailConfig.fromEmail}</a>
             </li>
-            {hasAddress() && (
+            {hasAddress(company.address) && (
               <li className="flex items-start gap-2">
-                <MapPin size={14} className="text-[var(--color-accent)] mt-0.5 shrink-0" /> {formatAddress()}
+                <MapPin size={14} className="text-[var(--color-accent)] mt-0.5 shrink-0" /> {formatAddress(company.address)}
               </li>
             )}
           </ul>
@@ -63,7 +60,7 @@ export default function Footer() {
           ...propertyTypes.map((t) => ({ to: `/listings?type=${encodeURIComponent(t)}`, label: t })),
           { to: '/listings?beds=2&purpose=Buy', label: '2 BHK Flats' },
           { to: '/listings?beds=3&purpose=Buy', label: '3 BHK Flats' },
-          { to: '/listings?possession=Ready%20to%20Move&purpose=Buy', label: 'Ready to Move' },
+          { to: `/listings?possession=${encodeURIComponent(siteContent.options.possession[0] ?? 'Ready to Move')}&purpose=Buy`, label: siteContent.options.possession[0] ?? 'Ready to Move' },
         ]} />
 
         <FooterCol title="Company" links={[
@@ -78,12 +75,10 @@ export default function Footer() {
 
       <div className="max-w-6xl mx-auto mt-6 text-center">
         <p className="text-tertiary text-xs leading-relaxed max-w-3xl mx-auto">
-          {COMPANY.name} is an intermediary platform. Prices, availability and specifications are provided by owners,
-          developers and agents and may change — always verify RERA registration and documents before making any
-          payment. {COMPANY.reraAgentId ? `RERA agent registration no. ${COMPANY.reraAgentId}. ` : ''}
+          {fill(siteContent.footer.disclaimer)} {company.reraAgentId ? `RERA agent registration no. ${company.reraAgentId}.` : ''}
         </p>
         <p className="text-tertiary text-xs mt-3">
-          &copy; {new Date().getFullYear()} {COMPANY.name}. All rights reserved.
+          &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
         </p>
       </div>
     </footer>

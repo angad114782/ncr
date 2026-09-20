@@ -1,21 +1,15 @@
-import posts from '../data/blog.json'
+import { bodyPlainText } from './blogBody'
 
-export const allPosts = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date))
-
-export const getPost = (slug) => allPosts.find((p) => p.slug === slug)
+// Pure helpers only — posts themselves live in DataContext (admin-managed).
 
 export const slugify = (text) =>
-  text
+  String(text)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
-function postText(post) {
-  const parts = [post.intro]
-  post.sections.forEach((s) => {
-    parts.push(s.heading, ...(s.body ?? []), ...(s.list ?? []))
-    if (s.table) parts.push(...s.table.head, ...s.table.rows.flat())
-  })
+export function postText(post) {
+  const parts = [post.intro ?? '', bodyPlainText(post.body ?? '')]
   post.faqs?.forEach((f) => parts.push(f.question, f.answer))
   return parts.join(' ')
 }
@@ -27,5 +21,10 @@ export function readingMinutes(post) {
 }
 
 export function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (!iso) return ''
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+/** Cover image usable in meta tags / JSON-LD — uploaded (data:) images are not crawlable. */
+export const shareableImage = (src) => (src && !src.startsWith('data:') ? src : undefined)

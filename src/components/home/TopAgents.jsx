@@ -3,6 +3,7 @@ import { Award, MapPin, Star } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
 import { useData } from '../../context/DataContext'
+import Avatar from '../common/Avatar'
 
 export default function TopAgents() {
   const { approvedAgents: agents } = useData()
@@ -26,12 +27,7 @@ export default function TopAgents() {
         {top.map((agent) => (
           <Link key={agent.id} to={`/agents/${agent.id}`}>
             <GlassCard className="p-6 text-center h-full">
-              <img
-                src={agent.avatar}
-                alt={`${agent.name}, ${agent.role}`}
-                className="w-16 h-16 rounded-full object-cover mx-auto mb-3 ring-2 ring-[var(--glass-border)]"
-                loading="lazy"
-              />
+              <Avatar src={agent.avatar} name={agent.name} alt={`${agent.name}, ${agent.role}`} className="w-16 h-16 rounded-full object-cover mx-auto mb-3 ring-2 ring-[var(--glass-border)]" />
               <h3 className="font-semibold text-sm">{agent.name}</h3>
               <p className="text-secondary text-xs mb-3">{agent.role}</p>
               <div className="flex items-center justify-center gap-3 text-xs text-secondary">

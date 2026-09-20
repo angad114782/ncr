@@ -9,9 +9,6 @@ import { useSettings } from '../../context/SettingsContext'
 
 const OTP_LENGTH = 4
 
-const buyBudgets = ['Under ₹50 Lakh', '₹50 Lakh – ₹1 Cr', '₹1 Cr – ₹2 Cr', '₹2 Cr – ₹5 Cr', 'Above ₹5 Cr']
-const rentBudgets = ['Under ₹20,000/mo', '₹20,000 – ₹40,000/mo', '₹40,000 – ₹75,000/mo', '₹75,000 – ₹1,50,000/mo', 'Above ₹1,50,000/mo']
-
 function generateOtp() {
   return String(Math.floor(1000 + Math.random() * 9000))
 }
@@ -19,17 +16,18 @@ function generateOtp() {
 export default function LeadForm({ property }) {
   const { addInquiry } = useData()
   const { user } = useAuth()
-  const { fireLeadEvent } = useSettings()
+  const { fireLeadEvent, siteContent } = useSettings()
   const navigate = useNavigate()
 
-  const budgetOptions = property?.purpose === 'Rent' ? rentBudgets : buyBudgets
+  const { buyBudgets, rentBudgets } = siteContent.forms // editable in Admin → Site Content → Forms & options
+  const budgetOptions = (property?.purpose === 'Rent' ? rentBudgets : buyBudgets).filter(Boolean)
 
   const [step, setStep] = useState('details')
   const [form, setForm] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
-    budget: budgetOptions[0],
+    budget: budgetOptions[0] ?? '',
     message: '',
   })
   const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(''))

@@ -1,5 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext } from 'react'
+import usePersistedState from '../hooks/usePersistedState'
 import { fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
+import { COMPANY_DEFAULTS } from '../data/company'
+import { SITE_DEFAULTS, fillTokens } from '../data/siteDefaults'
 
 const SettingsContext = createContext(null)
 
@@ -55,55 +58,16 @@ const DEFAULT_TICKER = {
   ],
 }
 
-function usePersistedState(key, initial) {
-  const [value, setValue] = useState(() => {
-    try {
-      const saved = localStorage.getItem(key)
-      return saved ? { ...initial, ...JSON.parse(saved) } : initial
-    } catch {
-      return initial
-    }
-  })
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value))
-    } catch {
-      /* ignore */
-    }
-  }, [key, value])
-  return [value, setValue]
-}
-
-// Plain (non-merging) persisted state — usePersistedState's `{...initial, ...saved}`
-// merge assumes an object shape; spreading an array that way collapses it into
-// {0: ..., 1: ...}, so arrays need their own hook without the merge.
-function usePersistedList(key, initial) {
-  const [value, setValue] = useState(() => {
-    try {
-      const saved = localStorage.getItem(key)
-      return saved ? JSON.parse(saved) : initial
-    } catch {
-      return initial
-    }
-  })
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(value))
-    } catch {
-      /* ignore */
-    }
-  }, [key, value])
-  return [value, setValue]
-}
-
 export function SettingsProvider({ children }) {
-  const [whatsappConfig, setWhatsappConfig] = usePersistedState('re-whatsapp-config', DEFAULT_WHATSAPP_CONFIG)
-  const [mailConfig, setMailConfig] = usePersistedState('re-mail-config', DEFAULT_MAIL_CONFIG)
-  const [marketingConfig, setMarketingConfig] = usePersistedState('re-marketing-config', DEFAULT_MARKETING_CONFIG)
-  const [cities, setCities] = usePersistedList('re-cities', DEFAULT_CITIES)
-  const [propertyTypes, setPropertyTypes] = usePersistedList('re-property-types', DEFAULT_PROPERTY_TYPES)
-  const [topBanner, setTopBanner] = usePersistedState('re-top-banner', DEFAULT_TOP_BANNER)
-  const [ticker, setTicker] = usePersistedState('re-ticker', DEFAULT_TICKER)
+  const [whatsappConfig, setWhatsappConfig] = usePersistedState('re-whatsapp-config', DEFAULT_WHATSAPP_CONFIG, { merge: true })
+  const [mailConfig, setMailConfig] = usePersistedState('re-mail-config', DEFAULT_MAIL_CONFIG, { merge: true })
+  const [marketingConfig, setMarketingConfig] = usePersistedState('re-marketing-config', DEFAULT_MARKETING_CONFIG, { merge: true })
+  const [cities, setCities] = usePersistedState('re-cities', DEFAULT_CITIES)
+  const [propertyTypes, setPropertyTypes] = usePersistedState('re-property-types', DEFAULT_PROPERTY_TYPES)
+  const [topBanner, setTopBanner] = usePersistedState('re-top-banner', DEFAULT_TOP_BANNER, { merge: true })
+  const [ticker, setTicker] = usePersistedState('re-ticker', DEFAULT_TICKER, { merge: true })
+  const [company, setCompany] = usePersistedState('re-company', COMPANY_DEFAULTS, { merge: true })
+  const [siteContent, setSiteContent] = usePersistedState('re-site-content', SITE_DEFAULTS, { merge: true })
 
   const updateWhatsappConfig = (patch) => setWhatsappConfig((prev) => ({ ...prev, ...patch }))
   const updateMailConfig = (patch) => setMailConfig((prev) => ({ ...prev, ...patch }))
@@ -127,6 +91,9 @@ export function SettingsProvider({ children }) {
 
   const fireLeadEvent = (formName) => fireLeadEventUtil(marketingConfig, formName)
 
+  /** Replace {brand} {ceoName} {ceoTitle} {years} in admin-written copy. */
+  const fill = (text) => fillTokens(text, company)
+
   return (
     <SettingsContext.Provider
       value={{
@@ -146,6 +113,13 @@ export function SettingsProvider({ children }) {
         updateTopBanner,
         ticker,
         updateTicker,
+        company,
+        setCompany,
+        resetCompany: () => setCompany(COMPANY_DEFAULTS),
+        siteContent,
+        setSiteContent,
+        resetSiteContent: () => setSiteContent(SITE_DEFAULTS),
+        fill,
         fireLeadEvent,
       }}
     >

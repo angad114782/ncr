@@ -1,6 +1,8 @@
 import Papa from 'papaparse'
+import { isDataUrl, isImageLink } from './images'
 
 export const PROPERTY_CSV_COLUMNS = [
+  'id',
   'title',
   'type',
   'purpose',
@@ -23,6 +25,7 @@ export const PROPERTY_CSV_COLUMNS = [
   'reraId',
   'possessionStatus',
   'videoTour',
+  'videoUrl',
   'postedDate',
   'images',
   'floorPlans',
@@ -31,8 +34,12 @@ export const PROPERTY_CSV_COLUMNS = [
   'description',
 ]
 
+// CSV carries image LINKS only — images uploaded in the admin (data URLs) are left out.
+const linksOnly = (list) => (list ?? []).filter((u) => !isDataUrl(u))
+
 function propertyToRow(p) {
   return {
+    id: p.id,
     title: p.title,
     type: p.type,
     purpose: p.purpose,
@@ -55,9 +62,10 @@ function propertyToRow(p) {
     reraId: p.reraId ?? '',
     possessionStatus: p.possessionStatus,
     videoTour: p.videoTour,
+    videoUrl: p.videoUrl ?? '',
     postedDate: p.postedDate,
-    images: (p.images ?? []).join(';'),
-    floorPlans: (p.floorPlans ?? []).join(';'),
+    images: linksOnly(p.images).join(';'),
+    floorPlans: linksOnly(p.floorPlans).join(';'),
     amenities: (p.amenities ?? []).join(';'),
     nearby: (p.nearby ?? []).map((n) => `${n.type}:${n.name}:${n.distance}`).join(';'),
     description: p.description,
@@ -65,13 +73,15 @@ function propertyToRow(p) {
 }
 
 export function buildPropertyTemplateCsv(buySample, rentSample) {
-  const rows = [propertyToRow(buySample), propertyToRow(rentSample)]
+  // Blank ids: importing the template adds new listings instead of overwriting p1 / p2.
+  const rows = [propertyToRow(buySample), propertyToRow(rentSample)].map((r) => ({ ...r, id: '' }))
   return Papa.unparse({ fields: PROPERTY_CSV_COLUMNS, data: rows })
 }
 
 export function propertiesToCsv(properties) {
   const rows = properties.map(propertyToRow)
-  return Papa.unparse({ fields: PROPERTY_CSV_COLUMNS, data: rows })
+  const skipped = properties.reduce((n, p) => n + (p.images ?? []).filter(isDataUrl).length + (p.floorPlans ?? []).filter(isDataUrl).length, 0)
+  return { csv: Papa.unparse({ fields: PROPERTY_CSV_COLUMNS, data: rows }), skipped }
 }
 
 function toBool(v) {
@@ -110,7 +120,16 @@ export function parsePropertyCsv(csvText) {
       return
     }
 
+    const images = row.images ? row.images.split(';').map((x) => x.trim()).filter(Boolean) : []
+    const floorPlans = row.floorPlans ? row.floorPlans.split(';').map((x) => x.trim()).filter(Boolean) : []
+    const badLink = [...images, ...floorPlans].find((u) => !isImageLink(u))
+    if (badLink) {
+      errors.push(`Row ${rowNum}: image "${badLink.slice(0, 40)}" must be a link (http(s):// or /path) — skipped`)
+      return
+    }
+
     properties.push({
+      ...(row.id?.trim() ? { id: row.id.trim() } : {}),
       title: row.title.trim(),
       type: row.type?.trim() || 'Apartment',
       purpose: row.purpose,
@@ -133,9 +152,10 @@ export function parsePropertyCsv(csvText) {
       reraId: row.reraId?.trim() || null,
       possessionStatus: row.possessionStatus?.trim() || 'Ready to Move',
       videoTour: toBool(row.videoTour),
+      videoUrl: row.videoUrl?.trim() || '',
       postedDate: row.postedDate?.trim() || new Date().toISOString().slice(0, 10),
-      images: row.images ? row.images.split(';').map((s) => s.trim()).filter(Boolean) : [],
-      floorPlans: row.floorPlans ? row.floorPlans.split(';').map((s) => s.trim()).filter(Boolean) : [],
+      images,
+      floorPlans,
       amenities: row.amenities ? row.amenities.split(';').map((s) => s.trim()).filter(Boolean) : [],
       nearby: row.nearby
         ? row.nearby

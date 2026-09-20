@@ -1,17 +1,16 @@
-import { COMPANY } from '../data/company'
 import { formatPriceShort } from './seo'
 
 // Copy + numbers for the SEO block under /listings. Everything is computed from
 // the current inventory — nothing here is invented.
 
-export function buildListingsFaqs({ heading, filtered, localities }) {
+export function buildListingsFaqs({ heading, filtered, localities, brand }) {
   if (filtered.length === 0) return []
   const prices = filtered.map((p) => p.price).filter((n) => n > 0)
   const faqs = []
   if (prices.length) {
     faqs.push({
       question: `What is the price range of ${heading}?`,
-      answer: `Currently ${filtered.length} listing${filtered.length > 1 ? 's' : ''} on ${COMPANY.name} match this search, with prices from ${formatPriceShort(Math.min(...prices))} to ${formatPriceShort(Math.max(...prices))}. Prices change as new properties are added, so check the latest listings above.`,
+      answer: `Currently ${filtered.length} listing${filtered.length > 1 ? 's' : ''} on ${brand} match this search, with prices from ${formatPriceShort(Math.min(...prices))} to ${formatPriceShort(Math.max(...prices))}. Prices change as new properties are added, so check the latest listings above.`,
     })
   }
   if (localities.length) {

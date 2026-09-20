@@ -22,11 +22,10 @@ const sortOptions = [
 ]
 
 const BHK_OPTIONS = ['1', '2', '3', '4']
-const POSSESSION_OPTIONS = ['Ready to Move', 'Under Construction']
 
 export default function Listings() {
   const { activeProperties: properties } = useData()
-  const { cities, propertyTypes: types } = useSettings()
+  const { cities, propertyTypes: types, siteContent, company } = useSettings()
   const [params, setParams] = useSearchParams()
   const [view, setView] = useState('grid')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -95,7 +94,7 @@ export default function Listings() {
   const prices = filtered.map((p) => p.price).filter((n) => n > 0)
   const priceText = prices.length ? ` from ${formatPriceShort(Math.min(...prices))} to ${formatPriceShort(Math.max(...prices))}` : ''
   const localities = useMemo(() => summariseLocalities(filtered, purpose !== 'Rent'), [filtered, purpose])
-  const faqs = useMemo(() => buildListingsFaqs({ heading, filtered, localities }), [heading, filtered, localities])
+  const faqs = useMemo(() => buildListingsFaqs({ heading, filtered, localities, brand: company.name }), [heading, filtered, localities, company.name])
 
   // Free-text search, price caps and empty result sets are thin / duplicate
   // pages — keep them out of the index and let the clean filter URLs rank.
@@ -127,7 +126,7 @@ export default function Listings() {
     <div className="pb-16">
       <Seo
         title={`${heading}${filtered.length ? ` — ${filtered.length}+ Listings` : ''}`}
-        description={`${heading}: browse ${filtered.length} listing${filtered.length === 1 ? '' : 's'}${priceText}. Compare price, BHK, area, possession status and RERA details, then talk to a verified agent on NCR Estates.`}
+        description={`${heading}: browse ${filtered.length} listing${filtered.length === 1 ? '' : 's'}${priceText}. Compare price, BHK, area, possession status and RERA details, then talk to a verified agent on ${company.name}.`}
         path={path}
         noindex={noindex}
         jsonLd={jsonLd}
@@ -218,7 +217,7 @@ export default function Listings() {
               <div>
                 <p className="text-sm font-medium text-secondary mb-2">Possession</p>
                 <div className="flex flex-wrap gap-2">
-                  {POSSESSION_OPTIONS.map((o) => (
+                  {siteContent.options.possession.map((o) => (
                     <button
                       key={o}
                       onClick={() => updateParam('possession', possession === o ? '' : o)}

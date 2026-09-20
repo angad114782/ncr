@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { LayoutDashboard, MessageSquare, User as UserIcon, Heart } from 'lucide-react'
-import { Building2, Settings, Users as UsersIcon } from 'lucide-react'
+import { BookOpen, Building2, HelpCircle, LayoutTemplate, Settings, Star, UserCheck, Users as UsersIcon } from 'lucide-react'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
@@ -35,6 +35,11 @@ import ManageListings from './pages/admin/ManageListings'
 import ManageUsers from './pages/admin/ManageUsers'
 import ManageInquiries from './pages/admin/ManageInquiries'
 import AdminSettings from './pages/admin/AdminSettings'
+import ManageBlog from './pages/admin/ManageBlog'
+import ManageFaqs from './pages/admin/ManageFaqs'
+import ManageTestimonials from './pages/admin/ManageTestimonials'
+import ManageAgents from './pages/admin/ManageAgents'
+import SiteContent from './pages/admin/SiteContent'
 
 const dashboardNav = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -46,8 +51,13 @@ const dashboardNav = [
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/admin/listings', label: 'Listings', icon: Building2 },
+  { to: '/admin/blog', label: 'Blog', icon: BookOpen },
+  { to: '/admin/faqs', label: 'FAQs', icon: HelpCircle },
+  { to: '/admin/testimonials', label: 'Reviews', icon: Star },
+  { to: '/admin/agents', label: 'Agents', icon: UserCheck },
   { to: '/admin/users', label: 'Users', icon: UsersIcon },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/admin/site', label: 'Site Content', icon: LayoutTemplate },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/profile', label: 'Profile', icon: UserIcon },
 ]
@@ -99,6 +109,11 @@ function App() {
                 >
                   <Route path="/admin" element={<AdminHome />} />
                   <Route path="/admin/listings" element={<ManageListings />} />
+                  <Route path="/admin/blog" element={<ManageBlog />} />
+                  <Route path="/admin/faqs" element={<ManageFaqs />} />
+                  <Route path="/admin/testimonials" element={<ManageTestimonials />} />
+                  <Route path="/admin/agents" element={<ManageAgents />} />
+                  <Route path="/admin/site" element={<SiteContent />} />
                   <Route path="/admin/users" element={<ManageUsers />} />
                   <Route path="/admin/inquiries" element={<ManageInquiries />} />
                   <Route path="/admin/settings" element={<AdminSettings />} />

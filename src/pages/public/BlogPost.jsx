@@ -3,19 +3,27 @@ import { ArrowRight, CalendarClock, Clock } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import Seo from '../../components/layout/Seo'
+import BlogBody from '../../components/blog/BlogBody'
+import CeoAvatar from '../../components/company/CeoAvatar'
 import NotFound from './NotFound'
-import { formatDate, getPost, readingMinutes, slugify } from '../../utils/blog'
-import { COMPANY } from '../../data/company'
-import { SITE_URL, breadcrumbLd, faqLd, personLd } from '../../utils/seo'
+import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
+import { formatDate, readingMinutes } from '../../utils/blog'
+import { extractHeadings } from '../../utils/blogBody'
+import { SITE_URL, breadcrumbLd, crawlableImage, faqLd, personLd } from '../../utils/seo'
 
 export default function BlogPost() {
   const { slug } = useParams()
-  const post = getPost(slug)
+  const { activeBlogPosts } = useData()
+  const { company } = useSettings()
+  const post = activeBlogPosts.find((p) => p.slug === slug)
   if (!post) return <NotFound />
 
-  const related = (post.related ?? []).map(getPost).filter(Boolean)
+  const related = (post.related ?? []).map((s) => activeBlogPosts.find((p) => p.slug === s)).filter(Boolean)
   const url = `${SITE_URL}/blog/${post.slug}`
-  const toc = post.sections.map((s) => ({ id: slugify(s.heading), label: s.heading }))
+  const toc = extractHeadings(post.body)
+  const authorName = post.author || company.ceo.name
+  const isCeo = authorName === company.ceo.name
 
   const jsonLd = [
     breadcrumbLd([
@@ -28,12 +36,12 @@ export default function BlogPost() {
       '@type': 'BlogPosting',
       headline: post.title,
       description: post.description,
-      image: post.cover,
+      ...(crawlableImage(post.cover) ? { image: post.cover } : {}),
       datePublished: post.date,
-      dateModified: post.updated,
+      dateModified: post.updated || post.date,
       mainEntityOfPage: url,
-      author: personLd(),
-      publisher: { '@type': 'Organization', name: COMPANY.name, url: SITE_URL },
+      author: isCeo ? personLd(company) : { '@type': 'Person', name: authorName },
+      publisher: { '@type': 'Organization', name: company.name, url: SITE_URL },
     },
     ...(post.faqs?.length ? [faqLd(post.faqs)] : []),
   ]
@@ -47,7 +55,7 @@ export default function BlogPost() {
         image={post.cover}
         type="article"
         publishedTime={post.date}
-        modifiedTime={post.updated}
+        modifiedTime={post.updated || post.date}
         jsonLd={jsonLd}
       />
 
@@ -59,27 +67,25 @@ export default function BlogPost() {
 
       <header className="mb-8">
         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)]">{post.category}</span>
-        <h1 className="text-3xl md:text-4xl font-bold mt-2 mb-4">{post.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mt-2 mb-4 break-words">{post.title}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-secondary">
           <Link to="/team" className="flex items-center gap-2 hover:text-primary">
-            <span className="w-8 h-8 rounded-full glass-strong flex items-center justify-center text-xs font-bold text-[var(--color-accent)]">
-              {COMPANY.ceo.name.split(' ').map((w) => w[0]).join('')}
-            </span>
+            {isCeo ? <CeoAvatar className="w-8 h-8 text-xs" /> : null}
             <span>
-              By <span className="font-medium text-primary">{COMPANY.ceo.name}</span>, {COMPANY.ceo.title}
+              By <span className="font-medium text-primary">{authorName}</span>{isCeo ? `, ${company.ceo.title}` : ''}
             </span>
           </Link>
-          <span className="flex items-center gap-1"><CalendarClock size={14} /> Updated {formatDate(post.updated)}</span>
+          <span className="flex items-center gap-1"><CalendarClock size={14} /> Updated {formatDate(post.updated || post.date)}</span>
           <span className="flex items-center gap-1"><Clock size={14} /> {readingMinutes(post)} min read</span>
         </div>
       </header>
 
-      <img src={post.cover} alt={post.title} className="w-full h-56 md:h-80 object-cover rounded-[24px] mb-8" />
+      {post.cover && <img src={post.cover} alt={post.title} className="w-full h-56 md:h-80 object-cover rounded-[24px] mb-8" />}
 
-      <p className="text-lg text-secondary leading-relaxed mb-8">{post.intro}</p>
+      {post.intro && <p className="text-lg text-secondary leading-relaxed mb-8">{post.intro}</p>}
 
       {toc.length > 2 && (
-        <GlassCard hover={false} className="p-5 mb-10">
+        <GlassCard hover={false} className="p-5 mb-8">
           <p className="font-semibold mb-2">In this guide</p>
           <ol className="list-decimal list-inside text-sm text-secondary flex flex-col gap-1">
             {toc.map((t) => (
@@ -91,45 +97,10 @@ export default function BlogPost() {
         </GlassCard>
       )}
 
-      {post.sections.map((s) => {
-        const ListTag = s.ordered ? 'ol' : 'ul'
-        return (
-          <section key={s.heading} id={slugify(s.heading)} className="mb-8 scroll-mt-28">
-            <h2 className="text-2xl font-bold mb-3">{s.heading}</h2>
-            {s.body?.map((para, i) => (
-              <p key={i} className="text-secondary leading-relaxed mb-3">{para}</p>
-            ))}
-            {s.table && (
-              <div className="overflow-x-auto my-4">
-                <table className="w-full text-sm glass rounded-[16px] overflow-hidden">
-                  <thead>
-                    <tr className="text-left border-b border-[var(--glass-border)]">
-                      {s.table.head.map((h) => <th key={h} className="p-3 font-semibold">{h}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.table.rows.map((row) => (
-                      <tr key={row[0]} className="border-b border-[var(--glass-border)] last:border-0">
-                        {row.map((cell, i) => (
-                          <td key={i} className={`p-3 ${i === 0 ? 'font-medium' : 'text-secondary'}`}>{cell}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {s.list && (
-              <ListTag className={`${s.ordered ? 'list-decimal' : 'list-disc'} pl-6 flex flex-col gap-2 text-secondary leading-relaxed`}>
-                {s.list.map((item) => <li key={item}>{item}</li>)}
-              </ListTag>
-            )}
-          </section>
-        )
-      })}
+      <BlogBody body={post.body} media={post.media} />
 
       {post.faqs?.length > 0 && (
-        <section className="mb-10">
+        <section className="my-10">
           <h2 className="text-2xl font-bold mb-4">Frequently asked questions</h2>
           <div className="flex flex-col gap-3">
             {post.faqs.map((f) => (
@@ -142,21 +113,21 @@ export default function BlogPost() {
         </section>
       )}
 
-      <GlassCard hover={false} strong className="p-6 md:p-8 mb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <span className="w-16 h-16 rounded-full glass-strong flex items-center justify-center text-xl font-bold text-[var(--color-accent)] shrink-0">
-            {COMPANY.ceo.name.split(' ').map((w) => w[0]).join('')}
-          </span>
-          <div className="flex-1">
-            <p className="text-tertiary text-xs uppercase font-semibold">About the author</p>
-            <p className="font-semibold text-lg">{COMPANY.ceo.name} — {COMPANY.ceo.title}, {COMPANY.name}</p>
-            <p className="text-secondary text-sm leading-relaxed">
-              {COMPANY.ceo.experienceYears}+ years of experience in real estate. {COMPANY.ceo.expertise.slice(0, 2).join(' and ')}.
-            </p>
+      {isCeo && (
+        <GlassCard hover={false} strong className="p-6 md:p-8 mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            <CeoAvatar className="w-16 h-16 text-xl" />
+            <div className="flex-1">
+              <p className="text-tertiary text-xs uppercase font-semibold">About the author</p>
+              <p className="font-semibold text-lg">{company.ceo.name} — {company.ceo.title}, {company.name}</p>
+              <p className="text-secondary text-sm leading-relaxed">
+                {company.ceo.experienceYears}+ years of experience in real estate. {company.ceo.expertise.slice(0, 2).join(' and ')}.
+              </p>
+            </div>
+            <Link to="/team"><GlassButton variant="glass" size="sm">Meet the team</GlassButton></Link>
           </div>
-          <Link to="/team"><GlassButton variant="glass" size="sm">Meet the team</GlassButton></Link>
-        </div>
-      </GlassCard>
+        </GlassCard>
+      )}
 
       <p className="text-tertiary text-xs mb-10 leading-relaxed">
         This article is for general information only and is not legal, tax or financial advice. Rules, rates and
@@ -176,9 +147,9 @@ export default function BlogPost() {
       {related.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4">Related guides</h2>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {related.map((r) => (
-              <Link key={r.slug} to={`/blog/${r.slug}`}>
+              <Link key={r.id} to={`/blog/${r.slug}`}>
                 <GlassCard className="p-4 h-full">
                   <span className="text-xs font-semibold uppercase text-[var(--color-accent)]">{r.category}</span>
                   <p className="font-semibold text-sm mt-1">{r.title}</p>

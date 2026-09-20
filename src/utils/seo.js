@@ -1,6 +1,9 @@
-import { COMPANY, formatAddress, hasAddress } from '../data/company'
+import { formatAddress, hasAddress } from '../data/company'
 
 export const SITE_URL = 'https://propertyinncr.com'
+
+/** Uploaded (data:) images can't be fetched by crawlers — never put them in meta tags / JSON-LD. */
+export const crawlableImage = (src) => (src && !String(src).startsWith('data:') ? src : undefined)
 
 export function breadcrumbLd(items) {
   return {
@@ -27,51 +30,52 @@ export function faqLd(faqs) {
   }
 }
 
-export function personLd() {
-  const { ceo } = COMPANY
+export function personLd(company) {
+  const { ceo } = company
+  const photo = crawlableImage(ceo.photo)
   return {
     '@type': 'Person',
     '@id': `${SITE_URL}/team#${ceo.name.toLowerCase().replace(/\s+/g, '-')}`,
     name: ceo.name,
     jobTitle: ceo.title,
     url: `${SITE_URL}/team`,
-    worksFor: { '@type': 'Organization', name: COMPANY.name, url: SITE_URL },
+    worksFor: { '@type': 'Organization', name: company.name, url: SITE_URL },
     knowsAbout: ceo.expertise,
-    ...(ceo.photo ? { image: `${SITE_URL}${ceo.photo}` } : {}),
+    ...(photo ? { image: photo.startsWith('http') ? photo : `${SITE_URL}${photo}` } : {}),
   }
 }
 
-export function organizationLd({ phone, email, cities = [] } = {}) {
-  const sameAs = Object.values(COMPANY.social).filter(Boolean)
+export function organizationLd({ company, phone, email, cities = [] }) {
+  const sameAs = Object.values(company.social ?? {}).filter(Boolean)
   return {
     '@type': 'RealEstateAgent',
     '@id': `${SITE_URL}/#organization`,
-    name: COMPANY.name,
+    name: company.name,
     url: SITE_URL,
-    description: COMPANY.tagline,
+    description: company.tagline,
     ...(phone ? { telephone: `+91${phone}` } : {}),
     ...(email ? { email } : {}),
     ...(cities.length ? { areaServed: cities.map((c) => ({ '@type': 'City', name: c })) } : {}),
-    ...(COMPANY.foundedYear ? { foundingDate: String(COMPANY.foundedYear) } : {}),
-    founder: personLd(),
-    ...(hasAddress()
+    ...(company.foundedYear ? { foundingDate: String(company.foundedYear) } : {}),
+    founder: personLd(company),
+    ...(hasAddress(company.address)
       ? {
           address: {
             '@type': 'PostalAddress',
-            streetAddress: COMPANY.address.street,
-            addressLocality: COMPANY.address.city || COMPANY.address.locality,
-            addressRegion: COMPANY.address.region,
-            postalCode: COMPANY.address.postalCode,
+            streetAddress: company.address.street,
+            addressLocality: company.address.city || company.address.locality,
+            addressRegion: company.address.region,
+            postalCode: company.address.postalCode,
             addressCountry: 'IN',
           },
         }
       : {}),
-    ...(COMPANY.officeHours ? { openingHours: COMPANY.officeHours } : {}),
+    ...(company.officeHours ? { openingHours: company.officeHours } : {}),
     ...(sameAs.length ? { sameAs } : {}),
   }
 }
 
-export { COMPANY, formatAddress, hasAddress }
+export { formatAddress, hasAddress }
 
 const PLURAL_TYPE = {
   Apartment: 'Apartments',
@@ -97,8 +101,9 @@ export function listingsHeading({ purpose, city, type, beds, possession }) {
 }
 
 export function formatPriceShort(n) {
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2).replace(/\.00$/, '')} Cr`
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1).replace(/\.0$/, '')} L`
+  // parseFloat drops trailing zeros: 4.50 → 4.5, 4.00 → 4
+  if (n >= 10000000) return `₹${parseFloat((n / 10000000).toFixed(2))} Cr`
+  if (n >= 100000) return `₹${parseFloat((n / 100000).toFixed(1))} L`
   return `₹${Math.round(n).toLocaleString('en-IN')}`
 }
 

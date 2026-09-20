@@ -6,6 +6,7 @@ import PropertyCard from '../../components/property/PropertyCard'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
+import Avatar from '../../components/common/Avatar'
 
 export default function AgentProfile() {
   const { id } = useParams()
@@ -53,7 +54,7 @@ export default function AgentProfile() {
       </div>
 
       <GlassCard hover={false} className="p-8 mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
-        <img src={agent.avatar} alt={agent.name} className="w-28 h-28 rounded-full object-cover ring-4 ring-[var(--glass-border)]" />
+        <Avatar src={agent.avatar} name={agent.name} alt={agent.name} className="w-28 h-28 rounded-full object-cover ring-4 ring-[var(--glass-border)]" />
         <div className="flex-1">
           <h1 className="text-2xl font-bold">{agent.name}</h1>
           <p className="text-secondary mb-3">{agent.role}</p>

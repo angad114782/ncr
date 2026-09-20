@@ -27,7 +27,8 @@ import DistanceToHubs from '../../components/property/DistanceToHubs'
 import LeadForm from '../../components/property/LeadForm'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
-import { SITE_URL, breadcrumbLd, listingsPath } from '../../utils/seo'
+import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath } from '../../utils/seo'
+import Avatar from '../../components/common/Avatar'
 
 export default function PropertyDetail() {
   const { id } = useParams()
@@ -117,7 +118,7 @@ function PropertyDetailInner({ id }) {
     description: property.description || seoDescription,
     url: `${SITE_URL}/property/${property.id}`,
     datePosted: property.postedDate,
-    image: property.images,
+    image: property.images.filter(crawlableImage),
     ...(property.price > 0
       ? { offers: { '@type': 'Offer', price: property.price, priceCurrency: 'INR', availability: 'https://schema.org/InStock' } }
       : {}),
@@ -177,7 +178,11 @@ function PropertyDetailInner({ id }) {
           className="rounded-[18px] overflow-hidden h-72 md:h-[420px] mb-3 w-full block"
           onClick={() => setLightboxIndex(activeImg)}
         >
-          <img src={property.images[activeImg]} alt={`${property.title} in ${place}`} className="w-full h-full object-cover" />
+          {property.images[activeImg] ? (
+            <img src={property.images[activeImg]} alt={`${property.title} in ${place}`} className="w-full h-full object-cover" />
+          ) : (
+            <span className="w-full h-full glass-weak flex items-center justify-center text-tertiary">No photos added yet</span>
+          )}
         </button>
         <div className="flex items-center gap-3">
           <div className="flex gap-3 overflow-x-auto flex-1 min-w-0">
@@ -308,7 +313,7 @@ function PropertyDetailInner({ id }) {
             <GlassCard hover={false} className="p-5">
               <p className="text-tertiary text-xs uppercase font-semibold mb-3">Listed By</p>
               <div className="flex items-center gap-3 mb-4">
-                <img src={agent.avatar} alt={agent.name} className="w-14 h-14 rounded-full object-cover" />
+                <Avatar src={agent.avatar} name={agent.name} alt={agent.name} className="w-14 h-14 rounded-full object-cover" />
                 <div>
                   <p className="font-semibold">{agent.name}</p>
                   <p className="text-secondary text-xs">{agent.role}</p>

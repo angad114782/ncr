@@ -20,16 +20,16 @@ import HeroBlobs from '../../components/home/HeroBlobs'
 import RotatingWord from '../../components/home/RotatingWord'
 import AnimatedCounter from '../../components/home/AnimatedCounter'
 import BudgetFinder from '../../components/home/BudgetFinder'
-import Reveal from '../../components/glass/Reveal'
 import PopularSearches from '../../components/home/PopularSearches'
 import PromoTicker from '../../components/home/PromoTicker'
 import LatestPosts from '../../components/home/LatestPosts'
 import CeoSpotlight from '../../components/home/CeoSpotlight'
+import Reveal from '../../components/glass/Reveal'
 import Seo, { SITE_URL } from '../../components/layout/Seo'
-import { organizationLd } from '../../utils/seo'
-import { COMPANY } from '../../data/company'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
+import { normalizeSections } from '../../data/siteDefaults'
+import { organizationLd } from '../../utils/seo'
 
 const typeIcons = {
   Apartment: Building2,
@@ -42,7 +42,8 @@ const typeIcons = {
 
 export default function Home() {
   const { activeProperties: properties, approvedAgents: agents } = useData()
-  const { cities, propertyTypes, whatsappConfig, mailConfig } = useSettings()
+  const { cities, propertyTypes, whatsappConfig, mailConfig, company, siteContent, fill } = useSettings()
+  const hero = siteContent.home
   const categories = propertyTypes.map((label) => ({ label, icon: typeIcons[label] || Building2 }))
   const navigate = useNavigate()
   const [purpose, setPurpose] = useState('Buy')
@@ -63,10 +64,10 @@ export default function Home() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      organizationLd({ phone: whatsappConfig.displayPhone, email: mailConfig.fromEmail, cities }),
+      organizationLd({ company, phone: whatsappConfig.displayPhone, email: mailConfig.fromEmail, cities }),
       {
         '@type': 'WebSite',
-        name: 'NCR Estates',
+        name: company.name,
         url: SITE_URL,
         potentialAction: {
           '@type': 'SearchAction',
@@ -77,14 +78,66 @@ export default function Home() {
     ],
   }
 
+  // Every block below the hero is optional and re-orderable from Admin → Site Content → Home page.
+  const sectionBlocks = {
+    stats: (
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+        {[
+          { label: 'Active Listings', value: properties.length, suffix: '+', icon: Building2 },
+          { label: 'Verified Agents', value: agents.length, suffix: '', icon: Users },
+          { label: 'Cities Covered', value: cities.length, suffix: '', icon: MapPin },
+          { label: 'Property Types', value: propertyTypes.length, suffix: '', icon: TrendingUp },
+        ].map((s) => (
+          <GlassCard key={s.label} className="p-5 text-center">
+            <s.icon className="mx-auto mb-2 text-[var(--color-accent)]" size={22} />
+            <p className="text-2xl font-bold">
+              <AnimatedCounter value={s.value} suffix={s.suffix} decimals={s.decimals} />
+            </p>
+            <p className="text-secondary text-xs mt-1">{s.label}</p>
+          </GlassCard>
+        ))}
+      </section>
+    ),
+    featured: featured.length > 0 && (
+      <section className="mb-16">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
+          <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
+            View All
+          </GlassButton>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {featured.map((p) => (
+            <PropertyCard key={p.id} property={p} />
+          ))}
+        </div>
+      </section>
+    ),
+    budget: <BudgetFinder />,
+    newest: <NewestListings excludeIds={featured.map((p) => p.id)} />,
+    cities: <ExploreCities />,
+    trends: <CityPriceTrends />,
+    why: <WhyChooseUs />,
+    how: <HowItWorks />,
+    popular: <PopularSearches />,
+    agents: <TopAgents />,
+    ceo: <CeoSpotlight />,
+    recent: <RecentlyViewed />,
+    testimonials: <Testimonials />,
+    posts: <LatestPosts />,
+    cta: <ListPropertyCta />,
+    faq: <FAQSection page="home" />,
+  }
+
   return (
     <div className="pb-16">
       <Seo
         title="Buy & Rent Flats, Villas and Commercial Property in India"
-        description="Search verified 1, 2, 3 BHK flats, villas, studios and commercial property to buy or rent in Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram. Free guidance from a team led by CEO Angad Yadav."
+        description={`Search verified 1, 2, 3 BHK flats, villas, studios and commercial property to buy or rent in ${cities.slice(0, 7).join(', ')}. Free guidance from a team led by ${company.ceo.title} ${company.ceo.name}.`}
         path="/"
         jsonLd={jsonLd}
       />
+
       {/* Admin-managed running strip: sits between the navbar and the hero */}
       <PromoTicker />
 
@@ -97,12 +150,10 @@ export default function Home() {
           transition={{ type: 'spring', stiffness: 200, damping: 24 }}
           className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
         >
-          Find Your Next <RotatingWord />
-          <br className="hidden md:block" /> Across India
+          {fill(hero.heroPrefix)} <RotatingWord words={hero.rotatingWords} />
+          {hero.heroSuffix && <><br className="hidden md:block" /> {fill(hero.heroSuffix)}</>}
         </motion.h1>
-        <p className="text-secondary max-w-xl mx-auto mb-8 text-base md:text-lg">
-          Buy or rent 1, 2 &amp; 3 BHK flats, villas and commercial spaces in Mumbai, Delhi, Bangalore, Gurugram &amp; more — verified listings and free expert guidance.
-        </p>
+        <p className="text-secondary max-w-xl mx-auto mb-8 text-base md:text-lg">{fill(hero.heroSubtitle)}</p>
 
         <GlassCard hover={false} strong className="max-w-3xl mx-auto p-3 md:p-4">
           <div className="glass-weak p-1 rounded-full flex mb-3 w-fit mx-auto md:mx-0">
@@ -145,7 +196,7 @@ export default function Home() {
           {categories.map((c) => (
             <button
               key={c.label}
-              onClick={() => navigate(`/listings?type=${c.label}`)}
+              onClick={() => navigate(`/listings?type=${encodeURIComponent(c.label)}`)}
               className="glass px-5 py-2.5 rounded-full flex items-center gap-2 text-sm font-medium spring hover:scale-105"
             >
               <c.icon size={16} /> {c.label}
@@ -154,57 +205,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <Reveal>
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-          {[
-            { label: 'Active Listings', value: properties.length, suffix: '+', icon: Building2 },
-            { label: 'Verified Agents', value: agents.length, suffix: '', icon: Users },
-            { label: 'Cities Covered', value: cities.length, suffix: '', icon: MapPin },
-            { label: 'Property Types', value: propertyTypes.length, suffix: '', icon: TrendingUp },
-          ].map((s) => (
-            <GlassCard key={s.label} className="p-5 text-center">
-              <s.icon className="mx-auto mb-2 text-[var(--color-accent)]" size={22} />
-              <p className="text-2xl font-bold">
-                <AnimatedCounter value={s.value} suffix={s.suffix} decimals={s.decimals} />
-              </p>
-              <p className="text-secondary text-xs mt-1">{s.label}</p>
-            </GlassCard>
-          ))}
-        </section>
-      </Reveal>
-
-      {/* Featured */}
-      <Reveal>
-        <section className="mb-16">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
-            <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
-              View All
-            </GlassButton>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {featured.map((p) => (
-              <PropertyCard key={p.id} property={p} />
-            ))}
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal><BudgetFinder /></Reveal>
-      <Reveal><NewestListings excludeIds={featured.map((p) => p.id)} /></Reveal>
-      <Reveal><ExploreCities /></Reveal>
-      <Reveal><CityPriceTrends /></Reveal>
-      <Reveal><WhyChooseUs /></Reveal>
-      <Reveal><HowItWorks /></Reveal>
-      <Reveal><PopularSearches /></Reveal>
-      <Reveal><TopAgents /></Reveal>
-      <Reveal><CeoSpotlight /></Reveal>
-      <Reveal><RecentlyViewed /></Reveal>
-      {COMPANY.showTestimonials && <Reveal><Testimonials /></Reveal>}
-      <Reveal><LatestPosts /></Reveal>
-      <Reveal><ListPropertyCta /></Reveal>
-      <Reveal><FAQSection /></Reveal>
+      {normalizeSections(hero.sections)
+        .filter((s) => s.enabled !== false && sectionBlocks[s.id])
+        .map((s) => (
+          <Reveal key={s.id}>{sectionBlocks[s.id]}</Reveal>
+        ))}
     </div>
   )
 }

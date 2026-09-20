@@ -1,8 +1,8 @@
 import { Helmet } from 'react-helmet-async'
-import { SITE_URL } from '../../utils/seo'
+import { SITE_URL, crawlableImage } from '../../utils/seo'
+import { useSettings } from '../../context/SettingsContext'
 
 export { SITE_URL }
-export const SITE_NAME = 'NCR Estates'
 const DEFAULT_DESCRIPTION =
   'Find verified apartments, villas, studios and commercial properties to buy or rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram.'
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200'
@@ -20,7 +20,11 @@ export default function Seo({
   publishedTime,
   modifiedTime,
 }) {
+  const { company } = useSettings()
+  const SITE_NAME = company.name
   const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Real Estate Across India`
+  // Uploaded (data:) images can't be fetched by crawlers — fall back to the default share image.
+  const shareImage = crawlableImage(image) ?? DEFAULT_IMAGE
   const canonical = `${SITE_URL}${path}`
   const ldItems = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
 
@@ -37,14 +41,14 @@ export default function Seo({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonical} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={shareImage} />
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={shareImage} />
 
       {ldItems.map((item, i) => (
         <script key={i} type="application/ld+json">{JSON.stringify(item)}</script>

@@ -11,7 +11,7 @@ const read = (p) => JSON.parse(readFileSync(resolve(root, p), 'utf8'))
 
 const SITE = 'https://propertyinncr.com'
 const properties = read('src/data/properties.json').filter((p) => p.active !== false)
-const posts = read('src/data/blog.json')
+const posts = read('src/data/blog.json').filter((p) => p.active !== false)
 const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
 
 const esc = (s) => s.replace(/&/g, '&amp;')

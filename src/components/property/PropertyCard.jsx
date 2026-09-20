@@ -15,12 +15,16 @@ export default function PropertyCard({ property }) {
       transition={{ type: 'spring', stiffness: 300, damping: 22 }}
     >
       <div className="relative h-52 overflow-hidden">
-        <img
-          src={property.images[0]}
-          alt={`${property.title} in ${property.locality}, ${property.city}`}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        />
+        {property.images?.[0] ? (
+          <img
+            src={property.images[0]}
+            alt={`${property.title} in ${property.locality}, ${property.city}`}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full glass-weak flex items-center justify-center text-tertiary text-sm">No photo yet</div>
+        )}
         <div className="absolute top-3 left-3 flex gap-1.5">
           <span className="glass-strong px-3 py-1 rounded-full text-xs font-semibold">{property.purpose}</span>
           {property.verified && (

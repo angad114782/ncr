@@ -5,7 +5,8 @@
     "city": "Mumbai",
     "avatar": "https://i.pravatar.cc/150?img=25",
     "rating": 5,
-    "text": "Found our dream sea-facing apartment in Bandra within two weeks. The team handled every document and negotiation flawlessly."
+    "text": "Found our dream sea-facing apartment in Bandra within two weeks. The team handled every document and negotiation flawlessly.",
+    "active": false
   },
   {
     "id": "t2",
@@ -13,7 +14,8 @@
     "city": "Bangalore",
     "avatar": "https://i.pravatar.cc/150?img=51",
     "rating": 5,
-    "text": "Renting through NCR Estates was refreshingly transparent — no hidden brokerage, no surprises. Highly recommend for young professionals."
+    "text": "Renting through NCR Estates was refreshingly transparent — no hidden brokerage, no surprises. Highly recommend for young professionals.",
+    "active": false
   },
   {
     "id": "t3",
@@ -21,6 +23,7 @@
     "city": "Hyderabad",
     "avatar": "https://i.pravatar.cc/150?img=32",
     "rating": 4,
-    "text": "The EMI calculator and RERA verification gave us confidence before we even scheduled a site visit. Great experience overall."
+    "text": "The EMI calculator and RERA verification gave us confidence before we even scheduled a site visit. Great experience overall.",
+    "active": false
   }
 ]

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import GlassCard from '../glass/GlassCard'
-import { COMPANY } from '../../data/company'
+import { useSettings } from '../../context/SettingsContext'
 import { formatPriceShort, listingsPath } from '../../utils/seo'
 
 // Cumulative "under X" budgets — each links to /listings?...&maxPrice=X, which is
@@ -19,6 +19,7 @@ const RENT_BUDGETS = [
 ]
 
 export default function ListingsSeoContent({ heading, filters, filtered, active, cities, types, faqs, localities }) {
+  const { company } = useSettings()
   const { purpose, city, type, beds } = filters
   const buy = purpose !== 'Rent'
   const budgets = buy ? BUY_BUDGETS : RENT_BUDGETS
@@ -43,7 +44,7 @@ export default function ListingsSeoContent({ heading, filters, filtered, active,
         <GlassCard hover={false} className="p-6 md:p-8">
           <h2 id="seo-content-heading" className="text-xl md:text-2xl font-bold mb-3">About {heading}</h2>
           <p className="text-secondary leading-relaxed mb-3">
-            Browse {filtered.length} listing{filtered.length > 1 ? 's' : ''} of {heading} on {COMPANY.name}
+            Browse {filtered.length} listing{filtered.length > 1 ? 's' : ''} of {heading} on {company.name}
             {prices.length > 0 && <>, priced from <strong className="text-primary">{formatPriceShort(Math.min(...prices))}</strong> to <strong className="text-primary">{formatPriceShort(Math.max(...prices))}</strong></>}.
             Every listing shows price, area, possession status and — where available — the RERA registration number, so
             you can compare options and shortlist with confidence.

@@ -1,4 +1,5 @@
-import { BadgeCheck, Download, IndianRupee, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { BadgeCheck, Download, IndianRupee, Search, Trash2 } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import { useData } from '../../context/DataContext'
@@ -6,6 +7,13 @@ import { downloadCsv, inquiriesToCsv } from '../../utils/csv'
 
 export default function ManageInquiries() {
   const { inquiries, properties, updateInquiryStatus, deleteInquiry } = useData()
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState('all')
+
+  const q = query.trim().toLowerCase()
+  const shown = inquiries.filter(
+    (i) => (status === 'all' || i.status === status) && (!q || `${i.userName} ${i.phone} ${i.userEmail} ${i.message} ${i.city ?? ''}`.toLowerCase().includes(q)),
+  )
 
   const handleExport = () => {
     const csv = inquiriesToCsv(inquiries, properties)
@@ -24,8 +32,21 @@ export default function ManageInquiries() {
         </GlassButton>
       </div>
 
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="glass-weak rounded-full flex items-center gap-2 px-4 h-10 flex-1 min-w-[200px] max-w-sm">
+          <Search size={15} className="text-tertiary" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, phone, message…" aria-label="Search inquiries" className="bg-transparent outline-none w-full text-sm" />
+        </div>
+        <div className="glass-weak p-1 rounded-full flex">
+          {[['all', 'All'], ['Pending', 'Pending'], ['Responded', 'Responded']].map(([v, l]) => (
+            <button key={v} type="button" onClick={() => setStatus(v)} className={`px-3.5 py-1.5 rounded-full text-xs font-medium spring ${status === v ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'}`}>{l}</button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-4">
-        {inquiries.map((inq) => {
+        {shown.length === 0 && <p className="text-secondary glass-weak rounded-[16px] p-6 text-center">No inquiries match.</p>}
+        {shown.map((inq) => {
           const property = properties.find((p) => p.id === inq.propertyId)
           return (
             <GlassCard hover={false} key={inq.id} className="p-5 flex flex-col md:flex-row md:items-center gap-4">

@@ -1,5 +1,6 @@
 [
   {
+    "active": true,
     "id": "a1",
     "name": "Aarav Mehta",
     "role": "Senior Property Consultant",
@@ -13,6 +14,7 @@
     "bio": "Aarav specializes in premium coastal and luxury residential properties across Mumbai and Chennai with over 9 years of experience."
   },
   {
+    "active": true,
     "id": "a2",
     "name": "Priya Nair",
     "role": "Commercial Leasing Expert",
@@ -26,6 +28,7 @@
     "bio": "Priya focuses on rental and commercial spaces in Bangalore and Gurugram's top tech and business corridors."
   },
   {
+    "active": true,
     "id": "a3",
     "name": "Rohan Kapoor",
     "role": "Luxury Homes Specialist",
@@ -39,6 +42,7 @@
     "bio": "Rohan has closed some of Delhi and Hyderabad's most prestigious villa and penthouse transactions."
   },
   {
+    "active": true,
     "id": "a4",
     "name": "Sneha Deshpande",
     "role": "Residential Sales Associate",
@@ -52,6 +56,7 @@
     "bio": "Sneha helps first-time buyers and young professionals find affordable homes across Pune's growing suburbs."
   },
   {
+    "active": true,
     "id": "a5",
     "name": "Vikram Chauhan",
     "role": "Residential Sales Associate",

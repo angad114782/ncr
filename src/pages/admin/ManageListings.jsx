@@ -1,250 +1,154 @@
-import { useRef, useState } from 'react'
-import {
-  AlertTriangle,
-  Check,
-  Download,
-  Pencil,
-  Plus,
-  Trash2,
-  Upload,
-} from 'lucide-react'
-import GlassCard from '../../components/glass/GlassCard'
-import GlassButton from '../../components/glass/GlassButton'
-import GlassInput from '../../components/glass/GlassInput'
-import GlassSheet from '../../components/glass/GlassSheet'
+import { ExternalLink, Star } from 'lucide-react'
+import CollectionAdmin from '../../components/admin/CollectionAdmin'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
-import { buildPropertyTemplateCsv, downloadCsv, parsePropertyCsv } from '../../utils/csv'
+import { buildPropertyTemplateCsv, parsePropertyCsv, propertiesToCsv } from '../../utils/csv'
+import { isDataUrl } from '../../utils/images'
+import { newId } from '../../utils/ids'
+import { formatPriceShort } from '../../utils/seo'
 import propertiesSeed from '../../data/properties.json'
 
-const emptyForm = {
-  title: '', type: 'Apartment', purpose: 'Buy', priceLabel: '', price: 0,
-  city: '', locality: '', beds: 2, baths: 2, areaSqft: 1000, furnishing: 'Unfurnished',
+const NEARBY_TYPES = ['School', 'Hospital', 'Metro', 'Mall']
+const today = () => new Date().toISOString().slice(0, 10)
+
+// CSV carries image LINKS only. When a CSV row updates an existing listing, images that
+// were uploaded in the admin (which a CSV can't hold) are kept instead of being wiped.
+const keepUploads = (list = [], prev = []) => [...list, ...prev.filter(isDataUrl)]
+
+const propertyCsv = {
+  entity: 'listings',
+  filename: 'properties',
+  keyHelp: 'Rows whose id matches an existing listing update it; others are added. Images / floorPlans are links separated by ";". nearby = Type:Name:Distance;… (uploaded images can’t be exported).',
+  toCsv: propertiesToCsv,
+  template: (seed) => buildPropertyTemplateCsv(seed.find((p) => p.id === 'p1'), seed.find((p) => p.id === 'p2')),
+  parse(text, existing) {
+    const { properties, errors } = parsePropertyCsv(text)
+    const byId = new Map(existing.map((p) => [p.id, p]))
+    const items = properties.map((p) => {
+      const prev = p.id ? byId.get(p.id) : undefined
+      return {
+        ...(prev ?? {}),
+        ...p,
+        id: prev?.id ?? newId('p'),
+        images: keepUploads(p.images, prev?.images),
+        floorPlans: keepUploads(p.floorPlans, prev?.floorPlans),
+      }
+    })
+    return { items, errors }
+  },
 }
 
 export default function ManageListings() {
-  const { properties, addProperty, addProperties, updateProperty, togglePropertyActive, deleteProperty } = useData()
-  const { cities, propertyTypes } = useSettings()
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState(emptyForm)
-  const [importResult, setImportResult] = useState(null)
-  const fileInputRef = useRef(null)
+  const { properties, agents, propertyCrud, restoreSeeds } = useData()
+  const { cities, propertyTypes, siteContent } = useSettings()
+  const { possession, furnishing } = siteContent.options
 
-  const openAdd = () => {
-    setEditingId(null)
-    setForm(emptyForm)
-    setSheetOpen(true)
-  }
+  const schema = [
+    { key: 'title', label: 'Title', required: true, half: false, placeholder: 'e.g. Sea-Facing 3BHK Apartment' },
+    { key: 'purpose', label: 'Purpose', type: 'select', options: ['Buy', 'Rent'] },
+    { key: 'type', label: 'Property type', type: 'select', options: propertyTypes },
+    { key: 'city', label: 'City', type: 'select', required: true, options: cities, allowEmpty: true, emptyLabel: 'Select city…' },
+    { key: 'locality', label: 'Locality / sector', placeholder: 'Bandra West' },
+    { key: 'address', label: 'Full address', half: false },
+    { key: 'price', label: 'Price (₹)', type: 'number', required: true, min: 0, step: 1, hint: 'Full amount in rupees — used for sorting, filters and EMI. Rent = per month.' },
+    { key: 'priceLabel', label: 'Price label', placeholder: 'auto e.g. ₹2.15 Cr', hint: 'Leave blank to generate from the price.' },
+    { key: 'beds', label: 'Bedrooms', type: 'number', min: 0, step: 1 },
+    { key: 'baths', label: 'Bathrooms', type: 'number', min: 0, step: 1 },
+    { key: 'areaSqft', label: 'Area (sq.ft)', type: 'number', min: 0, step: 1 },
+    { key: 'furnishing', label: 'Furnishing', type: 'select', options: furnishing },
+    { key: 'possessionStatus', label: 'Possession', type: 'select', options: possession },
+    { key: 'yearBuilt', label: 'Year built', type: 'number', step: 1 },
+    { key: 'reraId', label: 'RERA registration no.', placeholder: 'Leave blank if not applicable', hint: 'Shown on the listing — enter only a real, verifiable number.' },
+    { key: 'agentId', label: 'Listing agent', type: 'select', allowEmpty: true, emptyLabel: '— none —', options: agents.map((a) => ({ value: a.id, label: `${a.name}${a.city ? ` (${a.city})` : ''}` })) },
+    { key: 'postedDate', label: 'Posted on', type: 'date' },
+    { key: 'lat', label: 'Latitude', type: 'number', step: 'any', hint: 'Needed for the map and distance-to-hubs.' },
+    { key: 'lng', label: 'Longitude', type: 'number', step: 'any' },
+    { key: 'description', label: 'Description', type: 'textarea', rows: 5 },
+    { key: 'images', label: 'Photos', type: 'imageList', max: 15, hint: 'First photo is the cover. Choose files from your device or paste links.' },
+    { key: 'floorPlans', label: 'Floor plans', type: 'imageList', max: 5 },
+    { key: 'videoUrl', label: 'Video tour link (YouTube / Vimeo)', type: 'url', half: false, placeholder: 'https://…' },
+    { key: 'amenities', label: 'Amenities', type: 'stringList', placeholder: 'e.g. Swimming Pool' },
+    {
+      key: 'nearby',
+      label: 'Nearby places',
+      type: 'objectList',
+      addLabel: 'Add place',
+      itemTitle: (n, i) => n.name || `Place ${i + 1}`,
+      newItem: () => ({ type: 'School', name: '', distance: '' }),
+      fields: [
+        { key: 'type', label: 'Type', type: 'select', options: NEARBY_TYPES },
+        { key: 'name', label: 'Name' },
+        { key: 'distance', label: 'Distance', placeholder: '1.2 km' },
+      ],
+    },
+    { key: 'featured', label: 'Featured', type: 'toggle', half: true },
+    { key: 'verified', label: 'Verified badge', type: 'toggle', half: true },
+    { key: 'videoTour', label: 'Show “Video Tour” badge', type: 'toggle', half: true },
+    { key: 'active', label: 'Active (visible on the website)', type: 'toggle', half: true },
+  ]
 
-  const openEdit = (property) => {
-    setEditingId(property.id)
-    setForm(property)
-    setSheetOpen(true)
-  }
+  const emptyItem = () => ({
+    id: newId('p'), title: '', purpose: 'Buy', type: propertyTypes[0] ?? 'Apartment', city: '', locality: '', address: '',
+    price: '', priceLabel: '', beds: 2, baths: 2, areaSqft: 1000, furnishing: furnishing[0] ?? '', possessionStatus: possession[0] ?? '',
+    yearBuilt: new Date().getFullYear(), reraId: '', agentId: '', postedDate: today(), lat: '', lng: '', description: '',
+    images: [], floorPlans: [], videoUrl: '', amenities: [], nearby: [], featured: false, verified: false, videoTour: false, active: true,
+  })
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (editingId) {
-      updateProperty(editingId, form)
-    } else {
-      addProperty({
-        ...form,
-        images: ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200'],
-        amenities: [],
-        agentId: 'a1',
-      })
+  const prepare = (p) => {
+    const price = Number(p.price) || 0
+    const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
+    return {
+      ...p,
+      price,
+      priceLabel: p.priceLabel?.trim() || `${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
+      beds: Number(p.beds) || 0,
+      baths: Number(p.baths) || 0,
+      areaSqft: Number(p.areaSqft) || 0,
+      yearBuilt: Number(p.yearBuilt) || new Date().getFullYear(),
+      lat: num(p.lat),
+      lng: num(p.lng),
+      reraId: p.reraId?.trim() || null,
+      postedDate: p.postedDate || today(),
+      videoTour: !!p.videoTour || !!p.videoUrl,
+      amenities: (p.amenities ?? []).map((a) => a.trim()).filter(Boolean),
+      nearby: (p.nearby ?? []).filter((n) => n.name?.trim()),
     }
-    setSheetOpen(false)
-  }
-
-  const handleDownloadTemplate = () => {
-    const buySample = propertiesSeed.find((p) => p.id === 'p1')
-    const rentSample = propertiesSeed.find((p) => p.id === 'p2')
-    const csv = buildPropertyTemplateCsv(buySample, rentSample)
-    downloadCsv('property-import-template.csv', csv)
-  }
-
-  const handleFileSelected = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const { properties: parsed, errors } = parsePropertyCsv(String(reader.result))
-      setImportResult({ parsed, errors })
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
-
-  const confirmImport = () => {
-    if (importResult?.parsed?.length) {
-      addProperties(importResult.parsed)
-    }
-    setImportResult(null)
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Manage Listings</h1>
-          <p className="text-secondary">{properties.length} properties in the system</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <GlassButton variant="glass" size="sm" icon={Download} onClick={handleDownloadTemplate}>
-            Download Template
-          </GlassButton>
-          <GlassButton variant="glass" size="sm" icon={Upload} onClick={() => fileInputRef.current?.click()}>
-            Import CSV
-          </GlassButton>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={handleFileSelected}
-          />
-          <GlassButton icon={Plus} onClick={openAdd}>Add Listing</GlassButton>
-        </div>
-      </div>
-
-      <GlassCard hover={false} className="p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-secondary border-b border-[var(--glass-border)]">
-                <th className="p-4">Property</th>
-                <th className="p-4">City</th>
-                <th className="p-4">Purpose</th>
-                <th className="p-4">Price</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map((p) => (
-                <tr key={p.id} className="border-b border-[var(--glass-border)] last:border-0">
-                  <td className="p-4 flex items-center gap-3">
-                    <img src={p.images[0]} alt="" className="w-12 h-10 rounded-[10px] object-cover" />
-                    <span className="font-medium truncate max-w-[180px]">{p.title}</span>
-                  </td>
-                  <td className="p-4 text-secondary">{p.city}</td>
-                  <td className="p-4">
-                    <span className="glass-weak px-2.5 py-1 rounded-full text-xs">{p.purpose}</span>
-                  </td>
-                  <td className="p-4 font-medium">{p.priceLabel}</td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => togglePropertyActive(p.id)}
-                      className={`relative w-12 h-7 rounded-full spring shrink-0 ${
-                        p.active !== false ? 'bg-[var(--color-success)]' : 'bg-[var(--glass-surface-strong)]'
-                      }`}
-                      aria-label={p.active !== false ? 'Deactivate listing' : 'Activate listing'}
-                    >
-                      <span
-                        className="absolute top-1 w-5 h-5 rounded-full bg-white shadow spring"
-                        style={{ left: p.active !== false ? '26px' : '4px' }}
-                      />
-                    </button>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => openEdit(p)} className="glass w-8 h-8 rounded-full flex items-center justify-center spring hover:scale-105">
-                        <Pencil size={14} />
-                      </button>
-                      <button onClick={() => deleteProperty(p.id)} className="glass w-8 h-8 rounded-full flex items-center justify-center spring hover:scale-105 text-[var(--color-danger)]">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </GlassCard>
-
-      <GlassSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title={editingId ? 'Edit Listing' : 'Add Listing'} maxWidth="max-w-lg">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <GlassInput label="Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <GlassInput as="select" label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              {propertyTypes.map((t) => <option key={t}>{t}</option>)}
-            </GlassInput>
-            <GlassInput as="select" label="Purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
-              {['Buy', 'Rent'].map((t) => <option key={t}>{t}</option>)}
-            </GlassInput>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <GlassInput as="select" label="City" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
-              <option value="">Select City</option>
-              {cities.map((c) => <option key={c}>{c}</option>)}
-            </GlassInput>
-            <GlassInput label="Locality" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
-          </div>
-          <GlassInput label="Price Label (e.g. ₹45,000/mo)" required value={form.priceLabel} onChange={(e) => setForm({ ...form, priceLabel: e.target.value })} />
-          <div className="grid grid-cols-3 gap-3">
-            <GlassInput label="Beds" type="number" value={form.beds} onChange={(e) => setForm({ ...form, beds: Number(e.target.value) })} />
-            <GlassInput label="Baths" type="number" value={form.baths} onChange={(e) => setForm({ ...form, baths: Number(e.target.value) })} />
-            <GlassInput label="Sqft" type="number" value={form.areaSqft} onChange={(e) => setForm({ ...form, areaSqft: Number(e.target.value) })} />
-          </div>
-          <GlassButton type="submit" className="w-full justify-center mt-2">
-            {editingId ? 'Save Changes' : 'Add Listing'}
-          </GlassButton>
-        </form>
-      </GlassSheet>
-
-      <GlassSheet open={!!importResult} onClose={() => setImportResult(null)} title="Import Preview" maxWidth="max-w-lg">
-        {importResult && (
-          <div className="flex flex-col gap-4">
-            <div className="glass-weak rounded-[16px] p-4 flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full glass-strong flex items-center justify-center text-[var(--color-success)] shrink-0">
-                <Check size={18} />
-              </span>
-              <div>
-                <p className="font-semibold">{importResult.parsed.length} properties ready to import</p>
-                <p className="text-secondary text-xs">They'll be added to your listings immediately.</p>
+    <CollectionAdmin
+      title="Listings"
+      singular="listing"
+      items={properties}
+      crud={propertyCrud}
+      schema={schema}
+      csv={{ config: propertyCsv, seedItems: propertiesSeed }}
+      restore={() => restoreSeeds('properties')}
+      emptyItem={emptyItem}
+      prepare={prepare}
+      validate={(p) => (Number(p.price) > 0 ? '' : 'Enter the price in rupees (greater than 0).')}
+      duplicate={(p) => ({ ...p, id: newId('p'), title: `${p.title} (copy)`, active: false, featured: false })}
+      searchText={(p) => `${p.title} ${p.city} ${p.locality} ${p.type} ${p.purpose}`}
+      rowExtras={(p) => p.active !== false && (
+        <a href={`/property/${p.id}`} target="_blank" rel="noopener noreferrer" aria-label={`View ${p.title} on the website`} className="glass w-8 h-8 rounded-full flex items-center justify-center"><ExternalLink size={13} /></a>
+      )}
+      columns={[
+        {
+          label: 'Property',
+          className: 'min-w-[260px]',
+          render: (p) => (
+            <div className="flex items-center gap-3">
+              {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-14 h-10 rounded-[10px] object-cover shrink-0" /> : <span className="w-14 h-10 rounded-[10px] glass-weak shrink-0" />}
+              <div className="min-w-0">
+                <p className="font-medium line-clamp-1">{p.title}{p.featured && <Star size={12} className="inline ml-1.5 -mt-0.5 fill-[var(--color-warning)] text-[var(--color-warning)]" />}</p>
+                <p className="text-tertiary text-xs truncate">{[p.locality, p.city].filter(Boolean).join(', ')}</p>
               </div>
             </div>
-
-            {importResult.errors.length > 0 && (
-              <div className="glass-weak rounded-[16px] p-4">
-                <p className="font-semibold text-sm flex items-center gap-2 mb-2 text-[var(--color-warning)]">
-                  <AlertTriangle size={16} /> {importResult.errors.length} row{importResult.errors.length > 1 ? 's' : ''} skipped
-                </p>
-                <ul className="text-xs text-secondary flex flex-col gap-1 max-h-32 overflow-y-auto">
-                  {importResult.errors.map((err, i) => <li key={i}>{err}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {importResult.parsed.length > 0 && (
-              <div className="max-h-48 overflow-y-auto flex flex-col gap-2">
-                {importResult.parsed.map((p, i) => (
-                  <div key={i} className="glass-weak rounded-[12px] px-3 py-2 text-sm flex items-center justify-between">
-                    <span className="truncate">{p.title}</span>
-                    <span className="text-tertiary text-xs shrink-0 ml-2">{p.city} · {p.purpose}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <GlassButton variant="glass" className="flex-1 justify-center" onClick={() => setImportResult(null)}>
-                Cancel
-              </GlassButton>
-              <GlassButton
-                className="flex-1 justify-center"
-                disabled={importResult.parsed.length === 0}
-                onClick={confirmImport}
-              >
-                Import {importResult.parsed.length > 0 ? importResult.parsed.length : ''}
-              </GlassButton>
-            </div>
-          </div>
-        )}
-      </GlassSheet>
-    </div>
+          ),
+        },
+        { label: 'Purpose', render: (p) => <span className="glass-weak px-2.5 py-1 rounded-full text-xs">{p.purpose}</span> },
+        { label: 'Price', render: (p) => <span className="font-medium whitespace-nowrap">{p.priceLabel}</span> },
+      ]}
+    />
   )
 }

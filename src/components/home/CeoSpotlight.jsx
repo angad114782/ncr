@@ -3,10 +3,11 @@ import { Award, Quote } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
 import CeoAvatar from '../company/CeoAvatar'
-import { COMPANY } from '../../data/company'
+import { useSettings } from '../../context/SettingsContext'
 
 export default function CeoSpotlight() {
-  const { ceo } = COMPANY
+  const { company } = useSettings()
+  const { ceo } = company
   return (
     <section className="mb-16" aria-labelledby="ceo-heading">
       <GlassCard hover={false} strong className="p-6 md:p-10">
@@ -14,7 +15,7 @@ export default function CeoSpotlight() {
           <div className="flex flex-col items-center text-center shrink-0">
             <CeoAvatar className="w-28 h-28 text-4xl mb-3" />
             <h2 id="ceo-heading" className="font-bold text-lg">{ceo.name}</h2>
-            <p className="text-[var(--color-accent)] text-sm font-semibold">{ceo.title}, {COMPANY.name}</p>
+            <p className="text-[var(--color-accent)] text-sm font-semibold">{ceo.title}, {company.name}</p>
             <span className="glass-weak rounded-full px-3 py-1 text-xs mt-2 flex items-center gap-1">
               <Award size={12} className="text-[var(--color-accent)]" /> {ceo.experienceYears}+ years in real estate
             </span>
@@ -27,7 +28,7 @@ export default function CeoSpotlight() {
             </blockquote>
             <div className="flex flex-wrap gap-3">
               <Link to="/team"><GlassButton>Meet the team</GlassButton></Link>
-              <Link to="/about"><GlassButton variant="glass">About {COMPANY.name}</GlassButton></Link>
+              <Link to="/about"><GlassButton variant="glass">About {company.name}</GlassButton></Link>
             </div>
           </div>
         </div>

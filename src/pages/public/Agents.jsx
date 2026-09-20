@@ -3,11 +3,13 @@ import { Award, MapPin, Star } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
-import { COMPANY } from '../../data/company'
+import { useSettings } from '../../context/SettingsContext'
 import { breadcrumbLd } from '../../utils/seo'
+import Avatar from '../../components/common/Avatar'
 
 export default function Agents() {
   const { approvedAgents: agents } = useData()
+  const { company } = useSettings()
 
   return (
     <div className="pb-16">
@@ -20,7 +22,7 @@ export default function Agents() {
       <div className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Meet Our Agents</h1>
         <p className="text-secondary max-w-2xl mx-auto">
-          Property consultants approved by the {COMPANY.name} team — local experts who help you buy, rent and sell across
+          Property consultants approved by the {company.name} team — local experts who help you buy, rent and sell across
           India's top cities. Every consultant on this page has been reviewed by our admin team before being listed.
         </p>
       </div>
@@ -29,11 +31,7 @@ export default function Agents() {
         {agents.map((agent) => (
           <Link key={agent.id} to={`/agents/${agent.id}`}>
             <GlassCard className="p-6 text-center h-full">
-              <img
-                src={agent.avatar}
-                alt={agent.name}
-                className="w-20 h-20 rounded-full object-cover mx-auto mb-3 ring-2 ring-[var(--glass-border)]"
-              />
+              <Avatar src={agent.avatar} name={agent.name} alt={agent.name} className="w-20 h-20 rounded-full object-cover mx-auto mb-3 ring-2 ring-[var(--glass-border)]" />
               <h3 className="font-semibold">{agent.name}</h3>
               <p className="text-secondary text-sm mb-3">{agent.role}</p>
               <div className="flex items-center justify-center gap-3 text-xs text-secondary">

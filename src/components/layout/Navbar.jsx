@@ -5,31 +5,7 @@ import { Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck, X } from 'l
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import { useAuth } from '../../context/AuthContext'
-
-const links = [
-  { to: '/', label: 'Home' },
-  {
-    to: '/listings',
-    label: 'Listings',
-    children: [
-      { to: '/listings', label: 'All Listings' },
-      { to: '/listings?purpose=Buy', label: 'Buy' },
-      { to: '/listings?purpose=Rent', label: 'Rent' },
-      { to: '/listings?type=Commercial', label: 'Commercial' },
-    ],
-  },
-  { to: '/agents', label: 'Agents' },
-  {
-    to: '/about',
-    label: 'About',
-    children: [
-      { to: '/about', label: 'About Us' },
-      { to: '/team', label: 'Our Team' },
-    ],
-  },
-  { to: '/blog', label: 'Blog' },
-  { to: '/contact', label: 'Contact' },
-]
+import { useSettings } from '../../context/SettingsContext'
 
 export default function Navbar({ onAuthOpen }) {
   const [scrolled, setScrolled] = useState(false)
@@ -37,6 +13,9 @@ export default function Navbar({ onAuthOpen }) {
   const [openMenu, setOpenMenu] = useState(null)
   const [mobileExpanded, setMobileExpanded] = useState(null)
   const { user, isAdmin, logout } = useAuth()
+  const { siteContent, company } = useSettings()
+  // Menu comes from Admin → Site Content → Menu & Footer (hidden items are skipped).
+  const links = siteContent.nav.filter((l) => l.visible !== false && l.label)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -71,7 +50,7 @@ export default function Navbar({ onAuthOpen }) {
           <span className="w-9 h-9 rounded-[12px] bg-[var(--color-accent)] flex items-center justify-center text-white">
             <Building2 size={18} />
           </span>
-          <span className="font-display">NCR Estates</span>
+          <span className="font-display">{company.name}</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -79,8 +58,8 @@ export default function Navbar({ onAuthOpen }) {
             <div
               key={l.to}
               className="relative"
-              onMouseEnter={() => l.children && setOpenMenu(l.to)}
-              onMouseLeave={() => l.children && setOpenMenu(null)}
+              onMouseEnter={() => (l.children?.length > 0) && setOpenMenu(l.to)}
+              onMouseLeave={() => (l.children?.length > 0) && setOpenMenu(null)}
             >
               <NavLink
                 to={l.to}
@@ -91,7 +70,7 @@ export default function Navbar({ onAuthOpen }) {
                 }
               >
                 {l.label}
-                {l.children && (
+                {l.children?.length > 0 && (
                   <ChevronDown
                     size={13}
                     className={`transition-transform ${openMenu === l.to ? 'rotate-180' : ''}`}
@@ -99,7 +78,7 @@ export default function Navbar({ onAuthOpen }) {
                 )}
               </NavLink>
 
-              {l.children && (
+              {l.children?.length > 0 && (
                 <AnimatePresence>
                   {openMenu === l.to && (
                     <motion.div
@@ -176,7 +155,7 @@ export default function Navbar({ onAuthOpen }) {
                 >
                   {l.label}
                 </NavLink>
-                {l.children && (
+                {l.children?.length > 0 && (
                   <button
                     onClick={() => setMobileExpanded((prev) => (prev === l.to ? null : l.to))}
                     className="w-10 h-10 shrink-0 flex items-center justify-center text-secondary"
@@ -190,7 +169,7 @@ export default function Navbar({ onAuthOpen }) {
                 )}
               </div>
 
-              {l.children && (
+              {l.children?.length > 0 && (
                 <AnimatePresence>
                   {mobileExpanded === l.to && (
                     <motion.div
