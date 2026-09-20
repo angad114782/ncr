@@ -1,13 +1,15 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Building2, LogOut } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import ContactRail from './ContactRail'
+import Seo from './Seo'
 import { useAuth } from '../../context/AuthContext'
 
 export default function PanelShell({ title, navItems }) {
   const { user, isAdmin, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile'
 
   const handleLogout = () => {
@@ -17,6 +19,7 @@ export default function PanelShell({ title, navItems }) {
 
   return (
     <div className="min-h-screen flex bg-base">
+      <Seo title={title} path={pathname} noindex />
       <motion.aside
         initial={{ x: -40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}

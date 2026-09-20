@@ -13,6 +13,7 @@ import GlassButton from '../../components/glass/GlassButton'
 import GlassInput from '../../components/glass/GlassInput'
 import GlassSheet from '../../components/glass/GlassSheet'
 import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
 import { buildPropertyTemplateCsv, downloadCsv, parsePropertyCsv } from '../../utils/csv'
 import propertiesSeed from '../../data/properties.json'
 
@@ -23,6 +24,7 @@ const emptyForm = {
 
 export default function ManageListings() {
   const { properties, addProperty, addProperties, updateProperty, togglePropertyActive, deleteProperty } = useData()
+  const { cities, propertyTypes } = useSettings()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -168,14 +170,17 @@ export default function ManageListings() {
           <GlassInput label="Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
           <div className="grid grid-cols-2 gap-3">
             <GlassInput as="select" label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              {['Apartment', 'Villa', 'Studio', 'Commercial', 'Penthouse', 'House'].map((t) => <option key={t}>{t}</option>)}
+              {propertyTypes.map((t) => <option key={t}>{t}</option>)}
             </GlassInput>
             <GlassInput as="select" label="Purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
               {['Buy', 'Rent'].map((t) => <option key={t}>{t}</option>)}
             </GlassInput>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <GlassInput label="City" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <GlassInput as="select" label="City" required value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })}>
+              <option value="">Select City</option>
+              {cities.map((c) => <option key={c}>{c}</option>)}
+            </GlassInput>
             <GlassInput label="Locality" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
           </div>
           <GlassInput label="Price Label (e.g. ₹45,000/mo)" required value={form.priceLabel} onChange={(e) => setForm({ ...form, priceLabel: e.target.value })} />

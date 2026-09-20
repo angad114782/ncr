@@ -22,8 +22,9 @@ export function loadMetaPixel(pixelId) {
     s.parentNode.insertBefore(t, s)
   }
 
+  // PageView is fired by TrackingScripts on mount and on every route change —
+  // firing it here as well double-counted the first page load.
   window.fbq('init', pixelId)
-  window.fbq('track', 'PageView')
   window.__metaPixelId = pixelId
 }
 
@@ -49,7 +50,9 @@ export function loadGoogleAds(conversionId) {
   }
 
   window.gtag('js', new Date())
-  window.gtag('config', conversionId)
+  // send_page_view:false — trackPageView() sends page_view itself; the automatic
+  // one from config would duplicate the first page load.
+  window.gtag('config', conversionId, { send_page_view: false })
   window.__googleAdsId = conversionId
 }
 

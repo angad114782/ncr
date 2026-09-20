@@ -17,7 +17,8 @@ export default function PropertyCard({ property }) {
       <div className="relative h-52 overflow-hidden">
         <img
           src={property.images[0]}
-          alt={property.title}
+          alt={`${property.title} in ${property.locality}, ${property.city}`}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute top-3 left-3 flex gap-1.5">

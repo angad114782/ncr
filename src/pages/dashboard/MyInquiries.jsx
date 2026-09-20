@@ -31,8 +31,8 @@ export default function MyInquiries() {
                   <img src={property.images[0]} alt={property.title} className="w-full sm:w-28 h-20 rounded-[14px] object-cover shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <Link to={`/property/${inq.propertyId}`} className="font-semibold hover:text-[var(--color-accent)] truncate block flex items-center gap-1.5">
-                    {property?.title ?? 'Property removed'}
+                  <Link to={inq.propertyId ? `/property/${inq.propertyId}` : '/contact'} className="font-semibold hover:text-[var(--color-accent)] truncate block flex items-center gap-1.5">
+                    {inq.propertyId ? (property?.title ?? 'Property removed') : 'General enquiry'}
                     {inq.phoneVerified && (
                       <span className="text-[var(--color-success)] shrink-0" title="Phone verified via OTP">
                         <BadgeCheck size={13} />

@@ -1,16 +1,30 @@
 import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { ChevronDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 import GlassCard from '../glass/GlassCard'
 import faqs from '../../data/faqs.json'
 
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: { '@type': 'Answer', text: f.answer },
+  })),
+}
+
 export default function FAQSection() {
   const [openId, setOpenId] = useState(faqs[0]?.id ?? null)
 
   return (
-    <section className="mb-16 max-w-3xl mx-auto">
+    <section className="mb-16 max-w-3xl mx-auto" aria-labelledby="faq-heading">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
       <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold mb-2">Frequently Asked Questions</h2>
+        <h2 id="faq-heading" className="text-2xl md:text-3xl font-bold mb-2">Frequently Asked Questions</h2>
         <p className="text-secondary">Everything you need to know before you get started.</p>
       </div>
       <div className="flex flex-col gap-3">

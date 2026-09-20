@@ -6,22 +6,44 @@ import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import GlassInput from '../../components/glass/GlassInput'
 import PropertyCard from '../../components/property/PropertyCard'
+import ExploreCities from '../../components/home/ExploreCities'
+import CityPriceTrends from '../../components/home/CityPriceTrends'
+import NewestListings from '../../components/home/NewestListings'
+import WhyChooseUs from '../../components/home/WhyChooseUs'
+import HowItWorks from '../../components/home/HowItWorks'
+import TopAgents from '../../components/home/TopAgents'
+import ListPropertyCta from '../../components/home/ListPropertyCta'
 import RecentlyViewed from '../../components/home/RecentlyViewed'
 import Testimonials from '../../components/home/Testimonials'
 import FAQSection from '../../components/home/FAQSection'
+import HeroBlobs from '../../components/home/HeroBlobs'
+import RotatingWord from '../../components/home/RotatingWord'
+import AnimatedCounter from '../../components/home/AnimatedCounter'
+import BudgetFinder from '../../components/home/BudgetFinder'
+import Reveal from '../../components/glass/Reveal'
+import PopularSearches from '../../components/home/PopularSearches'
+import PromoTicker from '../../components/home/PromoTicker'
+import LatestPosts from '../../components/home/LatestPosts'
+import CeoSpotlight from '../../components/home/CeoSpotlight'
+import Seo, { SITE_URL } from '../../components/layout/Seo'
+import { organizationLd } from '../../utils/seo'
+import { COMPANY } from '../../data/company'
 import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
 
-const categories = [
-  { label: 'Apartment', icon: Building2 },
-  { label: 'Villa', icon: HomeIcon },
-  { label: 'Commercial', icon: Building },
-  { label: 'Studio', icon: KeyRound },
-]
-
-const cities = ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Gurugram']
+const typeIcons = {
+  Apartment: Building2,
+  Villa: HomeIcon,
+  Commercial: Building,
+  Studio: KeyRound,
+  Penthouse: Building2,
+  House: HomeIcon,
+}
 
 export default function Home() {
   const { activeProperties: properties, approvedAgents: agents } = useData()
+  const { cities, propertyTypes, whatsappConfig, mailConfig } = useSettings()
+  const categories = propertyTypes.map((label) => ({ label, icon: typeIcons[label] || Building2 }))
   const navigate = useNavigate()
   const [purpose, setPurpose] = useState('Buy')
   const [city, setCity] = useState('')
@@ -38,21 +60,48 @@ export default function Home() {
     navigate(`/listings?${params.toString()}`)
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      organizationLd({ phone: whatsappConfig.displayPhone, email: mailConfig.fromEmail, cities }),
+      {
+        '@type': 'WebSite',
+        name: 'NCR Estates',
+        url: SITE_URL,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${SITE_URL}/listings?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    ],
+  }
+
   return (
     <div className="pb-16">
+      <Seo
+        title="Buy & Rent Flats, Villas and Commercial Property in India"
+        description="Search verified 1, 2, 3 BHK flats, villas, studios and commercial property to buy or rent in Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram. Free guidance from a team led by CEO Angad Yadav."
+        path="/"
+        jsonLd={jsonLd}
+      />
+      {/* Admin-managed running strip: sits between the navbar and the hero */}
+      <PromoTicker />
+
       {/* Hero */}
-      <section className="text-center pt-6 pb-10">
+      <section className="relative isolate overflow-hidden text-center pt-6 pb-10">
+        <HeroBlobs />
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 24 }}
           className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
         >
-          Find Your Next <span className="text-[var(--color-accent)]">Home</span>
+          Find Your Next <RotatingWord />
           <br className="hidden md:block" /> Across India
         </motion.h1>
         <p className="text-secondary max-w-xl mx-auto mb-8 text-base md:text-lg">
-          Curated apartments, villas, and commercial spaces in Mumbai, Delhi, Bangalore &amp; beyond.
+          Buy or rent 1, 2 &amp; 3 BHK flats, villas and commercial spaces in Mumbai, Delhi, Bangalore, Gurugram &amp; more — verified listings and free expert guidance.
         </p>
 
         <GlassCard hover={false} strong className="max-w-3xl mx-auto p-3 md:p-4">
@@ -106,39 +155,56 @@ export default function Home() {
       </section>
 
       {/* Stats */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-        {[
-          { label: 'Active Listings', value: `${properties.length}+`, icon: Building2 },
-          { label: 'Verified Agents', value: `${agents.length}`, icon: Users },
-          { label: 'Cities Covered', value: '7', icon: MapPin },
-          { label: 'Avg. Rating', value: '4.7★', icon: TrendingUp },
-        ].map((s) => (
-          <GlassCard key={s.label} className="p-5 text-center">
-            <s.icon className="mx-auto mb-2 text-[var(--color-accent)]" size={22} />
-            <p className="text-2xl font-bold">{s.value}</p>
-            <p className="text-secondary text-xs mt-1">{s.label}</p>
-          </GlassCard>
-        ))}
-      </section>
+      <Reveal>
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+          {[
+            { label: 'Active Listings', value: properties.length, suffix: '+', icon: Building2 },
+            { label: 'Verified Agents', value: agents.length, suffix: '', icon: Users },
+            { label: 'Cities Covered', value: cities.length, suffix: '', icon: MapPin },
+            { label: 'Property Types', value: propertyTypes.length, suffix: '', icon: TrendingUp },
+          ].map((s) => (
+            <GlassCard key={s.label} className="p-5 text-center">
+              <s.icon className="mx-auto mb-2 text-[var(--color-accent)]" size={22} />
+              <p className="text-2xl font-bold">
+                <AnimatedCounter value={s.value} suffix={s.suffix} decimals={s.decimals} />
+              </p>
+              <p className="text-secondary text-xs mt-1">{s.label}</p>
+            </GlassCard>
+          ))}
+        </section>
+      </Reveal>
 
       {/* Featured */}
-      <section className="mb-16">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
-          <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
-            View All
-          </GlassButton>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((p) => (
-            <PropertyCard key={p.id} property={p} />
-          ))}
-        </div>
-      </section>
+      <Reveal>
+        <section className="mb-16">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
+            <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
+              View All
+            </GlassButton>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {featured.map((p) => (
+              <PropertyCard key={p.id} property={p} />
+            ))}
+          </div>
+        </section>
+      </Reveal>
 
-      <RecentlyViewed />
-      <Testimonials />
-      <FAQSection />
+      <Reveal><BudgetFinder /></Reveal>
+      <Reveal><NewestListings excludeIds={featured.map((p) => p.id)} /></Reveal>
+      <Reveal><ExploreCities /></Reveal>
+      <Reveal><CityPriceTrends /></Reveal>
+      <Reveal><WhyChooseUs /></Reveal>
+      <Reveal><HowItWorks /></Reveal>
+      <Reveal><PopularSearches /></Reveal>
+      <Reveal><TopAgents /></Reveal>
+      <Reveal><CeoSpotlight /></Reveal>
+      <Reveal><RecentlyViewed /></Reveal>
+      {COMPANY.showTestimonials && <Reveal><Testimonials /></Reveal>}
+      <Reveal><LatestPosts /></Reveal>
+      <Reveal><ListPropertyCta /></Reveal>
+      <Reveal><FAQSection /></Reveal>
     </div>
   )
 }

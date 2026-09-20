@@ -190,7 +190,7 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
       </div>
 
       {nearby.length > 0 && (
-        <div className="grid sm:grid-cols-2 gap-2 mt-3 px-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 px-1">
           {nearby.map((n) => {
             const Icon = nearbyIcons[n.type] ?? MapPin
             return (

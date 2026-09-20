@@ -112,7 +112,7 @@ export default function AuthSheet({ open, onClose }) {
     <GlassSheet
       open={open}
       onClose={onClose}
-      title={step === 'otp' ? 'Verify OTP' : mode === 'login' ? 'Welcome Back' : 'Create Account'}
+      title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? 'Welcome Back' : 'Create Your Free Account'}
     >
       {step === 'phone' && (
         <>
@@ -162,8 +162,9 @@ export default function AuthSheet({ open, onClose }) {
             )}
 
             <GlassButton type="submit" className="mt-2 w-full justify-center">
-              Send OTP
+              {mode === 'login' ? 'Send Me a Secure Code' : 'Create My Free Account'}
             </GlassButton>
+            <p className="text-tertiary text-xs text-center">We’ll text a 4-digit code to confirm it’s you — no password to remember.</p>
           </form>
         </>
       )}
@@ -182,7 +183,7 @@ export default function AuthSheet({ open, onClose }) {
               <ShieldCheck size={24} />
             </span>
             <p className="text-secondary text-sm">
-              Enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {phone}</span>
+              You’re one step away — enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {phone}</span>
             </p>
           </div>
 
@@ -210,7 +211,7 @@ export default function AuthSheet({ open, onClose }) {
             {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
             <GlassButton type="submit" className="w-full justify-center">
-              Verify &amp; {mode === 'login' ? 'Sign In' : 'Create Account'}
+              {mode === 'login' ? 'Confirm & Take Me In' : 'Confirm & Start Exploring'}
             </GlassButton>
 
             <button
@@ -218,7 +219,7 @@ export default function AuthSheet({ open, onClose }) {
               onClick={handleSendOtp}
               className="text-sm text-[var(--color-accent)] font-medium text-center"
             >
-              Resend OTP
+              Didn’t get the code? Send it again
             </button>
           </form>
         </div>

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Check, IndianRupee, Mail, Phone, ShieldCheck, User } from 'lucide-react'
+import { ArrowLeft, Check, IndianRupee, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react'
 import GlassInput from '../glass/GlassInput'
 import GlassButton from '../glass/GlassButton'
 import { useData } from '../../context/DataContext'
@@ -113,7 +113,7 @@ export default function LeadForm({ property }) {
             <ShieldCheck size={20} />
           </span>
           <p className="text-secondary text-sm">
-            Enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {form.phone}</span>
+            Almost done — enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {form.phone}</span>
           </p>
         </div>
 
@@ -141,8 +141,11 @@ export default function LeadForm({ property }) {
           {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
           <GlassButton type="submit" className="w-full justify-center">
-            <Check size={16} /> Verify &amp; Submit
+            <Check size={16} /> Confirm &amp; Book My Callback
           </GlassButton>
+          <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">
+            <Lock size={11} /> This confirms it’s really you, so our expert can call you back.
+          </p>
         </form>
       </div>
     )
@@ -180,7 +183,7 @@ export default function LeadForm({ property }) {
       <GlassInput
         as="textarea"
         rows={3}
-        placeholder={property ? "I'm interested in this property..." : 'How can we help?'}
+        placeholder={property ? 'Any questions? e.g. site visit this weekend, loan help, negotiation…' : 'How can we help?'}
         value={form.message}
         onChange={(e) => setForm({ ...form, message: e.target.value })}
       />
@@ -188,8 +191,11 @@ export default function LeadForm({ property }) {
       {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
       <GlassButton type="submit" className="w-full justify-center">
-        Send OTP &amp; Continue
+        Get My Free Callback
       </GlassButton>
+      <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">
+        <Lock size={11} /> Quick 4-digit code to verify your number — no spam, no obligation.
+      </p>
     </form>
   )
 }

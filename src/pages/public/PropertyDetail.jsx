@@ -25,7 +25,9 @@ import Lightbox from '../../components/property/Lightbox'
 import PriceInsight from '../../components/property/PriceInsight'
 import DistanceToHubs from '../../components/property/DistanceToHubs'
 import LeadForm from '../../components/property/LeadForm'
+import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
+import { SITE_URL, breadcrumbLd, listingsPath } from '../../utils/seo'
 
 export default function PropertyDetail() {
   const { id } = useParams()
@@ -54,6 +56,7 @@ function PropertyDetailInner({ id }) {
   if (!property) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">
+        <Seo title="Property Not Found" path={`/property/${id}`} noindex />
         <p className="text-secondary mb-4">Property not found.</p>
         <GlassButton onClick={() => navigate('/listings')}>Back to Listings</GlassButton>
       </GlassCard>
@@ -63,6 +66,7 @@ function PropertyDetailInner({ id }) {
   if (property.active === false) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">
+        <Seo title="Listing No Longer Available" path={`/property/${id}`} noindex />
         <p className="text-secondary mb-4">This listing is no longer available.</p>
         <GlassButton onClick={() => navigate('/listings')}>Browse Other Listings</GlassButton>
       </GlassCard>
@@ -95,6 +99,40 @@ function PropertyDetailInner({ id }) {
     .filter((p) => !shownIds.has(p.id) && p.agentId === property.agentId)
     .slice(0, 3)
 
+  const bhk = property.beds > 0 ? `${property.beds} BHK ` : ''
+  const forWhat = property.purpose === 'Rent' ? 'for Rent' : 'for Sale'
+  const place = [property.locality, property.city].filter(Boolean).join(', ')
+  const seoTitle = `${bhk}${property.type} ${forWhat} in ${place} — ${property.priceLabel}`
+  const seoDescription = [
+    `${bhk}${property.type} ${forWhat.toLowerCase()} in ${place} at ${property.priceLabel}.`,
+    property.areaSqft ? `${property.areaSqft} sq.ft, ${property.furnishing}, ${property.possessionStatus}.` : '',
+    property.reraId ? `RERA: ${property.reraId}.` : '',
+    'View photos, price insight, EMI and contact a verified agent.',
+  ].filter(Boolean).join(' ')
+
+  const listingLd = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateListing',
+    name: seoTitle,
+    description: property.description || seoDescription,
+    url: `${SITE_URL}/property/${property.id}`,
+    datePosted: property.postedDate,
+    image: property.images,
+    ...(property.price > 0
+      ? { offers: { '@type': 'Offer', price: property.price, priceCurrency: 'INR', availability: 'https://schema.org/InStock' } }
+      : {}),
+    about: {
+      '@type': property.type === 'Villa' || property.type === 'House' ? 'House' : 'Apartment',
+      numberOfRooms: property.beds || undefined,
+      numberOfBathroomsTotal: property.baths || undefined,
+      floorSize: property.areaSqft ? { '@type': 'QuantitativeValue', value: property.areaSqft, unitCode: 'FTK' } : undefined,
+      address: { '@type': 'PostalAddress', streetAddress: property.address, addressLocality: property.city, addressCountry: 'IN' },
+      ...(property.lat != null && property.lng != null
+        ? { geo: { '@type': 'GeoCoordinates', latitude: property.lat, longitude: property.lng } }
+        : {}),
+    },
+  }
+
   const handleShare = async () => {
     const url = window.location.href
     if (navigator.share) {
@@ -112,9 +150,26 @@ function PropertyDetailInner({ id }) {
 
   return (
     <div className="pb-16">
-      <div className="flex items-center gap-2 text-sm text-secondary mb-4">
-        <Link to="/listings" className="hover:text-primary">Listings</Link> / <span>{property.city}</span> / <span className="text-primary">{property.title}</span>
-      </div>
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        path={`/property/${property.id}`}
+        image={property.images[0]}
+        jsonLd={[
+          breadcrumbLd([
+            { name: 'Home', path: '/' },
+            { name: 'Listings', path: '/listings' },
+            { name: property.city, path: listingsPath({ purpose: property.purpose, city: property.city }) },
+            { name: property.title, path: `/property/${property.id}` },
+          ]),
+          listingLd,
+        ]}
+      />
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-secondary mb-4">
+        <Link to="/listings" className="hover:text-primary">Listings</Link> /{' '}
+        <Link to={listingsPath({ purpose: property.purpose, city: property.city })} className="hover:text-primary">{property.city}</Link> /{' '}
+        <span className="text-primary">{property.title}</span>
+      </nav>
 
       {/* Gallery */}
       <GlassCard hover={false} className="p-3 mb-6">
@@ -122,10 +177,10 @@ function PropertyDetailInner({ id }) {
           className="rounded-[18px] overflow-hidden h-72 md:h-[420px] mb-3 w-full block"
           onClick={() => setLightboxIndex(activeImg)}
         >
-          <img src={property.images[activeImg]} alt={property.title} className="w-full h-full object-cover" />
+          <img src={property.images[activeImg]} alt={`${property.title} in ${place}`} className="w-full h-full object-cover" />
         </button>
         <div className="flex items-center gap-3">
-          <div className="flex gap-3 overflow-x-auto flex-1">
+          <div className="flex gap-3 overflow-x-auto flex-1 min-w-0">
             {property.images.map((img, i) => (
               <button
                 key={img}
@@ -144,9 +199,11 @@ function PropertyDetailInner({ id }) {
               <LayoutPanelLeft size={15} /> Floor Plan
             </button>
           )}
-          {property.videoTour && (
+          {/* A real tour link is rendered only when a listing has a videoUrl — the old
+              placeholder pointed every listing at the same YouTube search. */}
+          {property.videoUrl && (
             <a
-              href="https://www.youtube.com/results?search_query=luxury+home+tour"
+              href={property.videoUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="glass shrink-0 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1.5 text-[var(--color-accent)]"
@@ -169,14 +226,14 @@ function PropertyDetailInner({ id }) {
         onChange={(i) => { setLightboxIndex(i); setActiveImg(i) }}
       />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="min-w-0 lg:col-span-2 flex flex-col gap-6">
           <GlassCard hover={false} className="p-6">
             <div className="flex items-start justify-between gap-4 mb-3">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold mb-1">{property.title}</h1>
-                <p className="text-secondary flex items-center gap-1">
-                  <MapPin size={15} /> {property.address}
+              <div className="min-w-0">
+                <h1 className="text-2xl md:text-3xl font-bold mb-1 break-words">{property.title}</h1>
+                <p className="text-secondary flex items-start gap-1 break-words">
+                  <MapPin size={15} className="mt-1 shrink-0" /> {property.address}
                 </p>
               </div>
               <div className="flex gap-2 shrink-0">
@@ -240,13 +297,13 @@ function PropertyDetailInner({ id }) {
             priceLabel={property.priceLabel}
           />
 
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <PriceInsight property={property} />
             <DistanceToHubs city={property.city} lat={property.lat} lng={property.lng} />
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+        <div className="min-w-0 flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
           {agent && (
             <GlassCard hover={false} className="p-5">
               <p className="text-tertiary text-xs uppercase font-semibold mb-3">Listed By</p>
@@ -277,7 +334,8 @@ function PropertyDetailInner({ id }) {
           )}
 
           <GlassCard hover={false} className="p-5">
-            <h3 className="font-semibold mb-4">Contact / Inquiry</h3>
+            <h3 className="font-semibold mb-1">Interested? Talk to an Expert</h3>
+            <p className="text-secondary text-xs mb-4">Free guidance · site visits · no obligation</p>
             <LeadForm property={property} />
           </GlassCard>
 

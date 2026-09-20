@@ -20,6 +20,9 @@ import About from './pages/public/About'
 import Contact from './pages/public/Contact'
 import Compare from './pages/public/Compare'
 import ThankYou from './pages/public/ThankYou'
+import Team from './pages/public/Team'
+import Blog from './pages/public/Blog'
+import BlogPost from './pages/public/BlogPost'
 import NotFound from './pages/public/NotFound'
 
 import DashboardHome from './pages/dashboard/DashboardHome'
@@ -65,6 +68,9 @@ function App() {
                   <Route path="/agents" element={<Agents />} />
                   <Route path="/agents/:id" element={<AgentProfile />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/team" element={<Team />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/blog/:slug" element={<BlogPost />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/compare" element={<Compare />} />
                   <Route path="/thank-you" element={<ThankYou />} />

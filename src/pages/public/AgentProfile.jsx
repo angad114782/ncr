@@ -3,17 +3,21 @@ import { Award, Mail, MapPin, Phone, Star } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
+import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
+import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 
 export default function AgentProfile() {
   const { id } = useParams()
-  const { agents, activeProperties: properties } = useData()
+  const { approvedAgents, activeProperties: properties } = useData()
   const navigate = useNavigate()
 
-  const agent = agents.find((a) => a.id === id)
+  // Only approved agents get a public profile — pending / rejected ones 404.
+  const agent = approvedAgents.find((a) => a.id === id)
   if (!agent) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">
+        <Seo title="Agent Not Found" path={`/agents/${id}`} noindex />
         <p className="text-secondary mb-4">Agent not found.</p>
         <GlassButton onClick={() => navigate('/agents')}>Back to Agents</GlassButton>
       </GlassCard>
@@ -24,6 +28,26 @@ export default function AgentProfile() {
 
   return (
     <div className="pb-16">
+      <Seo
+        title={`${agent.name} — ${agent.role} in ${agent.city}`}
+        description={`${agent.name} is a ${agent.role.toLowerCase()} in ${agent.city} on NCR Estates. ${agent.dealsClosed} deals closed, rated ${agent.rating}/5. View active listings and contact directly.`}
+        path={`/agents/${agent.id}`}
+        image={agent.avatar}
+        jsonLd={[
+          breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'Agents', path: '/agents' }, { name: agent.name, path: `/agents/${agent.id}` }]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: agent.name,
+            jobTitle: agent.role,
+            url: `${SITE_URL}/agents/${agent.id}`,
+            image: agent.avatar,
+            description: agent.bio,
+            workLocation: { '@type': 'City', name: agent.city },
+            worksFor: { '@type': 'Organization', name: 'NCR Estates', url: SITE_URL },
+          },
+        ]}
+      />
       <div className="text-sm text-secondary mb-4">
         <Link to="/agents" className="hover:text-primary">Agents</Link> / <span className="text-primary">{agent.name}</span>
       </div>

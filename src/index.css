@@ -234,3 +234,22 @@ a.glass:hover {
 .text-tertiary { color: var(--text-tertiary); }
 .bg-base { background: var(--bg-base); }
 .bg-base-2 { background: var(--bg-base-2); }
+
+/* ---- Running strip (PromoTicker) ---- */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll var(--ticker-duration, 30s) linear infinite;
+}
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker { overflow-x: auto; }
+  .ticker-track { animation: none; }
+}

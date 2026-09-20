@@ -1,0 +1,429 @@
+[
+  {
+    "slug": "first-time-home-buyer-guide-india",
+    "title": "First-Time Home Buyer Guide India: Step-by-Step Process (2026)",
+    "description": "A practical step-by-step guide for first-time home buyers in India — budget, home loan, property search, due diligence, registration and possession.",
+    "category": "Buying Guides",
+    "cover": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "Buying your first home is usually the biggest financial decision you will make. The process feels complicated mostly because it has many small steps — and most mistakes happen when a step is skipped. This guide walks through the full journey in the order it actually happens.",
+    "sections": [
+      {
+        "heading": "1. Fix your budget before you search",
+        "body": [
+          "Start with what you can comfortably afford, not what a bank will lend. A common rule of thumb is that your total EMIs should stay within roughly 40% of your monthly income. Work backwards from that to a loan amount, then add your down payment to get a property budget.",
+          "Keep a separate cushion for costs that sit on top of the sale price: stamp duty and registration, GST on under-construction homes, loan processing fees, brokerage (if any), society transfer charges, and interiors."
+        ],
+        "list": ["Use our home-loan budget calculator on the home page to see a realistic property budget.", "Keep 6 months of expenses as an emergency fund — do not spend it on the down payment."]
+      },
+      {
+        "heading": "2. Check your credit score and get loan pre-approval",
+        "body": [
+          "A credit score of about 750 or higher generally helps you get better interest rates. Check your score early — errors in a credit report take time to fix. A pre-approval tells you the amount a lender is willing to sponsor and lets you negotiate with more confidence."
+        ]
+      },
+      {
+        "heading": "3. Decide location and property type",
+        "body": [
+          "Shortlist two or three localities based on your commute, schools, hospitals, metro or road connectivity and the neighbourhood you can see yourself in five years from now. Then decide between ready-to-move and under-construction, and between an apartment, builder floor, villa or plot."
+        ]
+      },
+      {
+        "heading": "4. Shortlist, visit and compare",
+        "body": [
+          "Visit each shortlisted property in person, ideally at different times of the day. Check water supply, parking, noise, natural light and the condition of common areas. Use the compare tool on NCR Estates to line up price, area, possession status and amenities side by side."
+        ]
+      },
+      {
+        "heading": "5. Do due diligence before you pay any token",
+        "body": [
+          "Verify the project's RERA registration on the state RERA website, confirm the seller's title, and ask for the documents listed in our property documents checklist. Never pay large amounts in cash and never rely on verbal assurances."
+        ]
+      },
+      {
+        "heading": "6. Negotiate, sign the agreement and register",
+        "body": [
+          "Once the price is agreed, the agreement to sell (or builder-buyer agreement) is signed, and the sale deed is executed and registered at the sub-registrar office after paying stamp duty and registration charges. After registration, apply for mutation / name transfer where applicable and update property tax and society records."
+        ]
+      },
+      {
+        "heading": "7. Take possession",
+        "body": [
+          "Before taking possession, inspect the flat against the agreed specifications, check fittings, meters and the completion / occupancy certificate, and only then accept the keys."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "How much down payment do I need for a home in India?",
+        "answer": "Banks usually finance a large share of the property value and you pay the rest as a down payment. The permitted loan-to-value ratio depends on the loan size and lender, so expect to arrange roughly 10% to 25% of the property value yourself, plus registration and other costs."
+      },
+      {
+        "question": "Is it better to buy a ready-to-move or an under-construction flat?",
+        "answer": "Ready-to-move homes let you inspect exactly what you are buying and avoid construction delay risk. Under-construction homes are often priced lower but carry timeline risk and GST. Read our ready-to-move vs under-construction comparison to decide."
+      },
+      {
+        "question": "What documents are needed to buy a house?",
+        "answer": "Typically the sale deed or allotment letter, title documents of previous owners, encumbrance certificate, approved building plan, RERA certificate for new projects, property-tax receipts, and the society no-dues certificate for resale flats."
+      }
+    ],
+    "related": ["home-loan-eligibility-emi-explained", "property-documents-checklist-before-buying", "how-to-check-rera-registration"]
+  },
+  {
+    "slug": "ready-to-move-vs-under-construction",
+    "title": "Ready-to-Move vs Under-Construction Flats: Which Should You Buy?",
+    "description": "Ready-to-move or under-construction? Compare price, GST, risk, possession and loan implications to pick the right flat for your situation.",
+    "category": "Buying Guides",
+    "cover": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "It is one of the most common questions buyers ask: should I buy a flat that is already built, or book one that is still under construction? There is no single right answer — it depends on your budget, timeline and risk appetite.",
+    "sections": [
+      {
+        "heading": "What does ready-to-move mean?",
+        "body": [
+          "A ready-to-move flat is a completed home for which the builder has received the completion or occupancy certificate. You can inspect it, and in most cases move in soon after registration."
+        ]
+      },
+      {
+        "heading": "Side-by-side comparison",
+        "table": {
+          "head": ["Factor", "Ready-to-move", "Under-construction"],
+          "rows": [
+            ["Possession", "Immediate or within weeks", "Waits for construction — dates can slip"],
+            ["What you see", "The actual flat and society", "A sample flat, brochure and plans"],
+            ["Price", "Usually higher per sq. ft.", "Often lower at launch, rising with progress"],
+            ["GST", "Generally not applicable with a completion certificate", "GST applies on the construction component"],
+            ["Loan", "Full disbursement at registration", "Staged disbursement, EMI can start with pre-EMI"],
+            ["Main risk", "Ageing / resale condition", "Delay, change in specs, developer risk"]
+          ]
+        }
+      },
+      {
+        "heading": "When ready-to-move makes sense",
+        "body": ["You need a home soon, you are paying rent alongside your EMI, or you want certainty about what you are buying."]
+      },
+      {
+        "heading": "When under-construction can make sense",
+        "body": [
+          "You have time, want a lower entry price or a payment plan linked to construction, and you are willing to research the developer thoroughly. In that case, only consider RERA-registered projects and track the project on the RERA portal."
+        ]
+      },
+      {
+        "heading": "Questions to ask before deciding",
+        "list": [
+          "Is the project RERA registered, and what is the promised completion date?",
+          "What is the developer's record on delivering earlier projects on time?",
+          "How much extra will I pay in GST, stamp duty and other charges?",
+          "Can I afford both rent and EMI if possession is delayed?"
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Is GST applicable on ready-to-move flats?",
+        "answer": "GST is generally charged on under-construction properties, while a completed flat sold after the completion certificate is issued is generally outside GST. Rules can change, so confirm the current position with your CA or the builder."
+      },
+      {
+        "question": "Are ready-to-move flats safer?",
+        "answer": "They remove construction-delay risk, but you still need to verify title, dues and the completion or occupancy certificate before you pay."
+      }
+    ],
+    "related": ["first-time-home-buyer-guide-india", "how-to-check-rera-registration", "stamp-duty-registration-charges-explained"]
+  },
+  {
+    "slug": "how-to-check-rera-registration",
+    "title": "How to Check RERA Registration of a Project or Agent (Step-by-Step)",
+    "description": "Learn how to verify a RERA-registered project, builder and real estate agent on your state RERA portal before you pay a token amount.",
+    "category": "Legal & RERA",
+    "cover": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "The Real Estate (Regulation and Development) Act, 2016 — RERA — was created to make property transactions more transparent. Checking a RERA registration takes a few minutes and is one of the most useful things you can do before booking a home.",
+    "sections": [
+      {
+        "heading": "What is RERA?",
+        "body": [
+          "RERA requires most new residential and commercial projects above a size threshold to be registered with the state's Real Estate Regulatory Authority, and to publish key details: layout, approvals, timelines, and quarterly progress. Real estate agents who broker deals in a project are also required to register in their state."
+        ]
+      },
+      {
+        "heading": "Steps to verify a project",
+        "list": [
+          "Ask the builder or agent for the project's RERA registration number.",
+          "Open the RERA website of the state where the project is located (for example UP-RERA for Noida, Greater Noida and Ghaziabad, HRERA for Gurugram, or the RERA authority of the relevant state).",
+          "Search the registration number or project name in the 'registered projects' section.",
+          "Check the promoter name, registration validity, proposed completion date, sanctioned plan and any complaints.",
+          "Match the details with your allotment letter or agreement — name, project and unit."
+        ],
+        "ordered": true
+      },
+      {
+        "heading": "Checking a real estate agent",
+        "body": [
+          "State RERA portals also publish a list of registered agents. Ask an agent for their RERA registration number and match it on the portal before you pay any brokerage."
+        ]
+      },
+      {
+        "heading": "Red flags",
+        "list": [
+          "A number that does not appear on the state portal, or belongs to a different project.",
+          "Registration that has lapsed or a completion date that has already passed with no extension.",
+          "Pressure to pay a large token amount before you have seen documents.",
+          "Advertised details that differ from the RERA-registered plan."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Do resale flats need RERA registration?",
+        "answer": "RERA mainly covers new projects. For resale flats, the project's original registration may still be relevant, but you should focus on title documents, the occupancy certificate and society dues."
+      },
+      {
+        "question": "Where do I find the RERA number for a project?",
+        "answer": "The number should be printed on the builder's brochure, agreement and website, and it must be searchable on the state RERA portal."
+      }
+    ],
+    "related": ["property-documents-checklist-before-buying", "ready-to-move-vs-under-construction", "how-to-choose-property-dealer-delhi-ncr"]
+  },
+  {
+    "slug": "home-loan-eligibility-emi-explained",
+    "title": "Home Loan Eligibility & EMI Explained: How Much Can You Borrow?",
+    "description": "Understand home loan eligibility, EMI, loan-to-value, FOIR and credit score — and how to estimate your property budget before you apply.",
+    "category": "Home Loans",
+    "cover": "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "A home loan decides how much home you can buy. Banks look at your income, existing obligations, credit history and the property itself. Knowing how they think helps you plan a budget that works.",
+    "sections": [
+      {
+        "heading": "What is an EMI?",
+        "body": [
+          "EMI (Equated Monthly Instalment) is the fixed amount you repay every month. It depends on three things: the loan amount, the interest rate and the tenure. A longer tenure lowers the EMI but increases the total interest you pay."
+        ]
+      },
+      {
+        "heading": "What banks check for eligibility",
+        "list": [
+          "Income and stability of employment or business.",
+          "Existing EMIs and credit-card dues (often summarised as FOIR — fixed obligations to income ratio).",
+          "Credit score and repayment history — a score of about 750 or higher generally helps.",
+          "Age, remaining working years and the chosen tenure.",
+          "The property's legal status and market valuation."
+        ]
+      },
+      {
+        "heading": "Loan-to-value (LTV) and your down payment",
+        "body": [
+          "Lenders fund only a part of the property's value. The maximum share depends on the loan size and the lender's policy, so you must arrange the remainder as a down payment. Registration, stamp duty and other costs are usually paid from your own funds on top of that."
+        ]
+      },
+      {
+        "heading": "A simple way to estimate your budget",
+        "body": [
+          "Take the EMI you can comfortably pay — many people target around 40% of monthly income for all EMIs combined — and calculate the loan it supports at the current interest rate and your preferred tenure. Add your down payment to get a realistic property price. The budget calculator on our home page does exactly this.",
+          "Interest rates change, so treat any estimate as a starting point and confirm the final offer with your bank."
+        ]
+      },
+      {
+        "heading": "Ways to reduce your interest cost",
+        "list": [
+          "Make a larger down payment.",
+          "Prepay part of the loan whenever you have surplus funds, subject to your lender's terms.",
+          "Compare offers from more than one bank and check processing fees, not just the rate.",
+          "Improve your credit score before applying."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "How much home loan can I get on a salary of ₹1,00,000 per month?",
+        "answer": "It depends on your existing obligations, age, tenure, interest rate and credit history. As a rough guide, if you plan to keep total EMIs near 40% of income, that is about ₹40,000 per month towards EMIs — use the EMI calculator to see the loan that supports."
+      },
+      {
+        "question": "Should I choose a longer tenure?",
+        "answer": "A longer tenure gives a smaller EMI but costs more interest overall. Many buyers pick a tenure they can afford and then prepay when possible."
+      }
+    ],
+    "related": ["first-time-home-buyer-guide-india", "stamp-duty-registration-charges-explained", "ready-to-move-vs-under-construction"]
+  },
+  {
+    "slug": "stamp-duty-registration-charges-explained",
+    "title": "Stamp Duty & Registration Charges When Buying Property in India",
+    "description": "What stamp duty and registration charges are, how they are calculated, why they differ by state, and how to budget for them.",
+    "category": "Legal & RERA",
+    "cover": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "On top of the price you agree with the seller, the government charges stamp duty and registration fees when a property changes hands. These are a meaningful part of your total cost, so they belong in your budget from day one.",
+    "sections": [
+      {
+        "heading": "What are stamp duty and registration charges?",
+        "body": [
+          "Stamp duty is a state tax paid on the transfer document (sale deed). Registration charges are a separate fee paid to register that document with the sub-registrar. Once the deed is registered, the transfer becomes legally recorded."
+        ]
+      },
+      {
+        "heading": "Why the amount differs",
+        "body": [
+          "Property is a state subject, so each state sets its own rates. The rate can also depend on the property's value, the circle rate (the government's minimum valuation for an area), the buyer profile — some states offer a concession for women buyers — and whether the property is urban or rural.",
+          "Because these rules are revised from time to time, always confirm the current rates on your state's stamps and registration department website before you finalise your budget."
+        ]
+      },
+      {
+        "heading": "How to estimate the cost",
+        "list": [
+          "Find the higher of the agreement value and the circle-rate value for the property.",
+          "Multiply by the state's stamp-duty percentage.",
+          "Add the registration fee, which is often a smaller percentage or capped amount.",
+          "Add legal and documentation charges if you use a lawyer."
+        ],
+        "ordered": true
+      },
+      {
+        "heading": "Other costs to budget for",
+        "list": [
+          "GST on under-construction properties.",
+          "Loan processing and valuation fees.",
+          "Society transfer fee or maintenance deposit on resale flats.",
+          "Brokerage, if applicable.",
+          "Interiors, moving and utility deposits."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Who pays stamp duty — buyer or seller?",
+        "answer": "In a sale, the buyer normally pays the stamp duty and registration charges unless the parties agree otherwise in writing."
+      },
+      {
+        "question": "Can stamp duty be included in a home loan?",
+        "answer": "Most lenders do not finance stamp duty and registration; you generally need to pay these from your own funds. Check with your bank."
+      }
+    ],
+    "related": ["first-time-home-buyer-guide-india", "home-loan-eligibility-emi-explained", "property-documents-checklist-before-buying"]
+  },
+  {
+    "slug": "property-documents-checklist-before-buying",
+    "title": "Property Documents Checklist: What to Verify Before You Pay",
+    "description": "A practical checklist of documents to verify before buying a flat or house in India — title, encumbrance certificate, approvals, RERA and society records.",
+    "category": "Legal & RERA",
+    "cover": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "Most property disputes start with paperwork that was never checked. Use this checklist before you pay a token amount or sign an agreement. If anything is missing or unclear, ask a property lawyer to review it.",
+    "sections": [
+      {
+        "heading": "Ownership and title",
+        "list": [
+          "Sale deed or allotment / builder-buyer agreement in the seller's name.",
+          "Chain of title — earlier sale deeds showing how the property reached the current owner.",
+          "Encumbrance certificate for a suitable period, showing no pending mortgage or claim.",
+          "Mutation / name-transfer records where applicable."
+        ]
+      },
+      {
+        "heading": "Approvals and compliance",
+        "list": [
+          "Sanctioned building plan and layout approval.",
+          "Completion or occupancy certificate for ready homes.",
+          "RERA registration certificate for new projects — verify it on the state portal.",
+          "Land-use and, for plots, the correct zoning."
+        ]
+      },
+      {
+        "heading": "Dues and society records",
+        "list": [
+          "Latest property-tax receipts and electricity / water bills.",
+          "Society no-objection and no-dues certificate for resale flats.",
+          "Maintenance status and any pending litigation involving the society or builder."
+        ]
+      },
+      {
+        "heading": "Identity and payments",
+        "list": [
+          "Seller's identity and address proof matched to the ownership documents.",
+          "Payments made by bank transfer with proper receipts.",
+          "Original documents shown before final payment — not just photocopies."
+        ]
+      },
+      {
+        "heading": "When in doubt",
+        "body": [
+          "A short legal opinion from a property lawyer costs far less than a dispute. Do not rush into a decision because of a 'limited-time' offer — genuine properties will still be there after you have verified the paperwork."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "What is an encumbrance certificate?",
+        "answer": "It is an official record showing whether a property has any registered transactions or liabilities, such as a mortgage, for a specified period."
+      },
+      {
+        "question": "Is an agreement to sell enough to own the property?",
+        "answer": "No. Ownership transfers through a registered sale deed after payment of the applicable stamp duty and registration charges."
+      }
+    ],
+    "related": ["how-to-check-rera-registration", "stamp-duty-registration-charges-explained", "first-time-home-buyer-guide-india"]
+  },
+  {
+    "slug": "how-to-choose-property-dealer-delhi-ncr",
+    "title": "How to Choose a Trusted Property Dealer in Delhi NCR",
+    "description": "How to pick a reliable property dealer or real estate consultant in Delhi NCR — RERA registration, transparency, references and red flags to avoid.",
+    "category": "Buying Guides",
+    "cover": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200",
+    "date": "2026-09-21",
+    "updated": "2026-09-21",
+    "intro": "Whether you are searching in Noida, Gurugram, Ghaziabad or Delhi, a good property dealer saves time and helps you avoid costly mistakes — a bad one can do the opposite. Here is how to tell them apart.",
+    "sections": [
+      {
+        "heading": "1. Check their RERA agent registration",
+        "body": [
+          "Real estate agents who broker deals in RERA-registered projects are required to register with the state RERA authority. Ask for the registration number and verify it on the official portal."
+        ]
+      },
+      {
+        "heading": "2. Look for a real business presence",
+        "list": [
+          "A working website with a real address, phone number and email.",
+          "Named people — leadership and agents you can actually speak to.",
+          "A track record you can verify: reviews on independent platforms and references from past clients."
+        ]
+      },
+      {
+        "heading": "3. Expect transparency about money",
+        "body": [
+          "A trustworthy dealer explains their brokerage or service fee up front, gives you a written record, and never asks for cash payments or 'off-the-record' arrangements."
+        ]
+      },
+      {
+        "heading": "4. Watch how they handle your questions",
+        "list": [
+          "They share the RERA number, documents and full price breakup without hesitation.",
+          "They show you options that fit your budget rather than only the most expensive ones.",
+          "They do not pressure you with false urgency."
+        ]
+      },
+      {
+        "heading": "5. Red flags",
+        "list": [
+          "Refusing to share a RERA number or ownership documents.",
+          "Photos or prices that change once you visit.",
+          "Requests for a large advance before you have seen paperwork."
+        ]
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Do I have to pay brokerage to a property dealer?",
+        "answer": "Brokerage depends on the dealer's terms and the type of transaction. Agree on the amount and when it is payable in writing before you start."
+      },
+      {
+        "question": "Should I use a dealer or buy directly from the builder?",
+        "answer": "Both can work. A good consultant helps you compare projects and negotiate, while buying directly can be simpler for a single known project. Verify RERA registration either way."
+      }
+    ],
+    "related": ["how-to-check-rera-registration", "property-documents-checklist-before-buying", "first-time-home-buyer-guide-india"]
+  }
+]

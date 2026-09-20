@@ -33,7 +33,9 @@ export default function ManageInquiries() {
                 <img src={property.images[0]} alt="" className="w-full md:w-24 h-16 rounded-[12px] object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{property?.title ?? 'Property removed'}</p>
+                <p className="font-semibold truncate">
+                  {inq.propertyId ? (property?.title ?? 'Property removed') : 'General enquiry (contact form)'}
+                </p>
                 <p className="text-secondary text-sm truncate flex items-center gap-1.5">
                   {[inq.userName, inq.userEmail, inq.phone].filter(Boolean).join(' · ')}
                   {inq.phoneVerified && (

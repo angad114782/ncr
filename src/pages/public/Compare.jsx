@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Check, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
+import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 
 const rows = [
@@ -25,6 +26,7 @@ export default function Compare() {
   if (items.length < 2) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">
+        <Seo title="Compare Properties" path="/compare" noindex />
         <p className="text-secondary mb-4">Select at least 2 properties to compare. Use the compare icon on any property card.</p>
         <GlassButton onClick={() => navigate('/listings')}>Browse Listings</GlassButton>
       </GlassCard>
@@ -35,6 +37,7 @@ export default function Compare() {
 
   return (
     <div className="pb-16">
+      <Seo title="Compare Properties" path="/compare" noindex />
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Compare Properties</h1>
 
       <div className="overflow-x-auto">

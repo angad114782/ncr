@@ -19,7 +19,15 @@ const links = [
     ],
   },
   { to: '/agents', label: 'Agents' },
-  { to: '/about', label: 'About' },
+  {
+    to: '/about',
+    label: 'About',
+    children: [
+      { to: '/about', label: 'About Us' },
+      { to: '/team', label: 'Our Team' },
+    ],
+  },
+  { to: '/blog', label: 'Blog' },
   { to: '/contact', label: 'Contact' },
 ]
 
@@ -51,7 +59,8 @@ export default function Navbar({ onAuthOpen }) {
       initial={{ y: -30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 24 }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-6xl"
+      className="fixed left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-6xl"
+      style={{ top: 'calc(1rem + var(--banner-h, 0px))' }}
     >
       <div
         className={`glass-strong rounded-[24px] px-5 py-3 flex items-center justify-between transition-all ${
