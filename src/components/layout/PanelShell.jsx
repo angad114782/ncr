@@ -10,12 +10,12 @@ import { useAuth } from '../../context/AuthContext'
 import Avatar from '../common/Avatar'
 
 export default function PanelShell({ title, navItems }) {
-  const { user, isAdmin, logout } = useAuth()
+  const { user, isAdmin, isAgent, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { company } = useSettings()
   const storageErrors = useStorageErrors()
-  const profilePath = isAdmin ? '/admin/profile' : '/dashboard/profile'
+  const profilePath = isAdmin ? '/admin/profile' : isAgent ? '/agent/profile' : '/dashboard/profile'
 
   const handleLogout = () => {
     logout()

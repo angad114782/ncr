@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Search, SlidersHorizontal, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassInput from '../../components/glass/GlassInput'
 import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
 import Seo from '../../components/layout/Seo'
+import NotFound from './NotFound'
+import { scrollToY } from '../../utils/smoothScroll'
 import ListingsSeoContent from '../../components/listings/ListingsSeoContent'
 import { buildListingsFaqs, summariseLocalities } from '../../utils/listingsSeo'
 import { useData } from '../../context/DataContext'
+import { useInterest } from '../../context/InterestContext'
 import { useSettings } from '../../context/SettingsContext'
-import { SITE_URL, breadcrumbLd, faqLd, formatPriceShort, listingsHeading, listingsPath } from '../../utils/seo'
+import { SITE_URL, breadcrumbLd, faqLd, formatPriceShort, listingsHeading, listingsPath, propertyPath, resolveListingsSegments } from '../../utils/seo'
 
 const PAGE_SIZE = 6
 
@@ -22,6 +25,27 @@ const sortOptions = [
 ]
 
 const BHK_OPTIONS = ['1', '2', '3', '4']
+
+/** Pagination is real links (`?page=N`) so crawlers can walk every page of results. */
+function PageLink({ to, children, current, disabled, rel, label }) {
+  const base = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium spring'
+  if (disabled) {
+    return <span aria-disabled="true" aria-label={label} className={`${base} glass opacity-30`}>{children}</span>
+  }
+  return (
+    <Link
+      to={to}
+      rel={rel}
+      aria-label={label}
+      aria-current={current ? 'page' : undefined}
+      state={{ keepScroll: true }}
+      onClick={() => scrollToY(0)}
+      className={`${base} ${current ? 'glass-strong text-[var(--color-accent)]' : 'glass text-secondary hover:scale-105'}`}
+    >
+      {children}
+    </Link>
+  )
+}
 
 /**
  * Text inputs whose value lives in the URL (?q=, ?maxPrice=) must not be driven by the URL
@@ -54,43 +78,81 @@ function useUrlField(urlValue, push, delay = 250) {
   return [text, setText]
 }
 
-export default function Listings() {
+/** Path + the non-category query bits (search text, price cap) that ride along on every URL. */
+function withExtras(base, { q, maxPrice }) {
+  const extra = new URLSearchParams()
+  if (q) extra.set('q', q)
+  if (maxPrice) extra.set('maxPrice', maxPrice)
+  const s = extra.toString()
+  return s ? `${base}${base.includes('?') ? '&' : '?'}${s}` : base
+}
+
+/**
+ * /buy, /buy/mumbai, /rent/pune/3-bhk … are the real, indexable landing pages; /listings is the
+ * catch-all. Filters come from the path (route `purpose` + :a/:b segments) with possession, page,
+ * search text and price cap in the query string. Old /listings?purpose=Buy&city=… links redirect
+ * to their clean URL.
+ */
+export default function Listings({ purpose: routePurpose = '' }) {
+  const { a, b } = useParams()
+  const [params] = useSearchParams()
+  const { cities, propertyTypes: types } = useSettings()
+
+  if (!routePurpose) {
+    const legacy = params.get('purpose')
+    if (legacy === 'Buy' || legacy === 'Rent') {
+      const to = withExtras(
+        listingsPath({
+          purpose: legacy,
+          city: params.get('city') || '',
+          type: params.get('type') || '',
+          beds: params.get('beds') || '',
+          possession: params.get('possession') || '',
+        }, Math.max(1, Number(params.get('page')) || 1)),
+        { q: params.get('q') || '', maxPrice: params.get('maxPrice') || '' },
+      )
+      return <Navigate to={to} replace state={{ keepScroll: true }} />
+    }
+  }
+
+  const resolved = routePurpose ? resolveListingsSegments({ purpose: routePurpose === 'Buy' ? 'Buy' : 'Rent', a, b }, cities, types) : {}
+  if (!resolved) return <NotFound />
+
+  const filters = {
+    purpose: resolved.purpose || '',
+    city: resolved.city || (!routePurpose ? params.get('city') || '' : ''),
+    type: resolved.type || (!routePurpose ? params.get('type') || '' : ''),
+    beds: resolved.beds || params.get('beds') || '',
+    possession: params.get('possession') || '',
+  }
+  return <ListingsView filters={filters} />
+}
+
+function ListingsView({ filters }) {
   const { activeProperties: properties } = useData()
   const { cities, propertyTypes: types, siteContent, company } = useSettings()
-  const [params, setParams] = useSearchParams()
+  const [params] = useSearchParams()
+  const navigate = useNavigate()
   const [view, setView] = useState('grid')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [sort, setSort] = useState('newest')
 
-  const purpose = params.get('purpose') || ''
-  const city = params.get('city') || ''
-  const type = params.get('type') || ''
-  const beds = params.get('beds') || ''
-  const possession = params.get('possession') || ''
+  const { track } = useInterest()
+  const { purpose, city, type, beds, possession } = filters
   const q = params.get('q') || ''
   const maxPrice = params.get('maxPrice') || ''
   const requestedPage = Math.max(1, Number(params.get('page')) || 1)
 
-  // Changing any filter drops the page param so results never land on an
-  // out-of-range page (the page lives in the URL, not in component state).
-  const updateParam = (key, value, options = {}) => {
-    const next = new URLSearchParams(params)
-    if (value) next.set(key, value)
-    else next.delete(key)
-    next.delete('page')
-    setParams(next, { state: { keepScroll: true }, ...options })
-  }
+  /** URL for a set of filters (keeping search text / price cap unless overridden). */
+  const urlFor = (next, { page: nextPage = 1, ...extras } = {}) =>
+    withExtras(listingsPath(next, nextPage), { q, maxPrice, ...extras })
 
-  const [qText, setQText] = useUrlField(q, (v) => updateParam('q', v, { replace: true }))
-  const [maxPriceText, setMaxPriceText] = useUrlField(maxPrice, (v) => updateParam('maxPrice', v, { replace: true }))
+  // Changing a filter navigates to that filter's clean URL — and drops the page so results never
+  // land on an out-of-range page.
+  const updateFilter = (key, value) => navigate(urlFor({ ...filters, [key]: value }), { state: { keepScroll: true } })
 
-  const setPage = (n) => {
-    const next = new URLSearchParams(params)
-    if (n > 1) next.set('page', String(n))
-    else next.delete('page')
-    setParams(next, { state: { keepScroll: true } })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  const [qText, setQText] = useUrlField(q, (v) => navigate(urlFor(filters, { q: v }), { replace: true, state: { keepScroll: true } }))
+  const [maxPriceText, setMaxPriceText] = useUrlField(maxPrice, (v) => navigate(urlFor(filters, { maxPrice: v }), { replace: true, state: { keepScroll: true } }))
 
   const filtered = useMemo(() => {
     const result = properties.filter((p) => {
@@ -116,6 +178,13 @@ export default function Listings() {
     return sorted
   }, [properties, purpose, city, type, beds, possession, q, maxPrice, sort])
 
+  // Remember what they searched for (after they stop changing filters for a moment).
+  useEffect(() => {
+    if (!purpose && !city && !type && !beds && !q && !maxPrice) return undefined
+    const t = setTimeout(() => track('search', { purpose, city, type, beds, maxPrice, q }), 1500)
+    return () => clearTimeout(t)
+  }, [purpose, city, type, beds, q, maxPrice, track])
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const page = Math.min(requestedPage, totalPages)
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -123,7 +192,6 @@ export default function Listings() {
   const activeFilterCount = [purpose, city, type, beds, possession, maxPrice].filter(Boolean).length
 
   // ---- SEO ----
-  const filters = { purpose, city, type, beds, possession }
   const heading = listingsHeading(filters)
   const prices = filtered.map((p) => p.price).filter((n) => n > 0)
   const priceText = prices.length ? ` from ${formatPriceShort(Math.min(...prices))} to ${formatPriceShort(Math.max(...prices))}` : ''
@@ -138,8 +206,9 @@ export default function Listings() {
   const jsonLd = [
     breadcrumbLd([
       { name: 'Home', path: '/' },
-      { name: 'Listings', path: '/listings' },
-      ...(city || type || beds || possession || purpose ? [{ name: heading, path }] : []),
+      { name: purpose === 'Rent' ? 'Rent' : purpose === 'Buy' ? 'Buy' : 'Listings', path: purpose ? listingsPath({ purpose }) : '/listings' },
+      ...(city && (type || beds) ? [{ name: `${purpose === 'Rent' ? 'Rent' : 'Buy'} in ${city}`, path: listingsPath({ purpose, city }) }] : []),
+      ...(city || type || beds || possession ? [{ name: heading, path }] : []),
     ]),
     {
       '@context': 'https://schema.org',
@@ -149,7 +218,7 @@ export default function Listings() {
       itemListElement: paginated.map((p, i) => ({
         '@type': 'ListItem',
         position: (page - 1) * PAGE_SIZE + i + 1,
-        url: `${SITE_URL}/property/${p.id}`,
+        url: `${SITE_URL}${propertyPath(p)}`,
         name: p.title,
       })),
     },
@@ -177,7 +246,7 @@ export default function Listings() {
               {activeFilterCount > 0 && (
                 <button
                   className="text-xs text-[var(--color-accent)] font-medium"
-                  onClick={() => setParams({}, { state: { keepScroll: true } })}
+                  onClick={() => navigate('/listings', { state: { keepScroll: true } })}
                 >
                   Clear all
                 </button>
@@ -198,7 +267,7 @@ export default function Listings() {
                   {['Buy', 'Rent'].map((p) => (
                     <button
                       key={p}
-                      onClick={() => updateParam('purpose', purpose === p ? '' : p)}
+                      onClick={() => updateFilter('purpose', purpose === p ? '' : p)}
                       className={`flex-1 py-2 rounded-[12px] text-sm font-medium spring ${
                         purpose === p ? 'glass-strong text-[var(--color-accent)]' : 'glass-weak text-secondary'
                       }`}
@@ -209,7 +278,7 @@ export default function Listings() {
                 </div>
               </div>
 
-              <GlassInput as="select" icon={MapPin} label="City" value={city} onChange={(e) => updateParam('city', e.target.value)}>
+              <GlassInput as="select" icon={MapPin} label="City" value={city} onChange={(e) => updateFilter('city', e.target.value)}>
                 <option value="">All Cities</option>
                 {cities.map((c) => <option key={c} value={c}>{c}</option>)}
               </GlassInput>
@@ -220,7 +289,7 @@ export default function Listings() {
                   {BHK_OPTIONS.map((n) => (
                     <button
                       key={n}
-                      onClick={() => updateParam('beds', beds === n ? '' : n)}
+                      onClick={() => updateFilter('beds', beds === n ? '' : n)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium spring ${
                         beds === n ? 'glass-strong text-[var(--color-accent)]' : 'glass-weak text-secondary'
                       }`}
@@ -237,7 +306,7 @@ export default function Listings() {
                   {types.map((t) => (
                     <button
                       key={t}
-                      onClick={() => updateParam('type', type === t ? '' : t)}
+                      onClick={() => updateFilter('type', type === t ? '' : t)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium spring ${
                         type === t ? 'glass-strong text-[var(--color-accent)]' : 'glass-weak text-secondary'
                       }`}
@@ -254,7 +323,7 @@ export default function Listings() {
                   {siteContent.options.possession.map((o) => (
                     <button
                       key={o}
-                      onClick={() => updateParam('possession', possession === o ? '' : o)}
+                      onClick={() => updateFilter('possession', possession === o ? '' : o)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium spring ${
                         possession === o ? 'glass-strong text-[var(--color-accent)]' : 'glass-weak text-secondary'
                       }`}
@@ -298,7 +367,7 @@ export default function Listings() {
               </GlassButton>
               <select
                 value={sort}
-                onChange={(e) => { setSort(e.target.value); setPage(1) }}
+                onChange={(e) => setSort(e.target.value)}
                 aria-label="Sort properties"
                 className="glass rounded-full px-4 py-2.5 text-sm outline-none"
               >
@@ -338,35 +407,19 @@ export default function Listings() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    aria-label="Previous page"
-                    className="glass w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-30 spring hover:scale-105"
-                  >
+                <nav aria-label="Pagination" className="flex items-center justify-center gap-2 mt-8">
+                  <PageLink to={urlFor(filters, { page: page - 1 })} disabled={page === 1} rel="prev" label="Previous page">
                     <ChevronLeft size={16} />
-                  </button>
+                  </PageLink>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setPage(n)}
-                      className={`w-10 h-10 rounded-full text-sm font-medium spring ${
-                        page === n ? 'glass-strong text-[var(--color-accent)]' : 'glass text-secondary'
-                      }`}
-                    >
+                    <PageLink key={n} to={urlFor(filters, { page: n })} current={page === n} label={`Page ${n}`}>
                       {n}
-                    </button>
+                    </PageLink>
                   ))}
-                  <button
-                    disabled={page === totalPages}
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    aria-label="Next page"
-                    className="glass w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-30 spring hover:scale-105"
-                  >
+                  <PageLink to={urlFor(filters, { page: page + 1 })} disabled={page === totalPages} rel="next" label="Next page">
                     <ChevronRight size={16} />
-                  </button>
-                </div>
+                  </PageLink>
+                </nav>
               )}
             </>
           )}

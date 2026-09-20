@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Check, IndianRupee, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react'
 import GlassInput from '../glass/GlassInput'
@@ -30,6 +30,12 @@ export default function LeadForm({ property }) {
     budget: budgetOptions[0] ?? '',
     message: '',
   })
+  // The signed-in user is loaded right after the first render — fill blanks in when it arrives.
+  useEffect(() => {
+    if (!user) return
+    setForm((f) => ({ ...f, name: f.name || user.name || '', phone: f.phone || user.phone || '', email: f.email || user.email || '' }))
+  }, [user])
+
   const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(''))
   const [sentOtp, setSentOtp] = useState('')
   const [error, setError] = useState('')

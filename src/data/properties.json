@@ -1,6 +1,7 @@
 [
   {
     "id": "p1",
+    "slug": "sea-facing-3bhk-apartment",
     "title": "Sea-Facing 3BHK Apartment",
     "type": "Apartment",
     "purpose": "Buy",
@@ -66,6 +67,7 @@
   },
   {
     "id": "p2",
+    "slug": "modern-2bhk-rental-flat",
     "title": "Modern 2BHK Rental Flat",
     "type": "Apartment",
     "purpose": "Rent",
@@ -123,6 +125,7 @@
   },
   {
     "id": "p3",
+    "slug": "luxury-villa-with-private-garden",
     "title": "Luxury Villa with Private Garden",
     "type": "Villa",
     "purpose": "Buy",
@@ -182,6 +185,7 @@
   },
   {
     "id": "p4",
+    "slug": "compact-studio-apartment",
     "title": "Compact Studio Apartment",
     "type": "Studio",
     "purpose": "Rent",
@@ -231,6 +235,7 @@
   },
   {
     "id": "p5",
+    "slug": "commercial-office-space",
     "title": "Commercial Office Space",
     "type": "Commercial",
     "purpose": "Rent",
@@ -282,6 +287,7 @@
   },
   {
     "id": "p6",
+    "slug": "riverside-4bhk-penthouse",
     "title": "Riverside 4BHK Penthouse",
     "type": "Penthouse",
     "purpose": "Buy",
@@ -341,6 +347,7 @@
   },
   {
     "id": "p7",
+    "slug": "affordable-1bhk-flat",
     "title": "Affordable 1BHK Flat",
     "type": "Apartment",
     "purpose": "Buy",
@@ -393,6 +400,7 @@
   },
   {
     "id": "p8",
+    "slug": "independent-house-with-terrace",
     "title": "Independent House with Terrace",
     "type": "House",
     "purpose": "Rent",
@@ -448,6 +456,7 @@
   },
   {
     "id": "p9",
+    "slug": "lakeview-2bhk-in-powai",
     "title": "Lakeview 2BHK in Powai",
     "type": "Apartment",
     "purpose": "Rent",
@@ -504,6 +513,7 @@
   },
   {
     "id": "p10",
+    "slug": "whitefield-garden-villa",
     "title": "Whitefield Garden Villa",
     "type": "Villa",
     "purpose": "Buy",
@@ -562,6 +572,7 @@
   },
   {
     "id": "p11",
+    "slug": "dwarka-sector-12-apartment",
     "title": "Dwarka Sector 12 Apartment",
     "type": "Apartment",
     "purpose": "Buy",
@@ -617,6 +628,7 @@
   },
   {
     "id": "p12",
+    "slug": "gachibowli-tech-residency",
     "title": "Gachibowli Tech Residency",
     "type": "Apartment",
     "purpose": "Rent",
@@ -673,6 +685,7 @@
   },
   {
     "id": "p13",
+    "slug": "andheri-east-2bhk-apartment",
     "title": "Andheri East 2BHK Apartment",
     "type": "Apartment",
     "purpose": "Buy",
@@ -728,6 +741,7 @@
   },
   {
     "id": "p14",
+    "slug": "koramangala-2bhk-apartment",
     "title": "Koramangala 2BHK Apartment",
     "type": "Apartment",
     "purpose": "Buy",

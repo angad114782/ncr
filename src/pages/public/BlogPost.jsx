@@ -1,14 +1,17 @@
 import { Link, useParams } from 'react-router-dom'
-import { ArrowRight, CalendarClock, Clock } from 'lucide-react'
+import { ArrowRight, CalendarClock, Clock, Sparkles } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import Seo from '../../components/layout/Seo'
 import BlogBody from '../../components/blog/BlogBody'
+import Img from '../../components/common/Img'
+import AutoLinkedText from '../../components/common/AutoLinkedText'
+import ExploreLinks from '../../components/common/ExploreLinks'
 import CeoAvatar from '../../components/company/CeoAvatar'
 import NotFound from './NotFound'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
-import { formatDate, readingMinutes } from '../../utils/blog'
+import { formatDate, readingMinutes, relatedPosts } from '../../utils/blog'
 import { extractHeadings } from '../../utils/blogBody'
 import { SITE_URL, breadcrumbLd, crawlableImage, faqLd, personLd } from '../../utils/seo'
 
@@ -19,7 +22,11 @@ export default function BlogPost() {
   const post = activeBlogPosts.find((p) => p.slug === slug)
   if (!post) return <NotFound />
 
-  const related = (post.related ?? []).map((s) => activeBlogPosts.find((p) => p.slug === s)).filter(Boolean)
+  // Hand-picked related guides first, topped up automatically from the same category / shared keywords
+  // so every article always links to (and is linked from) others.
+  const related = relatedPosts(post, activeBlogPosts, 3)
+  const path = `/blog/${post.slug}`
+  const claims = new Map() // keyword → the text that linked it (each keyword links once per page)
   const url = `${SITE_URL}/blog/${post.slug}`
   const toc = extractHeadings(post.body)
   const authorName = post.author || company.ceo.name
@@ -36,6 +43,9 @@ export default function BlogPost() {
       '@type': 'BlogPosting',
       headline: post.title,
       description: post.description,
+      ...(post.summary ? { abstract: post.summary } : {}),
+      // Tells voice assistants and answer engines which parts to read out / quote.
+      speakable: { '@type': 'SpeakableSpecification', cssSelector: ['[data-speakable]'] },
       ...(crawlableImage(post.cover) ? { image: post.cover } : {}),
       datePublished: post.date,
       dateModified: post.updated || post.date,
@@ -80,9 +90,24 @@ export default function BlogPost() {
         </div>
       </header>
 
-      {post.cover && <img src={post.cover} alt={post.title} className="w-full h-56 md:h-80 object-cover rounded-[24px] mb-8" />}
+      {post.cover && <Img src={post.cover} alt={post.title} priority width={1200} height={630} sizes="(min-width:768px) 768px, 100vw" className="w-full h-56 md:h-80 object-cover rounded-[24px] mb-8" />}
 
-      {post.intro && <p className="text-lg text-secondary leading-relaxed mb-8">{post.intro}</p>}
+      {post.summary && (
+        <aside data-speakable aria-label="Quick answer" className="glass-strong rounded-[20px] p-5 mb-6 border-l-4 border-[var(--color-accent)]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)] flex items-center gap-1.5 mb-1.5">
+            <Sparkles size={13} /> Quick answer
+          </p>
+          <p className="leading-relaxed">
+            <AutoLinkedText text={post.summary} claims={claims} id="summary" currentPath={path} />
+          </p>
+        </aside>
+      )}
+
+      {post.intro && (
+        <p className="text-lg text-secondary leading-relaxed mb-8" {...(post.summary ? {} : { 'data-speakable': true })}>
+          <AutoLinkedText text={post.intro} claims={claims} id="intro" currentPath={path} />
+        </p>
+      )}
 
       {toc.length > 2 && (
         <GlassCard hover={false} className="p-5 mb-8">
@@ -97,7 +122,7 @@ export default function BlogPost() {
         </GlassCard>
       )}
 
-      <BlogBody body={post.body} media={post.media} />
+      <BlogBody body={post.body} media={post.media} currentPath={path} claims={claims} />
 
       {post.faqs?.length > 0 && (
         <section className="my-10">
@@ -106,7 +131,7 @@ export default function BlogPost() {
             {post.faqs.map((f) => (
               <GlassCard key={f.question} hover={false} className="p-5">
                 <h3 className="font-semibold mb-1.5">{f.question}</h3>
-                <p className="text-secondary text-sm leading-relaxed">{f.answer}</p>
+                <p className="text-secondary text-sm leading-relaxed"><AutoLinkedText text={f.answer} claims={claims} id={`faq-${f.question}`} currentPath={path} /></p>
               </GlassCard>
             ))}
           </div>
@@ -139,10 +164,12 @@ export default function BlogPost() {
         <h2 className="text-xl md:text-2xl font-bold mb-2">Ready to start your property search?</h2>
         <p className="text-secondary mb-5">Browse verified listings or talk to our team for free guidance.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/listings"><GlassButton className="w-full justify-center">Browse Listings <ArrowRight size={16} /></GlassButton></Link>
+          <Link to="/buy"><GlassButton className="w-full justify-center">Browse Listings <ArrowRight size={16} /></GlassButton></Link>
           <Link to="/contact"><GlassButton variant="glass" className="w-full justify-center">Talk to an Expert</GlassButton></Link>
         </div>
       </GlassCard>
+
+      <ExploreLinks text={`${post.title} ${post.summary ?? ''} ${post.intro ?? ''} ${post.body ?? ''}`} className="mb-12" />
 
       {related.length > 0 && (
         <section>

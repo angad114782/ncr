@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MessageCircle, Phone, ShieldCheck, X } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MessageCircle, Phone, ShieldCheck, X } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import Avatar from '../common/Avatar'
 import { useAuth } from '../../context/AuthContext'
@@ -18,11 +18,13 @@ const item = { hidden: { opacity: 0, x: 36 }, show: { opacity: 1, x: 0, transiti
  * element — a `fixed` child inside it would be sized to the navbar, not the screen.
  */
 export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFocusRef }) {
-  const { user, isAdmin, logout } = useAuth()
+  const { user, isAdmin, isAgent, logout } = useAuth()
   const { whatsappConfig, company } = useSettings()
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(null)
   const closeRef = useRef(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, []) // portals need document — skip on the server
 
   // Lock the page behind the menu (CSS in index.css does the actual work).
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFoc
 
   const digits = whatsappConfig.displayPhone.replace(/\D/g, '')
   const go = (to) => { onClose(); navigate(to) }
+
+  if (!mounted) return null
 
   return createPortal(
     <AnimatePresence>
@@ -89,11 +93,11 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFoc
             </div>
 
             {user && (
-              <button onClick={() => go(isAdmin ? '/admin/profile' : '/dashboard/profile')} className="relative mx-5 mt-3 glass rounded-[20px] p-3 flex items-center gap-3 text-left">
+              <button onClick={() => go(isAdmin ? '/admin/profile' : isAgent ? '/agent/profile' : '/dashboard/profile')} className="relative mx-5 mt-3 glass rounded-[20px] p-3 flex items-center gap-3 text-left">
                 <Avatar src={user.avatar} name={user.name} className="w-11 h-11 rounded-full" />
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold truncate">Hi, {user.name.split(' ')[0]}</span>
-                  <span className="block text-tertiary text-xs">{isAdmin ? 'Administrator' : 'Your account'}</span>
+                  <span className="block text-tertiary text-xs">{isAdmin ? 'Administrator' : isAgent ? 'Property agent' : 'Your account'}</span>
                 </span>
                 <ChevronRight size={18} className="text-tertiary" />
               </button>
@@ -163,8 +167,8 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFoc
             <div className="sticky bottom-0 mt-6 px-5 pt-4 pb-5 bg-[var(--bg-base)]/85 backdrop-blur-xl border-t border-[var(--glass-border)] flex flex-col gap-3">
               {user ? (
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => go(isAdmin ? '/admin' : '/dashboard')} className="glass-strong rounded-full py-3.5 font-medium flex items-center justify-center gap-2">
-                    {isAdmin ? <ShieldCheck size={17} /> : <LayoutDashboard size={17} />} {isAdmin ? 'Admin' : 'Dashboard'}
+                  <button onClick={() => go(isAdmin ? '/admin' : isAgent ? '/agent' : '/dashboard')} className="glass-strong rounded-full py-3.5 font-medium flex items-center justify-center gap-2">
+                    {isAdmin ? <ShieldCheck size={17} /> : isAgent ? <Briefcase size={17} /> : <LayoutDashboard size={17} />} {isAdmin ? 'Admin' : isAgent ? 'Agent panel' : 'Dashboard'}
                   </button>
                   <button onClick={() => { logout(); onClose(); navigate('/') }} className="glass rounded-full py-3.5 font-medium flex items-center justify-center gap-2 text-[var(--color-danger)]">
                     <LogOut size={17} /> Sign out

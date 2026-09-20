@@ -1,26 +1,34 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useIsoLayoutEffect } from '../hooks/usePersistedState'
 
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
+  // First render = 'light' on the server and in the browser (matching HTML). The saved / system
+  // choice is applied before paint by the tiny inline script in index.html (no flash) and read
+  // here in a layout effect so the toggle icon is right.
+  const [theme, setTheme] = useState('light')
+  const [ready, setReady] = useState(false)
+
+  useIsoLayoutEffect(() => {
     try {
       const saved = localStorage.getItem('re-theme')
-      if (saved) return saved
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      setTheme(saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
     } catch {
-      return 'light'
+      /* keep light */
     }
-  })
+    setReady(true)
+  }, [])
 
   useEffect(() => {
+    if (!ready) return
     document.documentElement.setAttribute('data-theme', theme)
     try {
       localStorage.setItem('re-theme', theme)
     } catch {
       /* ignore */
     }
-  }, [theme])
+  }, [theme, ready])
 
   const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'))
 

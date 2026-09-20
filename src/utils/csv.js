@@ -3,6 +3,7 @@ import { isDataUrl, isImageLink } from './images'
 
 export const PROPERTY_CSV_COLUMNS = [
   'id',
+  'slug',
   'title',
   'type',
   'purpose',
@@ -40,6 +41,7 @@ const linksOnly = (list) => (list ?? []).filter((u) => !isDataUrl(u))
 function propertyToRow(p) {
   return {
     id: p.id,
+    slug: p.slug ?? '',
     title: p.title,
     type: p.type,
     purpose: p.purpose,
@@ -74,7 +76,7 @@ function propertyToRow(p) {
 
 export function buildPropertyTemplateCsv(buySample, rentSample) {
   // Blank ids: importing the template adds new listings instead of overwriting p1 / p2.
-  const rows = [propertyToRow(buySample), propertyToRow(rentSample)].map((r) => ({ ...r, id: '' }))
+  const rows = [propertyToRow(buySample), propertyToRow(rentSample)].map((r) => ({ ...r, id: '', slug: '' }))
   return Papa.unparse({ fields: PROPERTY_CSV_COLUMNS, data: rows })
 }
 
@@ -130,6 +132,7 @@ export function parsePropertyCsv(csvText) {
 
     properties.push({
       ...(row.id?.trim() ? { id: row.id.trim() } : {}),
+      ...(row.slug?.trim() ? { slug: row.slug.trim() } : {}), // blank = generated from the title
       title: row.title.trim(),
       type: row.type?.trim() || 'Apartment',
       purpose: row.purpose,
@@ -187,6 +190,10 @@ export function inquiriesToCsv(inquiries, properties) {
     phone: i.phone ?? '',
     phoneVerified: i.phoneVerified ?? false,
     budget: i.budget ?? '',
+    source: i.source ?? '',
+    intent: i.intent ?? '',
+    interest: i.interest?.line ?? '',
+    consent: i.consent ?? '',
     message: i.message,
   }))
   return Papa.unparse(rows)

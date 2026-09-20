@@ -48,6 +48,31 @@ function SectionsEditor({ value, set }) {
   )
 }
 
+const legalTab = (id, label) => ({
+  id: `legal-${id}`,
+  label,
+  target: 'content',
+  intro: `Text of the /${id} page. A section's text: blank line = new paragraph, lines starting with “- ” = bullet list. Tokens: {brand} {email} {phone} {ceoName}. Have a lawyer review this before you collect real customer data.`,
+  schema: [
+    { key: `legal.${id}.title`, label: 'Page title' },
+    { key: `legal.${id}.updated`, label: 'Last updated on', type: 'date', hint: 'Shown at the top. Change it whenever you edit the text.' },
+    { key: `legal.${id}.intro`, label: 'Introduction', type: 'textarea', rows: 3 },
+    {
+      key: `legal.${id}.sections`,
+      label: 'Sections',
+      type: 'objectList',
+      addLabel: 'Add section',
+      itemTitle: (x, i) => x.title || `Section ${i + 1}`,
+      newItem: () => ({ title: '', body: '' }),
+      max: 25,
+      fields: [
+        { key: 'title', label: 'Heading', half: false },
+        { key: 'body', label: 'Text', type: 'textarea', rows: 7 },
+      ],
+    },
+  ],
+})
+
 const TABS = [
   {
     id: 'company',
@@ -195,6 +220,66 @@ const TABS = [
       },
       { key: 'footer.blurb', label: 'Footer description', type: 'textarea', rows: 3 },
       { key: 'footer.disclaimer', label: 'Footer disclaimer', type: 'textarea', rows: 3 },
+    ],
+  },
+  {
+    id: 'seo',
+    label: 'SEO & links',
+    target: 'content',
+    intro: 'Automatic internal linking. The first time a keyword appears in a blog post or FAQ answer it becomes a link — so Google (and readers) can move between your important pages without you linking every article by hand.',
+    schema: [
+      { key: 'seo.autoLinkCities', label: 'Link city names to their “properties for sale” page', type: 'toggle', hint: 'e.g. every first mention of “Mumbai” links to /buy/mumbai.' },
+      {
+        key: 'seo.autoLinks',
+        label: 'Keyword links',
+        type: 'objectList',
+        itemTitle: (x) => (x.keyword ? `${x.keyword} → ${x.to}` : 'New rule'),
+        newItem: () => ({ keyword: '', to: '/' }),
+        addLabel: 'Add keyword rule',
+        max: 60,
+        fields: [
+          { key: 'keyword', label: 'Keyword or phrase', placeholder: 'stamp duty' },
+          { key: 'to', label: 'Links to', placeholder: '/blog/stamp-duty-registration-charges-explained', hint: 'A page on this site (starts with /) or a full https:// link.' },
+        ],
+      },
+    ],
+  },
+  legalTab('privacy', 'Privacy Policy'),
+  legalTab('terms', 'Terms & Conditions'),
+  legalTab('disclaimer', 'Disclaimer'),
+  {
+    id: 'agentProgram',
+    label: 'Agent program',
+    target: 'content',
+    intro: 'The “I am a property agent” option on the sign-up form, and the messages agents see in their panel. Only promise what your team will actually do. Tokens: {brand}.',
+    schema: [
+      { key: 'agentProgram.enabled', label: 'Let agents register on the sign-up form', type: 'toggle' },
+      { key: 'agentProgram.registerLabel', label: 'Sign-up option label', half: false },
+      { key: 'agentProgram.title', label: 'Heading on agent pages' },
+      { key: 'agentProgram.benefits', label: 'Benefits shown to agents', type: 'stringList', max: 6 },
+      { key: 'agentProgram.consentText', label: 'Agent consent sentence (checkbox)', type: 'textarea', rows: 4 },
+      { key: 'agentProgram.pendingNotice', label: 'Notice while the agent awaits approval', type: 'textarea', rows: 2 },
+      { key: 'agentProgram.rejectedNotice', label: 'Notice if the agent is rejected', type: 'textarea', rows: 2 },
+      { key: 'agentProgram.listingReviewNote', label: 'Note about listing review', type: 'textarea', rows: 2 },
+    ],
+  },
+  {
+    id: 'nudge',
+    label: 'Login prompt',
+    target: 'content',
+    intro: 'A gentle, dismissible card that invites a visitor who has shown real interest (viewed homes, searched, saved a home) to create a free account with their mobile number. It never blocks the page. Use {focus} for what they have been looking at (e.g. “3 BHK flats for sale in Mumbai”) and {brand} for your name. Only promise what your team will actually do.',
+    schema: [
+      { key: 'nudge.enabled', label: 'Show the login prompt', type: 'toggle' },
+      { key: 'nudge.title', label: 'Headline (when we know their interest)', half: false },
+      { key: 'nudge.titleFallback', label: 'Headline (otherwise)', half: false },
+      { key: 'nudge.text', label: 'Short text', type: 'textarea', rows: 3 },
+      { key: 'nudge.buttonLabel', label: 'Button' },
+      { key: 'nudge.dismissLabel', label: '“No thanks” link' },
+      { key: 'nudge.benefits', label: 'Benefits (also shown in the sign-up form)', type: 'stringList', max: 6, hint: 'Keep them true and specific.' },
+      { key: 'nudge.consentText', label: 'Consent sentence shown under the sign-up button', type: 'textarea', rows: 4, hint: 'Required for contacting people (DPDP Act). Keep the meaning.' },
+      { key: 'nudge.delaySeconds', label: 'Wait this many seconds first', type: 'number', step: 1, min: 0 },
+      { key: 'nudge.minScore', label: 'Interest needed (2 = one home viewed, 4 = two homes or one saved)', type: 'number', step: 1, min: 1 },
+      { key: 'nudge.cooldownDays', label: 'Days to stay away after “Not now”', type: 'number', step: 1, min: 0 },
     ],
   },
   {

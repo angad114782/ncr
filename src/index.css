@@ -260,3 +260,29 @@ html.menu-open body {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+/* ---- Below-the-fold blocks (see components/glass/Reveal.jsx) ---- */
+.reveal-block {
+  /* skip layout/paint of off-screen sections until they are near — big win on the long home page */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 640px;
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal-block[data-hidden] {
+  opacity: 0;
+  transform: translateY(28px);
+}
+/* A block whose content is empty (e.g. a personalised section with nothing to show) takes no room. */
+.reveal-block:empty { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-block { transition: none; }
+}
+
+/* Smooth in-page anchor jumps (blog contents, skip links). Route changes reset instantly in ScrollToTop. */
+html { scroll-behavior: smooth; scroll-padding-top: 6.5rem; }
+
+/* ---- Lenis smooth scrolling (utils/smoothScroll.js) ---- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }

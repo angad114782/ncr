@@ -3,10 +3,13 @@
 // version through useSiteContent(). Text can use these tokens, replaced at
 // render time: {brand} {ceoName} {ceoTitle} {years}.
 
+import { LEGAL_DEFAULTS } from './legalDefaults.js'
+
 export const HOME_SECTION_LABELS = {
   stats: 'Live stats',
   showcase: '3D home showcase',
   featured: 'Featured properties',
+  recommended: 'Picked for you (personalised)',
   budget: 'Budget finder (what can you afford?)',
   newest: 'Newest listings',
   cities: 'Explore by city',
@@ -28,13 +31,13 @@ export const SITE_DEFAULTS = {
     { label: 'Home', to: '/', visible: true, children: [] },
     {
       label: 'Listings',
-      to: '/listings',
+      to: '/buy',
       visible: true,
       children: [
         { label: 'All Listings', to: '/listings' },
-        { label: 'Buy', to: '/listings?purpose=Buy' },
-        { label: 'Rent', to: '/listings?purpose=Rent' },
-        { label: 'Commercial', to: '/listings?type=Commercial' },
+        { label: 'Buy', to: '/buy' },
+        { label: 'Rent', to: '/rent' },
+        { label: 'Commercial', to: '/buy/commercial' },
       ],
     },
     { label: 'Agents', to: '/agents', visible: true, children: [] },
@@ -66,7 +69,7 @@ export const SITE_DEFAULTS = {
     subtitle:
       'Drag to look around, tap the glowing dots to explore, and switch to night to see the house light up. Then browse real homes like this one on {brand}.',
     ctaLabel: 'Browse Homes',
-    ctaLink: '/listings',
+    ctaLink: '/buy',
     hotspots: [
       { label: 'Open living space', text: 'Floor-to-ceiling glass and lots of natural light.' },
       { label: 'Private pool', text: 'Unwind at home — a pool right outside the living room.' },
@@ -195,6 +198,62 @@ export const SITE_DEFAULTS = {
   forms: {
     buyBudgets: ['Under ₹50 Lakh', '₹50 Lakh – ₹1 Cr', '₹1 Cr – ₹2 Cr', '₹2 Cr – ₹5 Cr', 'Above ₹5 Cr'],
     rentBudgets: ['Under ₹20,000/mo', '₹20,000 – ₹40,000/mo', '₹40,000 – ₹75,000/mo', '₹75,000 – ₹1,50,000/mo', 'Above ₹1,50,000/mo'],
+  },
+
+  // Gentle prompt that invites a visitor who has shown real interest (viewed / searched / saved) to
+  // create a free account with just a mobile number. Tokens: {focus} = what they have been looking
+  // at, e.g. "3 BHK flats for sale in Mumbai". Never shown on /admin, /dashboard or /contact.
+  nudge: {
+    enabled: true,
+    delaySeconds: 8,
+    minScore: 4, // 2 = one home viewed, 4 = two, or one saved home
+    cooldownDays: 3, // after "Not now" (doubles the second time)
+    title: 'Still looking at {focus}?',
+    titleFallback: 'Want homes that fit you?',
+    text: 'Create a free account with just your mobile number — no password to remember. We use what you have looked at to line up matching homes.',
+    buttonLabel: 'Get my matches',
+    dismissLabel: 'Not now',
+    benefits: [
+      'Picks based on the homes you have viewed',
+      'A property advisor can WhatsApp you new matches',
+      'Book a site visit in one tap — free, no obligation',
+      'Saved homes and enquiries in one dashboard',
+    ],
+    consentText: 'I agree to be contacted by {brand} by call or WhatsApp about homes that match my searches, and to the Privacy Policy. {brand} uses the searches and homes I view on this site to personalise my matches. I can ask to stop at any time.',
+  },
+
+  // Property agents: the "I am an agent" option on the sign-up form and the agent panel notices.
+  agentProgram: {
+    enabled: true,
+    registerLabel: 'I am a property agent / dealer',
+    title: 'Join as an agent',
+    benefits: [
+      'Post your own listings from your own agent panel',
+      'Reach buyers and tenants searching in your city',
+      'Get enquiries on your listings directly',
+      'Our team approves your profile and listings before they go live',
+    ],
+    consentText: 'I confirm my details are true and I hold the registrations the law requires. I agree to the Terms & Conditions and the Privacy Policy, and that my agent profile and approved listings will be shown publicly on {brand}.',
+    pendingNotice: 'Your agent account is waiting for approval by our team. You can already prepare listings — they go live after approval.',
+    rejectedNotice: 'Your agent registration was not approved, so new listings stay hidden. Please contact us to find out more.',
+    listingReviewNote: 'New listings are checked by our team before they appear on the site.',
+  },
+
+  // Privacy Policy, Terms & Conditions and Disclaimer pages (see legalDefaults.js).
+  legal: LEGAL_DEFAULTS,
+
+  // Internal-linking rules: the first time one of these keywords appears in a blog post or FAQ
+  // answer it becomes a link. City names are linked to their /buy/{city} page automatically.
+  seo: {
+    autoLinkCities: true,
+    autoLinks: [
+      { keyword: 'RERA', to: '/blog/how-to-check-rera-registration' },
+      { keyword: 'stamp duty', to: '/blog/stamp-duty-registration-charges-explained' },
+      { keyword: 'home loan', to: '/blog/home-loan-eligibility-emi-explained' },
+      { keyword: 'under-construction', to: '/blog/ready-to-move-vs-under-construction' },
+      { keyword: 'ready-to-move', to: '/blog/ready-to-move-vs-under-construction' },
+      { keyword: 'first-time buyer', to: '/blog/first-time-home-buyer-guide-india' },
+    ],
   },
 
   options: {

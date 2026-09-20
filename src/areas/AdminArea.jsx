@@ -1,0 +1,59 @@
+import { Route, Routes } from 'react-router-dom'
+import { BookOpen, Building2, HelpCircle, LayoutDashboard, LayoutTemplate, MessageSquare, Settings, Star, User as UserIcon, UserCheck, Users as UsersIcon } from 'lucide-react'
+import PanelShell from '../components/layout/PanelShell'
+import ProtectedRoute from '../components/layout/ProtectedRoute'
+import Profile from '../pages/dashboard/Profile'
+import AdminHome from '../pages/admin/AdminHome'
+import ManageListings from '../pages/admin/ManageListings'
+import ManageUsers from '../pages/admin/ManageUsers'
+import ManageInquiries from '../pages/admin/ManageInquiries'
+import AdminSettings from '../pages/admin/AdminSettings'
+import ManageBlog from '../pages/admin/ManageBlog'
+import ManageFaqs from '../pages/admin/ManageFaqs'
+import ManageTestimonials from '../pages/admin/ManageTestimonials'
+import ManageAgents from '../pages/admin/ManageAgents'
+import SiteContent from '../pages/admin/SiteContent'
+
+const adminNav = [
+  { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/admin/listings', label: 'Listings', icon: Building2 },
+  { to: '/admin/blog', label: 'Blog', icon: BookOpen },
+  { to: '/admin/faqs', label: 'FAQs', icon: HelpCircle },
+  { to: '/admin/testimonials', label: 'Reviews', icon: Star },
+  { to: '/admin/agents', label: 'Agents', icon: UserCheck },
+  { to: '/admin/users', label: 'Users', icon: UsersIcon },
+  { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/admin/site', label: 'Site Content', icon: LayoutTemplate },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
+  { to: '/admin/profile', label: 'Profile', icon: UserIcon },
+]
+
+/**
+ * The whole admin panel is one lazily-loaded chunk (mounted at /admin/*), so ordinary visitors
+ * and search-engine crawlers never download any of this code.
+ */
+export default function AdminArea() {
+  return (
+    <Routes>
+      <Route
+        element={
+          <ProtectedRoute requireAdmin>
+            <PanelShell title="Admin Panel" navItems={adminNav} />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminHome />} />
+        <Route path="listings" element={<ManageListings />} />
+        <Route path="blog" element={<ManageBlog />} />
+        <Route path="faqs" element={<ManageFaqs />} />
+        <Route path="testimonials" element={<ManageTestimonials />} />
+        <Route path="agents" element={<ManageAgents />} />
+        <Route path="site" element={<SiteContent />} />
+        <Route path="users" element={<ManageUsers />} />
+        <Route path="inquiries" element={<ManageInquiries />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+    </Routes>
+  )
+}

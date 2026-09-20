@@ -33,7 +33,8 @@ export default function CollectionAdmin({
   reorderable = false,
   restore, // () => void — back to the bundled sample content
   headerExtras,
-  rowExtras,
+  rowExtras, // (item, { flash }) => node
+  extraFilters = [], // [{ value, label, test(item) }] — extra chips next to All / Active / Inactive
   sheetWidth = 'max-w-3xl',
   itemLabel = (x) => x.title ?? x.question ?? x.name ?? x.id,
 }) {
@@ -52,9 +53,11 @@ export default function CollectionAdmin({
     return items.filter((it) => {
       if (status === 'active' && it.active === false) return false
       if (status === 'inactive' && it.active !== false) return false
+      const custom = extraFilters.find((f) => f.value === status)
+      if (custom && !custom.test(it)) return false
       return !q || searchText(it).toLowerCase().includes(q)
     })
-  }, [items, query, status, searchText])
+  }, [items, query, status, searchText, extraFilters])
 
   const activeCount = items.filter((i) => i.active !== false).length
   const allSelected = visible.length > 0 && visible.every((i) => selected.has(i.id))
@@ -143,7 +146,7 @@ export default function CollectionAdmin({
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={`Search ${title.toLowerCase()}…`} aria-label={`Search ${title}`} className="bg-transparent outline-none w-full text-sm" />
         </div>
         <div className="glass-weak p-1 rounded-full flex">
-          {[['all', 'All'], ['active', activeLabels.on], ['inactive', activeLabels.off]].map(([v, l]) => (
+          {[['all', 'All'], ['active', activeLabels.on], ['inactive', activeLabels.off], ...extraFilters.map((f) => [f.value, f.label])].map(([v, l]) => (
             <button key={v} type="button" onClick={() => setStatus(v)} className={`px-3.5 py-1.5 rounded-full text-xs font-medium spring ${status === v ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'}`}>{l}</button>
           ))}
         </div>
@@ -181,7 +184,7 @@ export default function CollectionAdmin({
                   </td>
                   <td className="p-4">
                     <div className="flex justify-end gap-1.5">
-                      {rowExtras?.(item)}
+                      {rowExtras?.(item, { flash })}
                       {reorderable && !query && status === 'all' && (
                         <>
                           <button type="button" aria-label="Move up" onClick={() => crud.move(item.id, -1)} className="glass w-8 h-8 rounded-full flex items-center justify-center"><ArrowUp size={13} /></button>

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
+import { scrollToElement, scrollToY } from '../../utils/smoothScroll'
 
 /**
  * React Router (BrowserRouter) keeps the previous page's scroll offset, so a new
@@ -43,17 +44,17 @@ export default function ScrollToTop() {
 
     if (state?.keepScroll) return
     if (navType === 'POP' && positions.current[key] != null) {
-      window.scrollTo(0, positions.current[key])
+      scrollToY(positions.current[key], { immediate: true })
       return
     }
     if (hash) {
       const el = document.getElementById(decodeURIComponent(hash.slice(1)))
       if (el) {
-        el.scrollIntoView()
+        scrollToElement(el)
         return
       }
     }
-    window.scrollTo(0, 0)
+    scrollToY(0, { immediate: true }) // instant: page changes never animate
     // key changes on every navigation, so it alone is enough to re-run this.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, pathname, search, hash])

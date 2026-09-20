@@ -8,7 +8,7 @@ const schema = [
   { key: 'name', label: 'Full name', required: true },
   { key: 'phone', label: 'Mobile number (10 digits)', required: true, maxLength: 10, placeholder: '98XXXXXXXX', hint: 'Users sign in with this number + OTP.' },
   { key: 'city', label: 'City' },
-  { key: 'role', label: 'Role', type: 'select', options: ['user', 'admin'], hint: 'Admins can open this panel. At least one active admin must always remain.' },
+  { key: 'role', label: 'Role', type: 'select', options: [{ value: 'user', label: 'user (client)' }, { value: 'agent', label: 'agent' }, { value: 'admin', label: 'admin' }], hint: 'Client = normal visitor account, agent = can post listings from the Agent panel, admin = can open this panel. At least one active admin must always remain.' },
   { key: 'active', label: 'Active (can sign in)', type: 'toggle' },
 ]
 

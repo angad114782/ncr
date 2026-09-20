@@ -22,6 +22,7 @@ export default function ManageBlog() {
     { key: 'date', label: 'Published on', type: 'date' },
     { key: 'cover', label: 'Cover image', type: 'image', hint: 'Shown on the blog list, the article header and in social / Google previews (links work best for previews).' },
     { key: 'description', label: 'Search description (SEO)', type: 'textarea', rows: 2, required: true, hint: 'One or two sentences, ideally 120–160 characters. Shown by Google under the title.' },
+    { key: 'summary', label: 'Quick answer (AI & Google snippet)', type: 'textarea', rows: 2, hint: 'A direct 1–2 sentence answer to what the article is about (40–60 words is ideal). Shown in a “Quick answer” box at the top — AI assistants and Google AI Overviews quote this.' },
     { key: 'intro', label: 'Introduction', type: 'textarea', rows: 3, hint: 'Opening paragraph shown above the article.' },
     { key: 'body', type: 'custom', render: (p) => <BlogBodyEditor {...p} /> },
     {
@@ -56,7 +57,7 @@ export default function ManageBlog() {
       csv={{ config: blogCsv, seedItems: blogSeed }}
       restore={() => restoreSeeds('blog')}
       activeLabels={{ on: 'Published', off: 'Draft' }}
-      emptyItem={() => ({ id: newId('b'), slug: '', title: '', description: '', category: 'Buying Guides', author: company.ceo.name, date: today(), updated: today(), cover: '', intro: '', body: '', media: {}, faqs: [], related: [], featured: false, active: false })}
+      emptyItem={() => ({ id: newId('b'), slug: '', title: '', description: '', category: 'Buying Guides', author: company.ceo.name, date: today(), updated: today(), cover: '', summary: '', intro: '', body: '', media: {}, faqs: [], related: [], featured: false, active: false })}
       validate={(p, { items }) => {
         const slug = slugify(p.slug || p.title)
         if (!slug) return 'Please enter a title.'

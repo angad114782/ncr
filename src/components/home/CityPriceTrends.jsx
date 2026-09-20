@@ -1,11 +1,11 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { IndianRupee } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import { useData } from '../../context/DataContext'
+import { listingsPath } from '../../utils/seo'
 
 export default function CityPriceTrends() {
   const { activeProperties } = useData()
-  const navigate = useNavigate()
 
   const rates = Object.values(
     activeProperties.reduce((acc, p) => {
@@ -33,10 +33,9 @@ export default function CityPriceTrends() {
         {rates.map((r) => (
           <GlassCard
             key={r.city}
-            as="button"
-            type="button"
-            onClick={() => navigate(`/listings?city=${r.city}&purpose=Buy`)}
-            className="p-5 text-left"
+            as={Link}
+            to={listingsPath({ purpose: 'Buy', city: r.city })}
+            className="p-5 text-left block"
           >
             <IndianRupee className="text-[var(--color-accent)] mb-3" size={20} />
             <h3 className="font-semibold">{r.city}</h3>

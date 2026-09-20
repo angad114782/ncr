@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { propertyPath } from '../../utils/seo'
 import { Check, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
@@ -53,7 +54,7 @@ export default function Compare() {
                   <X size={13} />
                 </button>
                 <img src={p.images[0]} alt={p.title} className="w-full h-28 rounded-[14px] object-cover mb-2" />
-                <Link to={`/property/${p.id}`} className="font-semibold text-sm hover:text-[var(--color-accent)] block truncate">
+                <Link to={propertyPath(p)} className="font-semibold text-sm hover:text-[var(--color-accent)] block truncate">
                   {p.title}
                 </Link>
                 <p className="text-tertiary text-xs truncate">{p.locality}, {p.city}</p>

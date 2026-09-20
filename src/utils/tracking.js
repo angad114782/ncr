@@ -68,17 +68,19 @@ export function trackPageView() {
  * submission (inquiry, contact, signup). Safe to call even when neither
  * platform is configured — it's just a no-op then.
  */
-export function fireLeadEvent(marketingConfig, formName) {
+export function fireLeadEvent(marketingConfig, formName, extra = {}) {
   if (typeof window === 'undefined') return
 
+  // `extra` carries non-identifying context (city, property type, intent level) so the ad platforms
+  // can build better audiences. Never pass a name, phone number or e-mail here.
   if (window.fbq && marketingConfig?.metaPixelId) {
-    window.fbq('track', 'Lead', { content_name: formName })
+    window.fbq('track', 'Lead', { content_name: formName, ...extra })
   }
 
   if (window.gtag && marketingConfig?.googleAdsId) {
     const sendTo = marketingConfig.googleAdsConversionLabel
       ? `${marketingConfig.googleAdsId}/${marketingConfig.googleAdsConversionLabel}`
       : marketingConfig.googleAdsId
-    window.gtag('event', 'conversion', { send_to: sendTo, event_category: formName })
+    window.gtag('event', 'conversion', { send_to: sendTo, event_category: formName, ...extra })
   }
 }

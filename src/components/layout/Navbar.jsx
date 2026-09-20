@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import MobileMenu from './MobileMenu'
@@ -14,7 +14,7 @@ export default function Navbar({ onAuthOpen }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState(null)
   const hamburgerRef = useRef(null)
-  const { user, isAdmin, logout } = useAuth()
+  const { user, isAdmin, isAgent, logout } = useAuth()
   const { siteContent, company } = useSettings()
   // Menu comes from Admin → Site Content → Menu & Footer (hidden items are skipped).
   const links = siteContent.nav.filter((l) => l.visible !== false && l.label)
@@ -114,6 +114,11 @@ export default function Navbar({ onAuthOpen }) {
               {isAdmin && (
                 <GlassButton variant="glass" size="sm" icon={ShieldCheck} onClick={() => navigate('/admin')}>
                   Admin
+                </GlassButton>
+              )}
+              {isAgent && (
+                <GlassButton variant="glass" size="sm" icon={Briefcase} onClick={() => navigate('/agent')}>
+                  Agent panel
                 </GlassButton>
               )}
               <GlassButton variant="glass" size="sm" icon={LayoutDashboard} onClick={() => navigate('/dashboard')}>

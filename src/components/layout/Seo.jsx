@@ -33,7 +33,10 @@ export default function Seo({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={canonical} />
-      <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large'} />
+      {!noindex && <link rel="alternate" hrefLang="en-IN" href={canonical} />}
+      {!noindex && <link rel="alternate" hrefLang="x-default" href={canonical} />}
+      {/* noindex pages (search results, empty filters) still pass link equity: bots keep following links */}
+      <meta name="robots" content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large'} />
 
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={SITE_NAME} />

@@ -1,11 +1,26 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#EFE3D7" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#15100C" media="(prefers-color-scheme: dark)" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Apply the saved light/dark choice before first paint (no flash of the wrong theme). -->
+    <script>
+      try {
+        var t = localStorage.getItem('re-theme')
+        if (t) document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
+
+    <!-- Warm up the image hosts used by listings / agents so hero images start sooner. -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <link rel="dns-prefetch" href="https://i.pravatar.cc" />
+
+    <!--app-head-start-->
     <title>NCR Estates — Buy, Rent & Sell Property Across India</title>
 
     <meta property="og:type" content="website" />
@@ -24,6 +39,7 @@
       content="Find verified apartments, villas, studios and commercial properties to buy or rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram."
     />
     <meta name="twitter:image" content="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200" />
+    <!--app-head-end-->
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, Mail, MapPin, MessageCircle, Phone, Send, User } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
@@ -31,6 +31,10 @@ export default function Contact() {
     city: '',
     message: '',
   })
+  useEffect(() => {
+    if (!user) return
+    setForm((f) => ({ ...f, name: f.name || user.name || '', phone: f.phone || user.phone || '', email: f.email || user.email || '' }))
+  }, [user])
   const [error, setError] = useState('')
 
   const digits = whatsappConfig.displayPhone.replace(/\D/g, '')

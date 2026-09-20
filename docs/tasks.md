@@ -96,6 +96,35 @@ _Last updated: 2026-09-21_
 - [x] Storage-full alert; `textarea` fields no longer clipped to one line; agent/CEO avatars fall back to initials; price labels drop trailing zeros
 - [x] 42-step browser test of the whole flow (upload/link images, CSV, active toggles, site content, users, backup) + mobile overflow sweep of 14 pages
 
+### SEO · AIO · GEO · speed · smooth scrolling (this batch)
+- [x] **Pre-rendering**: all 87 public URLs are static HTML (real `<h1>`, `<title>`, canonical, JSON-LD, internal links) that React hydrates — verified with JavaScript disabled and with zero hydration errors on 12 pages
+- [x] SSR-safe state: `usePersistedState` / Theme / Auth / Settings render defaults first, load `localStorage` in a layout effect
+- [x] **Clean listing URLs** `/buy|rent[/city][/type|N-bhk]`, legacy `/listings?…` redirects, crawlable `?page=N` pagination, filter chips navigate to clean URLs
+- [x] Dynamic interlinking: buttons → real `<Link>`s; `AutoLinkedText` (admin keyword rules + cities), related guides, `ExploreLinks`, `GuideLinks`, HTML `/sitemap` page, footer link
+- [x] **AIO / GEO**: blog *Quick answer* field (admin + CSV + top-of-article box + `abstract`/`speakable`), `llms.txt`, `llms-full.txt`, AI-crawler-friendly `robots.txt`, RSS `feed.xml`, `hreflang`, generated sitemap (86 URLs)
+- [x] **Speed**: admin / dashboard / Leaflet / three.js are lazy chunks, `<Img>` with responsive `srcset`, `content-visibility` sections, `deploy/nginx.example.conf`
+- [x] **Smooth scrolling** (Lenis) — desktop only, reduced-motion aware, admin excluded, nested scrollers untouched, instant reset on route change
+
+### Login prompts & lead capture (this batch)
+- [x] Visitor interest profile on-device (views, searches, saves, compares, visits → focus, budget, Hot/Warm/Cold)
+- [x] `LoginNudge` soft prompt (delay, once per session, cooldown, hidden on forms/panels), admin-editable in Site Content → *Login prompt*
+- [x] Sign-up sheet with benefits, personalised "matching you with …" line and **consent checkbox**; creates a lead with interest, intent, source, consent
+- [x] Home "Picked for you" section (admin can reorder / hide), `/privacy` page, footer + sitemap links
+- [x] Admin Inquiries: intent badge, *Hot leads* filter, consent note, richer CSV; 29-step browser test
+
+### Legal pages & agents (this batch)
+- [x] **Privacy Policy, Terms & Conditions, Disclaimer** pages (`/privacy`, `/terms`, `/disclaimer`) — text fully admin-editable (Site Content, one tab each: title, updated date, intro, add / edit / remove sections); in footer, HTML sitemap, `llms.txt`, XML sitemap, pre-rendered
+- [x] Sign-up sheet links to Terms + Privacy; **client is the default**, "I'm a property agent" switch reveals city / agency / RERA (admin can turn the option off, edit its text under *Agent program*)
+- [x] **Agent role + Agent Panel** (`/agent`): overview with status banner, **My listings** (same editor as admin, CSV too), **Enquiries** on own listings, **Profile** (account + public agent profile)
+- [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
+- [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
+
+### Readable property URLs (this batch)
+- [x] `/property/<slug>` — slug from the title; duplicates get city → locality → type / purpose / BHK → number; unique against slugs, old slugs and ids
+- [x] Old `/property/p6` links keep working (client redirect, pre-rendered stub with canonical + refresh, generated nginx 301 map); renamed slugs redirect via `previousSlugs`
+- [x] Admin **URL slug** field (blank = auto, typed = cleaned + uniqueness check), CSV `slug` column, duplicate / CSV / agent posts all get unique slugs, older saved data is back-filled; sitemap, llms.txt, JSON-LD use slugs; 22-step test
+- [x] Fixed: admin **Duplicate** on Listings crashed (`newId` import lost in the earlier refactor)
+
 ---
 
 ## 🔄 In progress
@@ -113,7 +142,20 @@ _Last updated: 2026-09-21_
 
 ## 📋 Backlog
 
-### 🔴 Backend (next phase) — this is what makes admin edits reach every visitor
+### ✅ Backend built (this batch) — see `backend/README.md`
+- [x] `backend/` — Express + MongoDB API: public data, phone-OTP auth (JWT cookie), roles user / agent / admin, leads with consent records and server-side intent, agent panel API with moderation, admin API (listings, agents, users, blog, FAQs, reviews, leads, settings incl. legal pages with version history, stats, audit, backup), image uploads, slugs, rebuild webhook, seed script — **88 tests pass**
+- [ ] 🔴 **MongoDB Atlas login failed** (`bad auth`): check the user / password in Atlas → Database Access, then `cd backend && npm run check-db && npm run seed`
+- [ ] Connect the website to the API (README §5): API client, replace `usePersistedState` providers, real OTP in `AuthSheet` / `LeadForm`, upload images via the API, point `scripts/site-data.mjs` at `/public/bootstrap`
+- [ ] Configure WhatsApp Cloud API (OTP + lead alerts) and SMTP in Admin → Settings; without WhatsApp, OTPs cannot be sent in production
+- [ ] Deploy: pm2 + nginx `/api` and `/uploads` proxy, `NODE_ENV=production`, strong `JWT_SECRET`, `OTP_DEV_MODE=false`, `REBUILD_WEBHOOK_URL`
+- [ ] **Rotate the Atlas password** — it was shared in a chat message; set the new one only in `backend/.env`
+
+### 🔴 Backend (original checklist — mostly done above) — this is what makes admin edits reach every visitor
+- [ ] 📘 **Read [architecture.md](architecture.md) §8a first** — it is the full migration spec for everything below (collections, endpoints, consent log, lead pipeline, SEO rebuild / SSR, security).
+- [ ] **Leads pipeline** — `POST /leads` with real OTP verification, consent record (sentence version, time, IP, UA), de-duplicate by phone, server-side Hot/Warm/Cold, WhatsApp team notification, agent assignment, admin Hot-leads view. (Front end already sends `source, consent, intent, interest` — swap `addInquiry`.)
+- [ ] **Events + data rights** — `POST /events` after consent, `GET /me/data`, `DELETE /me`, consent withdrawal, retention policy matching `/privacy`.
+- [ ] **Saved homes per user** (`savedProperties`) so "synced on all devices" becomes true; saved searches + new-listing WhatsApp matcher (fulfils the login-prompt promise).
+- [ ] **SEO with dynamic content** — `scripts/site-data.mjs` reads the API; rebuild-on-publish hook (or Express SSR using `entry-server.jsx` with `initialData`); unpublished content → 404 / out of sitemap + llms files.
 - [ ] **Move the admin CMS collections to an API** (`re-blog, re-faqs, re-testimonials, re-agents, re-properties, re-inquiries, re-company, re-site-content, re-ticker, re-top-banner, re-cities, re-property-types`). The `makeCrud` API and `usePersistedState` are the only two seams to swap.
 - [ ] Image storage (Cloudinary / S3) so uploads stop living in browser storage; keep the "paste a link" option
 - [ ] Server-side admin auth (today admin = a flag in localStorage)
@@ -168,6 +210,27 @@ _Last updated: 2026-09-21_
 
 ## 🐛 Known issues / tech debt
 
+**Slugs (new)**
+- To get real 301s for old `/property/<id>` links, add the `map` from `deploy/nginx.example.conf` on the VPS (the pre-rendered stub page already redirects instantly, so nothing breaks without it).
+- Slugs are generated in the browser today; the server must generate and enforce uniqueness itself (architecture §8a F2).
+
+**Agents & legal (new)**
+- 🔴 The **agent rules are enforced in the browser only** (listings stamped pending, own-listing scope, no self-approval). A logged-in agent could still edit `localStorage` by hand — real enforcement needs the API (architecture §8a C2).
+- 🔴 The **legal text is a draft** — have a lawyer review Privacy, Terms and Disclaimer (and the consent sentences) before launch. Add real registered-office details / jurisdiction if your lawyer asks.
+- Agent approval / rejection and "new listing waiting" have **no notifications** yet (admin has to open the panel). Add e-mail / WhatsApp with the backend.
+- Agent photo uploads count toward browser storage — prefer image links (same limit as every other upload).
+
+**Lead capture (new)**
+- 🔴 Leads created by sign-up live in the visitor's browser only — they do **not** reach the admin panel until the backend exists (same limit as every other form). Wire `addInquiry` to the API first.
+- 🔴 Have a lawyer review `/privacy` and the consent sentence before collecting real customer data (DPDP Act 2023). Do not promise WhatsApp matches / alerts in the prompt text unless the team will send them.
+- Real SMS OTP is still a mock (OTP shown on screen) — a verified number is not truly verified yet.
+
+**SEO / deploy (new)**
+- 🔴 **Verify nginx `try_files $uri $uri/ /index.html;`** on the VPS (see `deploy/nginx.example.conf`). Without it crawlers still get the empty shell. Check: `curl -s -A Googlebot https://propertyinncr.com/about | grep -o "<h1[^>]*>"`.
+- Crawlable HTML reflects the **shipped** content. Posts / listings the admin adds live only in the admin's browser until the backend exists — then re-run the build (or move to server-side rendering) so they get static pages, sitemap entries and `llms.txt` lines.
+- Submit `https://propertyinncr.com/sitemap.xml` in Google Search Console and Bing Webmaster Tools; request indexing for the home page and the top `/buy/{city}` pages.
+- `scripts/prerender.mjs` renders with Node — keep the build Node version ≥ 20 on the VPS.
+
 **Critical before any public deploy (frontend-only limits)**
 - Admin data is **per-browser** (`localStorage`): visitors' leads, Meta/Google IDs, banner, cities, listing edits never reach the admin's browser or other visitors.
 - Admin panel is not secure: role is read from `localStorage` (`re-user`), and the login sheet prints the admin number; OTP is mock and shown on screen (so `phoneVerified` is not real verification).
@@ -181,7 +244,7 @@ _Last updated: 2026-09-21_
 - CSV import: unparseable prices become 0 silently; no duplicate detection; city/type/agent not validated. CSV export is open to spreadsheet formula injection.
 - `PropertyMap` injects `priceLabel` as raw HTML (escape it). Navbar avatar logs out with no confirmation and no aria-label. PropertyCard photo isn't a link.
 - Property-card "Video Tour" badge shows for `videoTour: true` listings that have no video URL.
-- Bundle is one 860 kB chunk (no code-splitting).
+- Main bundle is ~388 kB (113 kB gzip); three.js (929 kB) and Leaflet (160 kB) are lazy chunks. Further splitting of `framer-motion` is possible.
 
 **Content / legal**
 - Demo data: stock photos, made-up agents / ratings, fake RERA IDs — replace before launch (RERA advertising rules).

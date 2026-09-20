@@ -5,16 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/generate-sitemap.mjs && vite build",
+    "seo": "node scripts/generate-seo-files.mjs",
+    "sitemap": "node scripts/generate-seo-files.mjs",
+    "build:client": "vite build",
+    "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist-ssr",
+    "prerender": "node scripts/prerender.mjs",
+    "build": "npm run seo && npm run build:client && npm run build:ssr && npm run prerender",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "sitemap": "node scripts/generate-sitemap.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "framer-motion": "^13.3.0",
     "leaflet": "^1.9.4",
+    "lenis": "^1.3.26",
     "lucide-react": "^1.46.0",
     "papaparse": "^5.7.0",
     "react": "~19.2.8",

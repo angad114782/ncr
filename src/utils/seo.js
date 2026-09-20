@@ -100,22 +100,8 @@ export function listingsHeading({ purpose, city, type, beds, possession }) {
   return `${ready}${bhk}${noun} ${verb} in ${city || 'India'}`.replace(/\s+/g, ' ').trim()
 }
 
-export function formatPriceShort(n) {
-  // parseFloat drops trailing zeros: 4.50 → 4.5, 4.00 → 4
-  if (n >= 10000000) return `₹${parseFloat((n / 10000000).toFixed(2))} Cr`
-  if (n >= 100000) return `₹${parseFloat((n / 100000).toFixed(1))} L`
-  return `₹${Math.round(n).toLocaleString('en-IN')}`
-}
+export { formatPriceShort } from './format.js'
 
-const FILTER_KEYS = ['purpose', 'city', 'type', 'beds', 'possession']
-
-/**
- * Canonical /listings URL for a set of filters — fixed key order and
- * encodeURIComponent so the same filter combination always maps to one URL
- * (also used by the sitemap generator, which mirrors this logic).
- */
-export function listingsPath(filters = {}, page = 1) {
-  const parts = FILTER_KEYS.filter((k) => filters[k]).map((k) => `${k}=${encodeURIComponent(filters[k])}`)
-  if (page > 1) parts.push(`page=${page}`)
-  return `/listings${parts.length ? `?${parts.join('&')}` : ''}`
-}
+// Clean listing URLs live in a dependency-free module shared with the build scripts.
+export { listingsPath, resolveListingsSegments, slugify } from './listingsUrl.js'
+export { propertyPath } from './propertySlug.js'

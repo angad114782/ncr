@@ -3,6 +3,7 @@ import usePersistedState from '../hooks/usePersistedState'
 import { fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
 import { COMPANY_DEFAULTS } from '../data/company'
 import { SITE_DEFAULTS, fillTokens } from '../data/siteDefaults'
+import { DEFAULT_CITIES, DEFAULT_PROPERTY_TYPES } from '../data/taxonomy'
 
 const SettingsContext = createContext(null)
 
@@ -34,8 +35,6 @@ const DEFAULT_MARKETING_CONFIG = {
   googleAdsConversionLabel: '',
 }
 
-const DEFAULT_CITIES = ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Gurugram']
-const DEFAULT_PROPERTY_TYPES = ['Apartment', 'Villa', 'Studio', 'Commercial', 'Penthouse', 'House']
 
 const DEFAULT_TOP_BANNER = {
   enabled: false,
@@ -89,7 +88,7 @@ export function SettingsProvider({ children }) {
   }
   const removePropertyType = (name) => setPropertyTypes((prev) => prev.filter((t) => t !== name))
 
-  const fireLeadEvent = (formName) => fireLeadEventUtil(marketingConfig, formName)
+  const fireLeadEvent = (formName, extra) => fireLeadEventUtil(marketingConfig, formName, extra)
 
   /** Replace {brand} {ceoName} {ceoTitle} {years} in admin-written copy. */
   const fill = (text) => fillTokens(text, company)

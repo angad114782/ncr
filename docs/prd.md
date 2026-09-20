@@ -108,7 +108,7 @@ Every page renders `<Seo>` (title, description, canonical, Open Graph / Twitter,
 | Agent | Person, BreadcrumbList |
 | Blog / post | Blog / BlogPosting (author = CEO, dates), BreadcrumbList, FAQPage |
 
-`public/robots.txt` blocks `/admin`, `/dashboard`. `public/sitemap.xml` is **generated** by `npm run sitemap` (also runs before `npm run build`) from listings, city/BHK/type landing pages that have results, blog posts and static pages.
+`public/robots.txt` blocks `/admin`, `/dashboard`. `public/sitemap.xml`, `llms.txt`, `llms-full.txt` and `feed.xml` are **generated** by `npm run seo` (also runs before `npm run build`) from listings, city/BHK/type landing pages that have results, blog posts and static pages.
 
 **Known limit:** the app is a client-rendered SPA. Google renders JS, but social/WhatsApp link previews (and slower crawlers) only see the static defaults in `index.html`. Pre-rendering / SSR is the biggest remaining SEO upgrade (see [tasks.md](tasks.md)).
 
@@ -119,7 +119,13 @@ Every page renders `<Seo>` (title, description, canonical, Open Graph / Twitter,
 
 ## 5. Non-functional requirements
 
-- **Performance:** fast first paint; lazy work where possible; animations via `transform`/`opacity`.
+- **Performance:** fast first paint; lazy work where possible; animations via `transform`/`opacity`. Public pages ship as pre-rendered HTML; admin, dashboard, maps and 3D are lazy chunks; images are responsive and lazy.
+- **SEO / AIO / GEO:** every public URL is crawlable static HTML with one `<h1>`, unique title/description, canonical, JSON-LD and real internal links; clean keyword URLs (`/buy/mumbai/3-bhk`); dynamic interlinking and an HTML + XML sitemap; answer-first *Quick answer* boxes, `llms.txt` and RSS for AI answer engines; India-targeted (`en-IN`, ₹, city landing pages).
+- **Readable URLs:** each property has a keyword URL made from its title (`/property/sea-facing-3bhk-apartment`); duplicates are made unique with the city / locality / type; old links redirect.
+- **Legal:** Privacy Policy, Terms & Conditions and Disclaimer pages, edited by the admin; every data-collecting form links to them.
+- **Agents:** anyone can register as an agent from the sign-up form (client is the default); the admin approves the agent; approved agents post their own properties from an Agent Panel, the admin approves each listing before it goes live, and agents see the enquiries on their own listings.
+- **Sign-up conversion:** visitors who show interest are invited (never forced) to create a free account with a mobile number; the sign-up records consent and hands the sales team what the visitor looked for (city, type, BHK, budget, intent). Personalised "Picked for you" homes. Privacy Policy page.
+- **Smooth browsing:** inertial smooth scrolling on desktop (never on touch / reduced-motion), instant jump on page change.
 - **Responsive:** mobile-first; mobile bottom tab bar for panels, sidebar on desktop.
 - **Accessibility:** readable contrast in both themes, keyboard-usable controls, `aria` labels on icon buttons.
 - **Persistence:** all state survives reload (`localStorage`, `re-*` keys). Storage access must never crash the app.
@@ -136,7 +142,7 @@ Every page renders `<Seo>` (title, description, canonical, Open Graph / Twitter,
 ## 7. Roadmap (summary)
 
 1. **Now — Frontend complete:** public site, dashboards, admin tooling, SEO, tracking. *(largely done — see [tasks.md](tasks.md))*
-2. **Next — Backend:** Node + MongoDB (Mongoose); real auth, listings CRUD, inquiries, uploads.
+2. **Next — Backend:** Node + MongoDB (Mongoose); real auth (real OTP), listings CRUD, **lead pipeline with consent log**, uploads, rebuild-on-publish / SSR for SEO. Spec: [architecture.md](architecture.md) §8a.
 3. **Then — Real messaging:** WhatsApp Cloud API for OTP + lead templates; SMTP for email.
 4. **Later:** image uploads/CDN, agent self-service portal, saved searches + alerts, analytics dashboard.
 

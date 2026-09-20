@@ -9,10 +9,11 @@ export default function ManageInquiries() {
   const { inquiries, properties, updateInquiryStatus, deleteInquiry } = useData()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
+  const hot = inquiries.filter((i) => i.intent === 'Hot' && i.status === 'Pending').length
 
   const q = query.trim().toLowerCase()
   const shown = inquiries.filter(
-    (i) => (status === 'all' || i.status === status) && (!q || `${i.userName} ${i.phone} ${i.userEmail} ${i.message} ${i.city ?? ''}`.toLowerCase().includes(q)),
+    (i) => (status === 'all' || (status === 'Hot' ? i.intent === 'Hot' : i.status === status)) && (!q || `${i.userName} ${i.phone} ${i.userEmail} ${i.message} ${i.city ?? ''}`.toLowerCase().includes(q)),
   )
 
   const handleExport = () => {
@@ -38,7 +39,7 @@ export default function ManageInquiries() {
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, phone, message…" aria-label="Search inquiries" className="bg-transparent outline-none w-full text-sm" />
         </div>
         <div className="glass-weak p-1 rounded-full flex">
-          {[['all', 'All'], ['Pending', 'Pending'], ['Responded', 'Responded']].map(([v, l]) => (
+          {[['all', 'All'], ['Hot', `Hot leads${hot ? ` (${hot})` : ''}`], ['Pending', 'Pending'], ['Responded', 'Responded']].map(([v, l]) => (
             <button key={v} type="button" onClick={() => setStatus(v)} className={`px-3.5 py-1.5 rounded-full text-xs font-medium spring ${status === v ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'}`}>{l}</button>
           ))}
         </div>
@@ -55,7 +56,12 @@ export default function ManageInquiries() {
               )}
               <div className="flex-1 min-w-0">
                 <p className="font-semibold truncate">
-                  {inq.propertyId ? (property?.title ?? 'Property removed') : 'General enquiry (contact form)'}
+                  {inq.propertyId ? (property?.title ?? 'Property removed') : inq.source?.startsWith('signup') ? 'New sign-up' : 'General enquiry (contact form)'}
+                  {inq.intent && (
+                    <span className={`ml-2 align-middle text-[11px] font-semibold px-2 py-0.5 rounded-full ${inq.intent === 'Hot' ? 'bg-[var(--color-danger)] text-white' : inq.intent === 'Warm' ? 'bg-[var(--color-accent)] text-white' : 'glass-weak text-secondary'}`}>
+                      {inq.intent}
+                    </span>
+                  )}
                 </p>
                 <p className="text-secondary text-sm truncate flex items-center gap-1.5">
                   {[inq.userName, inq.userEmail, inq.phone].filter(Boolean).join(' · ')}
@@ -71,6 +77,11 @@ export default function ManageInquiries() {
                   </p>
                 )}
                 <p className="text-secondary text-sm mt-1">{inq.message}</p>
+                {inq.source?.startsWith('signup') && (
+                  <p className="text-tertiary text-xs mt-1">
+                    Signed up on the website · {inq.consent ? 'agreed to be contacted' : 'no contact consent recorded'}
+                  </p>
+                )}
                 <p className="text-tertiary text-xs mt-1">{inq.date}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">

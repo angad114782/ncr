@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
   Bath,
   BedDouble,
@@ -19,7 +19,6 @@ import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
 import PropertyBadges from '../../components/property/PropertyBadges'
-import PropertyMap from '../../components/property/PropertyMap'
 import EMICalculator from '../../components/property/EMICalculator'
 import Lightbox from '../../components/property/Lightbox'
 import PriceInsight from '../../components/property/PriceInsight'
@@ -27,8 +26,50 @@ import DistanceToHubs from '../../components/property/DistanceToHubs'
 import LeadForm from '../../components/property/LeadForm'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
-import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath } from '../../utils/seo'
+import Img from '../../components/common/Img'
+import { findByParam } from '../../utils/propertySlug'
+import { useInterest } from '../../context/InterestContext'
+import ExploreLinks from '../../components/common/ExploreLinks'
+import GuideLinks from '../../components/common/GuideLinks'
+import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath, propertyPath } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
+
+// Leaflet needs `window`, so the map is a client-only lazy chunk. Until it loads (and in the
+// pre-rendered HTML) we render the address and nearby places as plain, crawlable text.
+const PropertyMap = lazy(() => import('../../components/property/PropertyMap'))
+
+function MapPlaceholder({ address, nearby = [] }) {
+  return (
+    <GlassCard hover={false} className="p-3">
+      <div className="flex items-center gap-2 px-2 pt-1 pb-3">
+        <MapPin size={16} className="text-[var(--color-accent)] shrink-0" />
+        <p className="text-sm font-medium">{address}</p>
+      </div>
+      <div className="h-64 rounded-[16px] glass-weak flex items-center justify-center text-tertiary text-sm">Loading map…</div>
+      {nearby.length > 0 && (
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 px-1">
+          {nearby.map((n) => (
+            <li key={n.name} className="glass-weak rounded-[12px] px-3 py-2 flex items-center justify-between gap-2 text-sm">
+              <span className="truncate">{n.name} <span className="text-tertiary">· {n.type}</span></span>
+              <span className="text-tertiary text-xs shrink-0">{n.distance}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </GlassCard>
+  )
+}
+
+function LazyMap(props) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return <MapPlaceholder {...props} />
+  return (
+    <Suspense fallback={<MapPlaceholder {...props} />}>
+      <PropertyMap {...props} />
+    </Suspense>
+  )
+}
 
 export default function PropertyDetail() {
   const { id } = useParams()
@@ -42,15 +83,20 @@ export default function PropertyDetail() {
 function PropertyDetailInner({ id }) {
   const { properties, activeProperties, agents, savedIds, toggleSaved, trackRecentlyViewed } = useData()
   const navigate = useNavigate()
+  const { track } = useInterest()
   const [activeImg, setActiveImg] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [copied, setCopied] = useState(false)
   const [showFloorPlan, setShowFloorPlan] = useState(false)
 
-  const property = properties.find((p) => p.id === id)
+  // `id` is the URL segment: the slug, an old slug, or (old links like /property/p6) the id.
+  const property = findByParam(properties, id)
 
   useEffect(() => {
-    if (property) trackRecentlyViewed(property.id)
+    if (property) {
+      trackRecentlyViewed(property.id)
+      track('view', property)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property?.id])
 
@@ -63,6 +109,9 @@ function PropertyDetailInner({ id }) {
       </GlassCard>
     )
   }
+
+  // Old link (id or renamed slug) → send visitors and search engines to the one canonical URL.
+  if (property.slug && id !== property.slug) return <Navigate to={propertyPath(property)} replace />
 
   if (property.active === false) {
     return (
@@ -116,7 +165,7 @@ function PropertyDetailInner({ id }) {
     '@type': 'RealEstateListing',
     name: seoTitle,
     description: property.description || seoDescription,
-    url: `${SITE_URL}/property/${property.id}`,
+    url: `${SITE_URL}${propertyPath(property)}`,
     datePosted: property.postedDate,
     image: property.images.filter(crawlableImage),
     ...(property.price > 0
@@ -154,20 +203,20 @@ function PropertyDetailInner({ id }) {
       <Seo
         title={seoTitle}
         description={seoDescription}
-        path={`/property/${property.id}`}
+        path={propertyPath(property)}
         image={property.images[0]}
         jsonLd={[
           breadcrumbLd([
             { name: 'Home', path: '/' },
-            { name: 'Listings', path: '/listings' },
+            { name: property.purpose === 'Rent' ? 'Rent' : 'Buy', path: listingsPath({ purpose: property.purpose }) },
             { name: property.city, path: listingsPath({ purpose: property.purpose, city: property.city }) },
-            { name: property.title, path: `/property/${property.id}` },
+            { name: property.title, path: propertyPath(property) },
           ]),
           listingLd,
         ]}
       />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-secondary mb-4">
-        <Link to="/listings" className="hover:text-primary">Listings</Link> /{' '}
+        <Link to={listingsPath({ purpose: property.purpose })} className="hover:text-primary">{property.purpose === 'Rent' ? 'Rent' : 'Buy'}</Link> /{' '}
         <Link to={listingsPath({ purpose: property.purpose, city: property.city })} className="hover:text-primary">{property.city}</Link> /{' '}
         <span className="text-primary">{property.title}</span>
       </nav>
@@ -179,7 +228,7 @@ function PropertyDetailInner({ id }) {
           onClick={() => setLightboxIndex(activeImg)}
         >
           {property.images[activeImg] ? (
-            <img src={property.images[activeImg]} alt={`${property.title} in ${place}`} className="w-full h-full object-cover" />
+            <Img src={property.images[activeImg]} alt={`${property.title} in ${place}`} priority={activeImg === 0} width={1200} height={630} sizes="(min-width:1024px) 900px, 100vw" className="w-full h-full object-cover" />
           ) : (
             <span className="w-full h-full glass-weak flex items-center justify-center text-tertiary">No photos added yet</span>
           )}
@@ -192,7 +241,7 @@ function PropertyDetailInner({ id }) {
                 onClick={() => setActiveImg(i)}
                 className={`w-24 h-16 rounded-[12px] overflow-hidden shrink-0 spring ${i === activeImg ? 'ring-2 ring-[var(--color-accent)]' : 'opacity-70'}`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <Img src={img} alt="" width={96} height={64} widths={[160, 240]} sizes="96px" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -250,7 +299,10 @@ function PropertyDetailInner({ id }) {
                   {copied ? <Check size={16} className="text-[var(--color-success)]" /> : <Share2 size={16} />}
                 </button>
                 <button
-                  onClick={() => toggleSaved(property.id)}
+                  onClick={() => {
+                    if (!isSaved) track('save', property)
+                    toggleSaved(property.id)
+                  }}
                   className="glass w-11 h-11 rounded-full flex items-center justify-center spring hover:scale-105"
                 >
                   <Heart size={18} className={isSaved ? 'fill-[var(--color-danger)] text-[var(--color-danger)]' : ''} />
@@ -294,7 +346,7 @@ function PropertyDetailInner({ id }) {
             </div>
           </GlassCard>
 
-          <PropertyMap
+          <LazyMap
             lat={property.lat}
             lng={property.lng}
             address={property.address}
@@ -352,7 +404,7 @@ function PropertyDetailInner({ id }) {
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">More Properties in {property.city}</h2>
-            <Link to={`/listings?city=${property.city}`} className="text-sm font-medium text-[var(--color-accent)] shrink-0">
+            <Link to={listingsPath({ purpose: property.purpose, city: property.city })} className="text-sm font-medium text-[var(--color-accent)] shrink-0">
               View All →
             </Link>
           </div>
@@ -369,7 +421,7 @@ function PropertyDetailInner({ id }) {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Similar Properties in Your Budget</h2>
             <Link
-              to={`/listings?purpose=${property.purpose}&maxPrice=${Math.round(property.price * 1.25)}`}
+              to={`${listingsPath({ purpose: property.purpose })}?maxPrice=${Math.round(property.price * 1.25)}`}
               className="text-sm font-medium text-[var(--color-accent)] shrink-0"
             >
               View All →
@@ -388,7 +440,7 @@ function PropertyDetailInner({ id }) {
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">More {property.type}s Across India</h2>
-            <Link to={`/listings?type=${property.type}`} className="text-sm font-medium text-[var(--color-accent)] shrink-0">
+            <Link to={listingsPath({ purpose: property.purpose, type: property.type })} className="text-sm font-medium text-[var(--color-accent)] shrink-0">
               View All →
             </Link>
           </div>
@@ -415,6 +467,9 @@ function PropertyDetailInner({ id }) {
           </div>
         </section>
       )}
+
+      <ExploreLinks property={property} className="mt-12" />
+      <GuideLinks className="mt-12" />
     </div>
   )
 }

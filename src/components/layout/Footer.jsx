@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Building2, Mail, MapPin, Phone } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
 import { formatAddress, hasAddress } from '../../data/company'
+import { listingsPath } from '../../utils/seo'
 
 const socialLabels = { facebook: 'Facebook', instagram: 'Instagram', linkedin: 'LinkedIn', youtube: 'YouTube' }
 
@@ -47,20 +48,20 @@ export default function Footer() {
         </div>
 
         <FooterCol title="Buy Property" links={cities.map((c) => ({
-          to: `/listings?purpose=Buy&city=${encodeURIComponent(c)}`,
+          to: listingsPath({ purpose: 'Buy', city: c }),
           label: `Flats for Sale in ${c}`,
         }))} />
 
         <FooterCol title="Rent Property" links={cities.map((c) => ({
-          to: `/listings?purpose=Rent&city=${encodeURIComponent(c)}`,
+          to: listingsPath({ purpose: 'Rent', city: c }),
           label: `Rent in ${c}`,
         }))} />
 
         <FooterCol title="Property Types" links={[
-          ...propertyTypes.map((t) => ({ to: `/listings?type=${encodeURIComponent(t)}`, label: t })),
-          { to: '/listings?beds=2&purpose=Buy', label: '2 BHK Flats' },
-          { to: '/listings?beds=3&purpose=Buy', label: '3 BHK Flats' },
-          { to: `/listings?possession=${encodeURIComponent(siteContent.options.possession[0] ?? 'Ready to Move')}&purpose=Buy`, label: siteContent.options.possession[0] ?? 'Ready to Move' },
+          ...propertyTypes.map((t) => ({ to: listingsPath({ purpose: 'Buy', type: t }), label: t })),
+          { to: listingsPath({ purpose: 'Buy', beds: '2' }), label: '2 BHK Flats' },
+          { to: listingsPath({ purpose: 'Buy', beds: '3' }), label: '3 BHK Flats' },
+          { to: listingsPath({ purpose: 'Buy', possession: siteContent.options.possession[0] ?? 'Ready to Move' }), label: siteContent.options.possession[0] ?? 'Ready to Move' },
         ]} />
 
         <FooterCol title="Company" links={[
@@ -70,6 +71,10 @@ export default function Footer() {
           { to: '/agents', label: 'Agents' },
           { to: '/compare', label: 'Compare Properties' },
           { to: '/contact', label: 'Contact Us' },
+          { to: '/privacy', label: 'Privacy Policy' },
+          { to: '/terms', label: 'Terms & Conditions' },
+          { to: '/disclaimer', label: 'Disclaimer' },
+          { to: '/sitemap', label: 'Site Map' },
         ]} />
       </div>
 
@@ -77,7 +82,7 @@ export default function Footer() {
         <p className="text-tertiary text-xs leading-relaxed max-w-3xl mx-auto">
           {fill(siteContent.footer.disclaimer)} {company.reraAgentId ? `RERA agent registration no. ${company.reraAgentId}.` : ''}
         </p>
-        <p className="text-tertiary text-xs mt-3">
+        <p className="text-tertiary text-xs mt-3" suppressHydrationWarning>
           &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
         </p>
       </div>

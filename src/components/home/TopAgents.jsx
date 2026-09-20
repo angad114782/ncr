@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Award, MapPin, Star } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
@@ -7,7 +7,6 @@ import Avatar from '../common/Avatar'
 
 export default function TopAgents() {
   const { approvedAgents: agents } = useData()
-  const navigate = useNavigate()
   const top = [...agents].sort((a, b) => b.rating - a.rating).slice(0, 4)
 
   if (top.length === 0) return null
@@ -19,7 +18,7 @@ export default function TopAgents() {
           <h2 id="top-agents-heading" className="text-2xl md:text-3xl font-bold">Top Rated Agents</h2>
           <p className="text-secondary text-sm mt-1">Verified experts ready to help you find the right property.</p>
         </div>
-        <GlassButton variant="glass" size="sm" onClick={() => navigate('/agents')}>
+        <GlassButton variant="glass" size="sm" as={Link} to="/agents">
           View All
         </GlassButton>
       </div>
@@ -32,11 +31,13 @@ export default function TopAgents() {
               <p className="text-secondary text-xs mb-3">{agent.role}</p>
               <div className="flex items-center justify-center gap-3 text-xs text-secondary">
                 <span className="flex items-center gap-1"><MapPin size={12} /> {agent.city}</span>
-                <span className="flex items-center gap-1"><Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}</span>
+                {agent.rating > 0 && <span className="flex items-center gap-1"><Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}</span>}
               </div>
-              <div className="glass-weak rounded-full px-3 py-1.5 text-xs mt-4 flex items-center justify-center gap-1">
-                <Award size={12} /> {agent.dealsClosed} deals closed
-              </div>
+              {agent.dealsClosed > 0 && (
+                <div className="glass-weak rounded-full px-3 py-1.5 text-xs mt-4 flex items-center justify-center gap-1">
+                  <Award size={12} /> {agent.dealsClosed} deals closed
+                </div>
+              )}
             </GlassCard>
           </Link>
         ))}

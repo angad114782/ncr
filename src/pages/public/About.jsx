@@ -8,7 +8,7 @@ import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { getIcon } from '../../utils/icons'
-import { SITE_URL, breadcrumbLd, organizationLd } from '../../utils/seo'
+import { SITE_URL, breadcrumbLd, listingsPath, organizationLd } from '../../utils/seo'
 
 export default function About() {
   const { activeProperties, approvedAgents, activeBlogPosts } = useData()
@@ -49,7 +49,7 @@ export default function About() {
         <h1 className="text-3xl md:text-5xl font-bold mb-4">About {company.name}</h1>
         <p className="text-secondary max-w-2xl mx-auto text-base md:text-lg mb-6">{fill(c.heroText)}</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/listings"><GlassButton className="w-full justify-center">Browse Properties <ArrowRight size={16} /></GlassButton></Link>
+          <Link to="/buy"><GlassButton className="w-full justify-center">Browse Properties <ArrowRight size={16} /></GlassButton></Link>
           <Link to="/contact"><GlassButton variant="glass" className="w-full justify-center">Talk to Our Team</GlassButton></Link>
         </div>
       </GlassCard>
@@ -161,7 +161,7 @@ export default function About() {
             {cities.map((city) => (
               <Link
                 key={city}
-                to={`/listings?purpose=Buy&city=${encodeURIComponent(city)}`}
+                to={listingsPath({ purpose: 'Buy', city })}
                 className="glass px-5 py-2.5 rounded-full flex items-center gap-2 text-sm font-medium spring hover:scale-105"
               >
                 <MapPin size={15} /> Property in {city}

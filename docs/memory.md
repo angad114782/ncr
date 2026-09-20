@@ -140,6 +140,46 @@ The navbar is `-translate-x-1/2`; any `position: fixed` descendant is sized to t
 ### 3.24 Testing 3D in headless Chrome
 Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`. `readPixels` on the canvas returns zeros (no `preserveDrawingBuffer`), so verify by screenshot. Programmatic `window.scrollBy` bypasses `overflow: hidden` — use `mouse.wheel` to test a page lock.
 
+### 3.19 SEO / pre-rendering batch (React 19, Vite 8)
+- **`.jsx` vs `.tsx` doesn't matter for SEO** — crawlers read HTML. The fix is pre-rendering (every public URL → `dist/<route>/index.html`), not the file extension. Kept `.jsx`.
+- **React 19 hoists `<title>/<meta>/<link>`** to the start of the prerendered HTML, and react-helmet-async v3 leaves `helmetContext.helmet` empty. Extract the hoisted prefix in `prerender.mjs`, tag it `data-prerender`, remove it in `main.jsx` before `hydrateRoot`.
+- **Hydration needs identical first renders.** Reading `localStorage` in `useState` initialisers broke that; now defaults first, saved value in a layout effect, and `ready` gates writes + `ProtectedRoute`.
+- **Never mutate shared state during render.** The auto-link "used keywords" `Set` lost every link under StrictMode's double render (the second pass saw the keyword as already used). Fixed with a claims `Map` keyed by the text's id, which is idempotent.
+- **Node ESM can't import extensionless local files**, so anything shared with `scripts/*.mjs` (`listingsUrl.js`, `format.js`, `taxonomy.js`) is dependency-free.
+- **Empty filter combinations aren't pre-rendered** (and aren't linked / in the sitemap): they fall back to `index.html` and render `noindex` in the browser.
+- **Playwright `click()` scrolls the element into view** first; the filter chips sit under the sticky navbar when the page is scrolled, so a "filter keeps scroll" test must use a real coordinate click / DOM click, not `page.click`.
+- **Shell-generated code corrupts backslashes / backticks** (regexes in `autoLink.js`, `prerender.mjs`). Write such files with the editor tool, not heredocs / `python -c`.
+- Lenis needs `html.lenis { scroll-behavior:auto !important }` (we also set CSS `scroll-behavior:smooth`), a `prevent()` for self-scrolling containers, and `stop()` while the mobile menu freezes the page.
+
+### 3.20 Login prompts / lead capture
+- The owner wants every visitor to end up logged in ("physical game" = psychology) and leads generated "silently" from interest, behaviour and searches. Decision: **value-first soft prompt, no login wall** (a wall hides content from Google and drives visitors away), behaviour kept on-device, and **explicit consent** at sign-up — covertly attaching browsing to a phone number is a DPDP-Act risk. "Silent" = zero extra effort for the visitor, not hidden.
+- Only promise benefits that exist. Device-local storage means no cross-device sync yet, so the copy says "advisor can WhatsApp you matches" (the team must do it) instead.
+- Empty `Reveal` blocks (a section that renders `null`) were leaving a phantom gap because of `content-visibility` + `contain-intrinsic-size`; fixed with `.reveal-block:empty { display: none }`.
+- Playwright: framer-motion exit animations keep an element in the DOM for a moment — wait ~1.5 s before asserting it is gone.
+
+### 3.21 Legal pages & agents
+- Legal pages are **data** (`siteContent.legal`), not components with hard-coded text — the owner wanted admin to control them. The old `Privacy.jsx` was replaced by one generic `LegalPage`.
+- Sign-up **role defaults to client**; agent fields are only revealed by the switch. An agent's login and agent record are created together and the record is `pending` — `approvedAgents` already hides pending agents, so nothing leaks.
+- **Agent-posted listings need approval**: `activeProperties` now also requires `reviewStatus` approved (missing = approved, so seeds / admin listings still work). Admin approval is blocked while the agent is unapproved.
+- Native `required` on a `<select>` blocks form submit before our JS error shows — tests should check validity, not the message.
+- Playwright `addInitScript` re-runs on **every navigation** and will overwrite localStorage the app just saved; guard it with a sessionStorage flag.
+- `text=` selectors are substring + case-insensitive, so "agree to the terms" also matched the consent label.
+
+### 3.22 Property slugs
+- The owner wanted `/property/p6` → a readable URL from the title, with the city / locality / type added on duplicates. Implemented once in `utils/propertySlug.js` and used by DataContext (every save path), the public page (lookup + redirect), the scripts (sitemap / prerender / llms) and the admin form.
+- **Keep old URLs alive**: the live site already had `/property/p6` indexed. Old ids and old slugs resolve and redirect (`findByParam` + `previousSlugs`), and the build writes redirect stubs + an nginx map.
+- Several saves in one tick (CSV import, agent CSV) must not read a stale list — DataContext keeps a `latest` ref for property saves.
+- A refactor that moves code between files silently dropped an import (`newId`) and broke the admin **Duplicate** button — the tests hadn't covered it. After moving code, run lint with undefined-variable checks and click the buttons.
+- Bash heredocs turn `\n` inside JS strings into real newlines (again): use the editor tool for JS that contains escape sequences.
+
+### 3.23 Backend (`backend/`)
+- Built to the §8a spec: Express 5, Mongoose 9, zod validation, JWT in an HttpOnly cookie, string ids with `id` in JSON, tests on an **in-memory MongoDB** (never the real database).
+- **Atlas login failed** with the credentials the owner gave (`bad auth`) although the cluster is reachable — the user / password in Database Access must be checked; the server prints this hint on start. Credentials belong only in `backend/.env` (git-ignored) and the password should be rotated because it was pasted in chat.
+- Security rules worth remembering: never trust the client for intent, role, agentId, review status or slug; consent text is read from the CURRENT settings on the server; secrets in `whatsapp` / `mail` settings are write-only; OTP is stored as an HMAC and locked after 5 misses; production refuses `OTP_DEV_MODE=true`.
+- Express 5 gotchas hit: `req.query` is read-only (parse with zod, don't mutate); `?a[$ne]=x` stays a literal key (not an object) so operator injection can't happen through the query string; async route errors are caught automatically. Mongoose 9: use `returnDocument: 'after'` instead of `new: true`.
+- The test helper must pass the memory-server URI to `connectDb(uri)` explicitly — several suites run in one process and the config is cached.
+- `errorHandler` must not mask `AppError`s with status ≥ 500 (the 503 "OTP unavailable" was being turned into a generic 500).
+
 ## 4. Working preferences (user)
 
 - Writes in Hinglish; comfortable with technical English. Answer in the same register.
@@ -177,11 +217,16 @@ Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-bl
 19. **Home redesign + SEO + TopBanner + admin-managed cities/types** *(uncommitted — see [tasks.md](tasks.md))*
 20. **Site-wide review** — found the GlassCard remount bug, double conversions, canonical bug, contact form that saved nothing (§3.11–3.13).
 22. **Fully admin-controlled CMS** — generic admin engine, Blog/FAQ/Reviews/Agents/Users/Listings/Site-Content admin, image upload-or-link, CSV everywhere, backup/restore (§3.16–3.18).
+27. **Backend built** (`backend/`, 88 tests; Atlas login to be fixed) (§3.23).
+26. **Readable property slugs** (`/property/<title-slug>`, duplicates disambiguated, old links redirect) (§3.22).
+25. **Legal pages (admin-editable) + agent registration + Agent Panel + listing moderation** (§3.21).
+24. **Login prompt + interest profile + consented lead capture + Picked for you + /privacy** (§3.20).
+23. **SEO / AIO / GEO / speed / smooth-scroll batch** — pre-rendered static HTML, clean `/buy|/rent` URLs, dynamic interlinking + HTML sitemap, Quick-answer + llms.txt + RSS, lazy chunks + `<Img>`, Lenis (§3.19).
 21. **Competitor-driven content & SEO pass** — Team, Blog, long-form About/Contact, listing SEO blocks + BHK/possession filters, Seo on every page, generated sitemap (§3.14)..
 
 ## 6. Reference: localStorage keys
 
-`re-theme` · `re-user` · `re-extra-users` · `re-user-overrides` · `re-properties` · `re-inquiries` · `re-saved` · `re-compare` · `re-recent` · `re-agents` · `re-whatsapp-config` · `re-mail-config` · `re-marketing-config` · `re-cities` · `re-property-types` · `re-top-banner` · `re-ticker` · `re-banner-dismissed`
+`re-interest` (visitor browsing profile) · `re-nudge` (login-prompt cooldown) · `re-blog` · `re-faqs` · `re-testimonials` · `re-company` · `re-site-content` · sessionStorage `re-visit-counted`, `re-nudge-shown` · `re-theme` · `re-user` · `re-extra-users` · `re-user-overrides` · `re-properties` · `re-inquiries` · `re-saved` · `re-compare` · `re-recent` · `re-agents` · `re-whatsapp-config` · `re-mail-config` · `re-marketing-config` · `re-cities` · `re-property-types` · `re-top-banner` · `re-ticker` · `re-banner-dismissed`
 
 Clear all `re-*` keys in DevTools to reset the demo to seed data.
 
@@ -193,6 +238,8 @@ Clear all `re-*` keys in DevTools to reset the demo to seed data.
 - Public endpoints return only `active` properties and `approved` agents.
 - Sitemap should be generated from live listings.
 - Default to MongoDB + Mongoose unless the user changes their mind.
+- **Everything the owner has been testing (leads from the sign-up prompt, Hot/Warm intent, interest profiles, admin edits, blog, listings, site content, login-prompt text) is per-browser today.** The full migration spec — collections, endpoints, consent log, lead de-duplication, real OTP, SEO rebuild-on-publish / SSR — is in [architecture.md](architecture.md) §8a. Read it before starting the backend.
+- Two things silently break if forgotten: (1) the pre-rendered site reads `src/data/*.json` — point `scripts/site-data.mjs` at the API and add a rebuild trigger, or new content is invisible to Google; (2) the prompt copy promises WhatsApp matches — build the matcher job or edit the wording.
 
 ## 8. Entry template
 

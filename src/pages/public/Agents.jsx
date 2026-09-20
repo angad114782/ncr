@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Award, MapPin, Star } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import Seo from '../../components/layout/Seo'
+import AgentRegisterCta from '../../components/common/AgentRegisterCta'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { breadcrumbLd } from '../../utils/seo'
@@ -36,11 +37,13 @@ export default function Agents() {
               <p className="text-secondary text-sm mb-3">{agent.role}</p>
               <div className="flex items-center justify-center gap-3 text-xs text-secondary">
                 <span className="flex items-center gap-1"><MapPin size={12} /> {agent.city}</span>
-                <span className="flex items-center gap-1"><Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}</span>
+                {agent.rating > 0 && <span className="flex items-center gap-1"><Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}</span>}
               </div>
-              <div className="glass-weak rounded-full px-3 py-1.5 text-xs mt-4 flex items-center justify-center gap-1">
-                <Award size={12} /> {agent.dealsClosed} deals closed
-              </div>
+              {agent.dealsClosed > 0 && (
+                <div className="glass-weak rounded-full px-3 py-1.5 text-xs mt-4 flex items-center justify-center gap-1">
+                  <Award size={12} /> {agent.dealsClosed} deals closed
+                </div>
+              )}
             </GlassCard>
           </Link>
         ))}
@@ -61,6 +64,8 @@ export default function Agents() {
           , or <Link to="/contact" className="text-[var(--color-accent)] font-medium">talk to our team</Link> and we will match you with the right consultant.
         </p>
       </section>
+
+      <AgentRegisterCta className="mt-12" />
     </div>
   )
 }

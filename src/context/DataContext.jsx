@@ -1,6 +1,7 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect, useRef } from 'react'
 import usePersistedState from '../hooks/usePersistedState'
 import { newId } from '../utils/ids'
+import { ensureSlugs, resolveSlug } from '../utils/propertySlug'
 import propertiesSeed from '../data/properties.json'
 import inquiriesSeed from '../data/inquiries.json'
 import agentsSeed from '../data/agents.json'
@@ -53,7 +54,7 @@ function makeCrud(list, setList) {
 }
 
 export function DataProvider({ children }) {
-  const [properties, setProperties] = usePersistedState('re-properties', propertiesSeed)
+  const [properties, setProperties, propertiesReady] = usePersistedState('re-properties', propertiesSeed)
   const [inquiries, setInquiries] = usePersistedState('re-inquiries', inquiriesSeed)
   const [savedIds, setSavedIds] = usePersistedState('re-saved', [])
   const [compareIds, setCompareIds] = usePersistedState('re-compare', [])
@@ -66,13 +67,52 @@ export function DataProvider({ children }) {
   const isActive = (x) => x.active !== false
 
   // What visitors see: hidden / draft / unapproved items never leak to public pages.
-  const activeProperties = properties.filter(isActive)
+  // (a listing an agent posted stays hidden until the admin approves it — reviewStatus missing = approved)
+  const activeProperties = properties.filter((p) => isActive(p) && (p.reviewStatus ?? 'approved') === 'approved')
   const approvedAgents = agents.filter((a) => isActive(a) && a.status !== 'pending' && a.status !== 'rejected')
   const activeBlogPosts = blogPosts.filter(isActive).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
   const activeFaqs = faqs.filter(isActive)
   const activeTestimonials = testimonials.filter(isActive)
 
-  const propertyCrud = makeCrud(properties, setProperties)
+  // Listings saved before slugs existed get one (from their title) as soon as the saved data is loaded.
+  useEffect(() => {
+    if (propertiesReady && properties.some((p) => !p.slug)) setProperties(ensureSlugs(properties))
+  }, [propertiesReady, properties, setProperties])
+
+  // Every save gives the listing a readable, unique URL slug (see utils/propertySlug.js). The latest list
+  // is kept in a ref so several saves in a row (CSV import) don't hand out the same slug twice.
+  const latest = useRef(properties)
+  latest.current = properties
+  const baseCrud = makeCrud(properties, setProperties)
+  const stampSlug = (item, list) => {
+    const prev = list.find((x) => x.id === item.id)
+    const slug = resolveSlug({ ...item, slug: item.slug ?? prev?.slug }, list)
+    // old slugs keep working as redirects — but only for a listing that already existed (a duplicate starts clean)
+    const previousSlugs = prev
+      ? [...new Set([...(item.previousSlugs ?? prev.previousSlugs ?? []), ...(prev.slug && prev.slug !== slug ? [prev.slug] : [])])].filter((s) => s !== slug)
+      : []
+    return { ...item, slug, ...(previousSlugs.length ? { previousSlugs } : {}) }
+  }
+  const putProperty = (list, item) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? { ...x, ...item } : x)) : [item, ...list])
+  const propertyCrud = {
+    ...baseCrud,
+    upsert(item) {
+      const stamped = stampSlug(item, latest.current)
+      const next = putProperty(latest.current, stamped)
+      latest.current = next
+      setProperties(next)
+      return stamped
+    },
+    upsertMany(items) {
+      const known = new Set(latest.current.map((x) => x.id))
+      let next = latest.current
+      items.forEach((item) => { next = putProperty(next, stampSlug(item, next)) })
+      latest.current = next
+      setProperties(next)
+      const added = items.filter((x) => !known.has(x.id)).length
+      return { added, updated: items.length - added }
+    },
+  }
   const agentCrud = makeCrud(agents, setAgents)
   const blogCrud = makeCrud(blogPosts, setBlogPosts)
   const faqCrud = makeCrud(faqs, setFaqs)
@@ -122,7 +162,7 @@ export function DataProvider({ children }) {
   /** Bulk-add (CSV import). Each item gets a fresh unique id. */
   const addProperties = (items) => {
     const newProperties = items.map((item) => ({ id: newId('p'), featured: false, active: true, images: [], amenities: [], ...item }))
-    setProperties((prev) => [...newProperties, ...prev])
+    propertyCrud.upsertMany(newProperties)
     return newProperties
   }
 

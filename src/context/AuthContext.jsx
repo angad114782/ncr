@@ -1,65 +1,22 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
+import usePersistedState from '../hooks/usePersistedState'
 import usersData from '../data/users.json'
 
 const AuthContext = createContext(null)
 
+/** Where each kind of account lands after signing in. */
+export const panelPath = (user) => (user?.role === 'admin' ? '/admin' : user?.role === 'agent' ? '/agent' : '/dashboard')
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('re-user')
-      return saved ? JSON.parse(saved) : null
-    } catch {
-      return null
-    }
-  })
-
-  const [extraUsers, setExtraUsers] = useState(() => {
-    try {
-      const saved = localStorage.getItem('re-extra-users')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
-
-  // Per-user profile edits (name/phone/city/avatar), keyed by user id.
-  // Needed because the two seed accounts (admin/kabir) come from a static
-  // JSON import that can't be mutated directly — this is the persisted
-  // "patch" layer applied on top of it (and on top of extraUsers) whenever
-  // a user is looked up or listed.
-  const [overrides, setOverrides] = useState(() => {
-    try {
-      const saved = localStorage.getItem('re-user-overrides')
-      return saved ? JSON.parse(saved) : {}
-    } catch {
-      return {}
-    }
-  })
-
-  useEffect(() => {
-    try {
-      if (user) localStorage.setItem('re-user', JSON.stringify(user))
-      else localStorage.removeItem('re-user')
-    } catch {
-      /* ignore */
-    }
-  }, [user])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('re-extra-users', JSON.stringify(extraUsers))
-    } catch {
-      /* ignore */
-    }
-  }, [extraUsers])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('re-user-overrides', JSON.stringify(overrides))
-    } catch {
-      /* ignore */
-    }
-  }, [overrides])
+  // The very first render uses the defaults (no user) so pre-rendered HTML and the first
+  // client render match; the saved session is loaded before the browser paints.
+  // `ready` tells route guards to wait for that instead of bouncing a signed-in user away.
+  const [user, setUser, ready] = usePersistedState('re-user', null)
+  const [extraUsers, setExtraUsers] = usePersistedState('re-extra-users', [])
+  // Per-user profile edits (name/phone/city/avatar), keyed by user id. The seed accounts come
+  // from a static JSON import that can't be mutated, so edits are stored as a patch that is
+  // applied on top of it (and on top of extraUsers) whenever a user is looked up or listed.
+  const [overrides, setOverrides] = usePersistedState('re-user-overrides', {})
 
   // A deactivated account is signed out immediately, even if it is currently logged in.
   useEffect(() => {
@@ -83,7 +40,9 @@ export function AuthProvider({ children }) {
     return { ok: true, user: found }
   }
 
-  const signupWithPhone = (name, phone) => {
+  // role 'user' (client, the default) or 'agent'. An agent also gets a pending agent record — the
+  // caller (AuthSheet) creates it in DataContext, keyed by the `agentId` returned here.
+  const signupWithPhone = (name, phone, { role = 'user', city = '' } = {}) => {
     if (findByPhone(phone)) {
       return { ok: false, error: 'An account with this number already exists. Please login instead.' }
     }
@@ -91,10 +50,11 @@ export function AuthProvider({ children }) {
       id: `u${Date.now()}`,
       name,
       phone,
-      role: 'user',
-      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(phone)}`,
-      city: 'Mumbai',
+      role: role === 'agent' ? 'agent' : 'user',
+      avatar: '',
+      city: city || (role === 'agent' ? '' : 'Mumbai'),
     }
+    if (newUser.role === 'agent') newUser.agentId = `a${newUser.id}`
     setExtraUsers((prev) => [...prev, newUser])
     setUser(newUser)
     return { ok: true, user: newUser }
@@ -150,7 +110,7 @@ export function AuthProvider({ children }) {
     if (patch.name !== undefined && String(patch.name).trim().length < 2) return { ok: false, error: 'Please enter a name.' }
     // Never let the last active admin be demoted or deactivated (would lock everyone out).
     const target = allUsers.find((u) => u.id === id)
-    const wouldLoseAdmin = target?.role === 'admin' && (patch.role === 'user' || patch.active === false)
+    const wouldLoseAdmin = target?.role === 'admin' && ((patch.role !== undefined && patch.role !== 'admin') || patch.active === false)
     if (wouldLoseAdmin && allUsers.filter((u) => u.role === 'admin' && u.active !== false).length <= 1) {
       return { ok: false, error: 'At least one active admin is required.' }
     }
@@ -175,6 +135,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        ready,
         allUsers,
         loginWithPhone,
         signupWithPhone,
@@ -186,6 +147,7 @@ export function AuthProvider({ children }) {
         findByPhone,
         logout,
         isAdmin: user?.role === 'admin',
+        isAgent: user?.role === 'agent',
       }}
     >
       {children}

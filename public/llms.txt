@@ -1,0 +1,34 @@
+# NCR Estates
+
+> Verified homes to buy or rent across India. NCR Estates is an Indian real-estate platform led by Angad Yadav (CEO, 5+ years in real estate). It lists verified homes to buy or rent in Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai, Gurugram, with free buyer guidance on RERA, home loans, stamp duty and documents.
+
+## Key pages
+- [Home](https://propertyinncr.com/): search homes to buy or rent
+- [About NCR Estates](https://propertyinncr.com/about): who we are and how listings are verified
+- [Our team](https://propertyinncr.com/team): Angad Yadav and approved property consultants
+- [Contact](https://propertyinncr.com/contact): call, WhatsApp, email or send an enquiry
+- [Property blog](https://propertyinncr.com/blog): buying guides written by Angad Yadav
+- [Site map](https://propertyinncr.com/sitemap): every city, property type and guide
+- [Privacy Policy](https://propertyinncr.com/privacy) · [Terms & Conditions](https://propertyinncr.com/terms) · [Disclaimer](https://propertyinncr.com/disclaimer): legal information
+
+## Property search
+- [Flats for sale in Mumbai](https://propertyinncr.com/buy/mumbai) · [Rent in Mumbai](https://propertyinncr.com/rent/mumbai)
+- [Flats for sale in Delhi](https://propertyinncr.com/buy/delhi) · [Rent in Delhi](https://propertyinncr.com/rent/delhi)
+- [Flats for sale in Bangalore](https://propertyinncr.com/buy/bangalore) · [Rent in Bangalore](https://propertyinncr.com/rent/bangalore)
+- [Flats for sale in Pune](https://propertyinncr.com/buy/pune) · [Rent in Pune](https://propertyinncr.com/rent/pune)
+- [Flats for sale in Hyderabad](https://propertyinncr.com/buy/hyderabad) · [Rent in Hyderabad](https://propertyinncr.com/rent/hyderabad)
+- [Flats for sale in Chennai](https://propertyinncr.com/buy/chennai) · [Rent in Chennai](https://propertyinncr.com/rent/chennai)
+- [Flats for sale in Gurugram](https://propertyinncr.com/buy/gurugram) · [Rent in Gurugram](https://propertyinncr.com/rent/gurugram)
+
+## Buying guides
+- [First-Time Home Buyer Guide India: Step-by-Step Process (2026)](https://propertyinncr.com/blog/first-time-home-buyer-guide-india): A practical step-by-step guide for first-time home buyers in India — budget, home loan, property search, due diligence, registration and possession.
+- [Ready-to-Move vs Under-Construction Flats: Which Should You Buy?](https://propertyinncr.com/blog/ready-to-move-vs-under-construction): Ready-to-move or under-construction? Compare price, GST, risk, possession and loan implications to pick the right flat for your situation.
+- [How to Check RERA Registration of a Project or Agent (Step-by-Step)](https://propertyinncr.com/blog/how-to-check-rera-registration): Learn how to verify a RERA-registered project, builder and real estate agent on your state RERA portal before you pay a token amount.
+- [Home Loan Eligibility & EMI Explained: How Much Can You Borrow?](https://propertyinncr.com/blog/home-loan-eligibility-emi-explained): Understand home loan eligibility, EMI, loan-to-value, FOIR and credit score — and how to estimate your property budget before you apply.
+- [Stamp Duty & Registration Charges When Buying Property in India](https://propertyinncr.com/blog/stamp-duty-registration-charges-explained): What stamp duty and registration charges are, how they are calculated, why they differ by state, and how to budget for them.
+- [Property Documents Checklist: What to Verify Before You Pay](https://propertyinncr.com/blog/property-documents-checklist-before-buying): A practical checklist of documents to verify before buying a flat or house in India — title, encumbrance certificate, approvals, RERA and society records.
+- [How to Choose a Trusted Property Dealer in Delhi NCR](https://propertyinncr.com/blog/how-to-choose-property-dealer-delhi-ncr): How to pick a reliable property dealer or real estate consultant in Delhi NCR — RERA registration, transparency, references and red flags to avoid.
+
+## Optional
+- [Full plain-text version of this site](https://propertyinncr.com/llms-full.txt)
+- [Blog RSS feed](https://propertyinncr.com/feed.xml)

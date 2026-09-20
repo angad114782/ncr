@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { propertyPath } from '../../utils/seo'
 import { BadgeCheck, Clock, IndianRupee, MessageSquare } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import { useData } from '../../context/DataContext'
@@ -31,7 +32,7 @@ export default function MyInquiries() {
                   <img src={property.images[0]} alt={property.title} className="w-full sm:w-28 h-20 rounded-[14px] object-cover shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <Link to={inq.propertyId ? `/property/${inq.propertyId}` : '/contact'} className="font-semibold hover:text-[var(--color-accent)] truncate block flex items-center gap-1.5">
+                  <Link to={property ? propertyPath(property) : '/contact'} className="font-semibold hover:text-[var(--color-accent)] truncate block flex items-center gap-1.5">
                     {inq.propertyId ? (property?.title ?? 'Property removed') : 'General enquiry'}
                     {inq.phoneVerified && (
                       <span className="text-[var(--color-success)] shrink-0" title="Phone verified via OTP">

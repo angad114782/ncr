@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Phone, ShieldCheck, User } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Check, Phone, ShieldCheck, User } from 'lucide-react'
 import GlassSheet from '../glass/GlassSheet'
 import GlassInput from '../glass/GlassInput'
 import GlassButton from '../glass/GlassButton'
-import { useAuth } from '../../context/AuthContext'
+import { panelPath, useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
+import { useData } from '../../context/DataContext'
+import { useInterest } from '../../context/InterestContext'
+import { leadInterest } from '../../utils/interest'
 
 const OTP_LENGTH = 4
 
@@ -13,8 +16,13 @@ function generateOtp() {
   return String(Math.floor(1000 + Math.random() * 9000))
 }
 
-export default function AuthSheet({ open, onClose }) {
-  const [mode, setMode] = useState('login')
+export default function AuthSheet({ open, onClose, initialMode = 'login', source = '', initialRole = 'user' }) {
+  const [mode, setMode] = useState(initialMode)
+  const [agree, setAgree] = useState(false)
+  const [role, setRole] = useState(initialRole) // 'user' (client, the default) | 'agent'
+  const [agentCity, setAgentCity] = useState('')
+  const [agency, setAgency] = useState('')
+  const [reraId, setReraId] = useState('')
   const [step, setStep] = useState('phone')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -22,12 +30,28 @@ export default function AuthSheet({ open, onClose }) {
   const [sentOtp, setSentOtp] = useState('')
   const [error, setError] = useState('')
   const { loginWithPhone, signupWithPhone } = useAuth()
-  const { fireLeadEvent } = useSettings()
+  const { fireLeadEvent, siteContent, fill, cities } = useSettings()
+  const { addInquiry, agentCrud } = useData()
+  const { summary } = useInterest()
+  const nudge = siteContent.nudge
+  const program = siteContent.agentProgram
+  const isAgentSignup = mode === 'signup' && role === 'agent' && program.enabled !== false
   const navigate = useNavigate()
   const inputRefs = useRef([])
 
   useEffect(() => {
+    if (open) {
+      setMode(initialMode)
+      setRole(initialRole)
+    }
+  }, [open, initialMode, initialRole])
+
+  useEffect(() => {
     if (!open) {
+      setAgree(false)
+      setAgentCity('')
+      setAgency('')
+      setReraId('')
       setStep('phone')
       setName('')
       setPhone('')
@@ -53,6 +77,14 @@ export default function AuthSheet({ open, onClose }) {
     }
     if (mode === 'signup' && name.trim().length < 2) {
       setError('Please enter your full name')
+      return
+    }
+    if (isAgentSignup && !agentCity) {
+      setError('Please choose the city you work in')
+      return
+    }
+    if (mode === 'signup' && !agree) {
+      setError(isAgentSignup ? 'Please tick the box to agree to the terms' : 'Please tick the box to agree, so we can send you matches')
       return
     }
     // Mock SMS gateway — in production this would trigger a real OTP send.
@@ -98,21 +130,66 @@ export default function AuthSheet({ open, onClose }) {
       return
     }
 
-    const result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone)
+    const result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone, { role: isAgentSignup ? 'agent' : 'user', city: agentCity })
     if (!result.ok) {
       setError(result.error)
       return
     }
-    if (mode === 'signup') fireLeadEvent('signup')
+    if (isAgentSignup) {
+      // A new agent = a login (role "agent") plus an agent record that waits for the admin's approval.
+      agentCrud.upsert({
+        id: result.user.agentId,
+        userId: result.user.id,
+        name: name.trim(),
+        role: 'Property Consultant',
+        city: agentCity,
+        phone: `+91 ${phone}`,
+        email: '',
+        avatar: '',
+        rating: 0,
+        dealsClosed: 0,
+        status: 'pending',
+        bio: '',
+        agency: agency.trim(),
+        reraId: reraId.trim(),
+        joined: new Date().toISOString().slice(0, 10),
+        active: true,
+      })
+      fireLeadEvent('agent_signup', { city: agentCity })
+    } else if (mode === 'signup') {
+      // A new, OTP-verified number that agreed to be contacted = a lead. The sales team gets the
+      // visitor's interest (what they searched / viewed) so the first call is relevant.
+      addInquiry({
+        propertyId: summary.lastViewedId,
+        userId: result.user.id,
+        userName: name.trim(),
+        userEmail: '',
+        phone: `+91 ${phone}`,
+        budget: summary.budget ? `around ₹${summary.budget.toLocaleString('en-IN')}` : '',
+        message: summary.line ? `New sign-up. ${summary.line}` : 'New sign-up — no browsing history yet.',
+        phoneVerified: true,
+        source: source ? 'signup-prompt' : 'signup',
+        consent: true,
+        intent: summary.intent,
+        interest: leadInterest(summary),
+      })
+      // Only non-identifying context goes to the ad platforms — never the name or number.
+      fireLeadEvent('signup', {
+        ...(summary.city ? { city: summary.city } : {}),
+        ...(summary.type ? { property_type: summary.type } : {}),
+        intent: summary.intent,
+      })
+    }
     onClose()
-    navigate(result.user.role === 'admin' ? '/admin' : '/dashboard')
+    // From the login prompt they stay exactly where they were browsing; otherwise go to their panel.
+    if (isAgentSignup || !(mode === 'signup' && source)) navigate(panelPath(result.user))
   }
 
   return (
     <GlassSheet
       open={open}
       onClose={onClose}
-      title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? 'Welcome Back' : 'Create Your Free Account'}
+      title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? 'Welcome Back' : isAgentSignup ? program.title || 'Join as an agent' : 'Create Your Free Account'}
     >
       {step === 'phone' && (
         <>
@@ -131,6 +208,22 @@ export default function AuthSheet({ open, onClose }) {
           </div>
 
           <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+            {mode === 'signup' && program.enabled !== false && (
+              <div role="radiogroup" aria-label="I am a" className="glass-weak p-1 rounded-full flex">
+                {[['user', 'I’m a buyer / tenant'], ['agent', program.registerLabel || 'I’m an agent']].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={role === value}
+                    onClick={() => { setRole(value); setError('') }}
+                    className={`flex-1 py-2 px-2 rounded-full text-xs sm:text-sm font-medium spring ${role === value ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
             {mode === 'signup' && (
               <GlassInput
                 label="Full Name"
@@ -153,6 +246,17 @@ export default function AuthSheet({ open, onClose }) {
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
             />
 
+            {isAgentSignup && (
+              <>
+                <GlassInput as="select" label="City you work in" value={agentCity} onChange={(e) => setAgentCity(e.target.value)} required>
+                  <option value="">Select city…</option>
+                  {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+                </GlassInput>
+                <GlassInput label="Agency / company (optional)" value={agency} onChange={(e) => setAgency(e.target.value)} />
+                <GlassInput label="RERA agent registration no. (optional)" value={reraId} onChange={(e) => setReraId(e.target.value)} />
+              </>
+            )}
+
             {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
             {mode === 'login' && (
@@ -161,8 +265,34 @@ export default function AuthSheet({ open, onClose }) {
               </p>
             )}
 
+            {mode === 'signup' && (
+              <>
+                <ul className="glass-weak rounded-[16px] p-4 flex flex-col gap-2">
+                  {!isAgentSignup && summary.focus && (
+                    <li className="text-xs text-secondary pb-1">
+                      Matching you with <strong className="text-primary">{summary.focus}</strong>
+                    </li>
+                  )}
+                  {((isAgentSignup ? program.benefits : nudge.benefits) ?? []).map((b) => (
+                    <li key={b} className="flex items-start gap-2 text-sm">
+                      <Check size={15} className="text-[var(--color-success)] mt-0.5 shrink-0" />
+                      <span>{fill(b)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <label className="flex items-start gap-2.5 text-xs text-secondary leading-relaxed cursor-pointer">
+                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[var(--color-accent)] shrink-0" />
+                  <span>
+                    {fill(isAgentSignup ? program.consentText : nudge.consentText)}{' '}
+                    <Link to="/terms" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Terms</Link>{' · '}
+                    <Link to="/privacy" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Privacy Policy</Link>
+                  </span>
+                </label>
+              </>
+            )}
+
             <GlassButton type="submit" className="mt-2 w-full justify-center">
-              {mode === 'login' ? 'Send Me a Secure Code' : 'Create My Free Account'}
+              {mode === 'login' ? 'Send Me a Secure Code' : isAgentSignup ? 'Register as an agent' : 'Create My Free Account'}
             </GlassButton>
             <p className="text-tertiary text-xs text-center">We’ll text a 4-digit code to confirm it’s you — no password to remember.</p>
           </form>
@@ -211,7 +341,7 @@ export default function AuthSheet({ open, onClose }) {
             {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
             <GlassButton type="submit" className="w-full justify-center">
-              {mode === 'login' ? 'Confirm & Take Me In' : 'Confirm & Start Exploring'}
+              {mode === 'login' ? 'Confirm & Take Me In' : isAgentSignup ? 'Confirm & Open My Panel' : 'Confirm & Start Exploring'}
             </GlassButton>
 
             <button

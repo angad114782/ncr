@@ -28,6 +28,7 @@ export function useStorageErrors() {
       return () => listeners.delete(cb)
     },
     () => snapshot,
+    () => [],
   )
 }
 

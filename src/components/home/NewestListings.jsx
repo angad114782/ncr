@@ -1,11 +1,10 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import GlassButton from '../glass/GlassButton'
 import PropertyCard from '../property/PropertyCard'
 import { useData } from '../../context/DataContext'
 
 export default function NewestListings({ excludeIds = [] }) {
   const { activeProperties } = useData()
-  const navigate = useNavigate()
 
   const newest = [...activeProperties]
     .filter((p) => !excludeIds.includes(p.id))
@@ -18,7 +17,7 @@ export default function NewestListings({ excludeIds = [] }) {
     <section className="mb-16" aria-labelledby="newest-listings-heading">
       <div className="flex items-center justify-between mb-6">
         <h2 id="newest-listings-heading" className="text-2xl md:text-3xl font-bold">Newest Listings</h2>
-        <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
+        <GlassButton variant="glass" size="sm" as={Link} to="/buy">
           View All
         </GlassButton>
       </div>

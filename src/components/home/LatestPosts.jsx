@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
+import Img from '../common/Img'
 import { useData } from '../../context/DataContext'
 import { formatDate, readingMinutes } from '../../utils/blog'
 
@@ -22,7 +23,7 @@ export default function LatestPosts() {
         {posts.map((post) => (
           <Link key={post.id} to={`/blog/${post.slug}`}>
             <GlassCard className="overflow-hidden h-full flex flex-col">
-              {post.cover && <img src={post.cover} alt={post.title} loading="lazy" className="w-full h-40 object-cover" />}
+              {post.cover && <Img src={post.cover} alt={post.title} width={640} height={320} widths={[400, 640, 900]} sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw" className="w-full h-40 object-cover" />}
               <div className="p-5 flex flex-col flex-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)] mb-1.5">{post.category}</span>
                 <h3 className="font-semibold mb-2">{post.title}</h3>

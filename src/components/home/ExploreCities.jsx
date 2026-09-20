@@ -1,13 +1,13 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
+import { listingsPath } from '../../utils/seo'
 
 export default function ExploreCities() {
   const { activeProperties } = useData()
   const { cities } = useSettings()
-  const navigate = useNavigate()
 
   return (
     <section className="mb-16" aria-labelledby="explore-cities-heading">
@@ -21,16 +21,16 @@ export default function ExploreCities() {
         {cities.map((city) => {
           const count = activeProperties.filter((p) => p.city === city).length
           return (
-            <GlassCard
-              key={city}
-              as="button"
-              type="button"
-              onClick={() => navigate(`/listings?city=${city}`)}
-              className="p-5 text-left"
-            >
-              <Building2 className="text-[var(--color-accent)] mb-3" size={22} />
-              <h3 className="font-semibold">{city}</h3>
-              <p className="text-secondary text-xs mt-1">{count} propert{count === 1 ? 'y' : 'ies'}</p>
+            <GlassCard key={city} className="p-5 text-left">
+              <Link to={listingsPath({ purpose: 'Buy', city })} className="block">
+                <Building2 className="text-[var(--color-accent)] mb-3" size={22} />
+                <h3 className="font-semibold">{city}</h3>
+                <p className="text-secondary text-xs mt-1">{count} propert{count === 1 ? 'y' : 'ies'}</p>
+              </Link>
+              <p className="text-xs mt-3 flex gap-3 font-medium text-[var(--color-accent)]">
+                <Link to={listingsPath({ purpose: 'Buy', city })} className="hover:underline">Buy</Link>
+                <Link to={listingsPath({ purpose: 'Rent', city })} className="hover:underline">Rent</Link>
+              </p>
             </GlassCard>
           )
         })}

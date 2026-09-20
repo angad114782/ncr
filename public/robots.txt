@@ -1,6 +1,41 @@
+# Search engines and AI answer engines are welcome on the public site.
 User-agent: *
 Allow: /
-Disallow: /dashboard
 Disallow: /admin
+Disallow: /dashboard
+Disallow: /agent
+Disallow: /thank-you
+Disallow: /compare
+# Internal search / filter permutations add nothing new to the index
+Disallow: /*?q=
+Disallow: /*?maxPrice=
+Disallow: /*&maxPrice=
+
+# AI / generative-engine crawlers: allowed on purpose so the site can be cited in AI answers
+# (remove a block to opt out of that crawler).
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Perplexity-User
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: Amazonbot
+Allow: /
+User-agent: meta-externalagent
+Allow: /
 
 Sitemap: https://propertyinncr.com/sitemap.xml

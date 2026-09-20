@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Hand, Loader2, Moon, Sun } from 'lucide-react'
 import GlassButton from '../glass/GlassButton'
@@ -42,7 +42,9 @@ export default function HomeShowcase() {
   const [visible, setVisible] = useState(false) // currently on screen → animate
   const [ready, setReady] = useState(false)
   const [night, setNight] = useState(false)
-  const webgl = useMemo(supportsWebGL, [])
+  const [webgl, setWebgl] = useState(true) // assume yes on the server; probed in the browser
+
+  useEffect(() => { setWebgl(supportsWebGL()) }, [])
 
   useEffect(() => {
     const el = wrap.current

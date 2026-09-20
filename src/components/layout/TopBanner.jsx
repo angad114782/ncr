@@ -1,4 +1,5 @@
-import { useLayoutEffect, useState } from 'react'
+import { useState } from 'react'
+import { useIsoLayoutEffect } from '../../hooks/usePersistedState'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
@@ -8,19 +9,21 @@ const BANNER_HEIGHT = '40px'
 
 export default function TopBanner() {
   const { topBanner } = useSettings()
-  const [dismissedText, setDismissedText] = useState(() => {
+  // '' on the first render (server + browser agree); the visitor's dismissal is read before paint.
+  const [dismissedText, setDismissedText] = useState('')
+  useIsoLayoutEffect(() => {
     try {
-      return localStorage.getItem(DISMISS_KEY) || ''
+      setDismissedText(localStorage.getItem(DISMISS_KEY) || '')
     } catch {
-      return ''
+      /* ignore */
     }
-  })
+  }, [])
 
   // Re-appears automatically if the admin changes the message, since the
   // dismissal is keyed to the exact text the visitor dismissed.
   const visible = topBanner.enabled && !!topBanner.text.trim() && topBanner.text !== dismissedText
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     document.documentElement.style.setProperty('--banner-h', visible ? BANNER_HEIGHT : '0px')
   }, [visible])
 

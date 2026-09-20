@@ -5,6 +5,7 @@ import GlassCard from '../../components/glass/GlassCard'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
+import Img from '../../components/common/Img'
 import { formatDate, readingMinutes } from '../../utils/blog'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 
@@ -84,7 +85,7 @@ export default function Blog() {
       {featured && (
         <Link to={`/blog/${featured.slug}`} className="block mb-8">
           <GlassCard strong className="overflow-hidden grid grid-cols-1 md:grid-cols-2">
-            {featured.cover ? <img src={featured.cover} alt={featured.title} className="w-full h-56 md:h-full object-cover" /> : <div className="h-40 md:h-full glass-weak" />}
+            {featured.cover ? <Img src={featured.cover} alt={featured.title} priority width={1200} height={630} sizes="(min-width:768px) 50vw, 100vw" className="w-full h-56 md:h-full object-cover" /> : <div className="h-40 md:h-full glass-weak" />}
             <div className="p-6 md:p-10 flex flex-col justify-center">
               <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)] mb-2">
                 {featured.featured ? 'Featured · ' : ''}{featured.category}
@@ -101,7 +102,7 @@ export default function Blog() {
         {rest.map((post) => (
           <Link key={post.id} to={`/blog/${post.slug}`}>
             <GlassCard className="overflow-hidden h-full flex flex-col">
-              {post.cover ? <img src={post.cover} alt={post.title} loading="lazy" className="w-full h-44 object-cover" /> : <div className="h-24 glass-weak" />}
+              {post.cover ? <Img src={post.cover} alt={post.title} width={640} height={352} widths={[400, 640, 900]} sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw" className="w-full h-44 object-cover" /> : <div className="h-24 glass-weak" />}
               <div className="p-5 flex flex-col flex-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-accent)] mb-2">
                   {post.category}

@@ -31,7 +31,7 @@ export default function AgentProfile() {
     <div className="pb-16">
       <Seo
         title={`${agent.name} — ${agent.role} in ${agent.city}`}
-        description={`${agent.name} is a ${agent.role.toLowerCase()} in ${agent.city} on NCR Estates. ${agent.dealsClosed} deals closed, rated ${agent.rating}/5. View active listings and contact directly.`}
+        description={`${agent.name} is a ${agent.role.toLowerCase()} in ${agent.city} on NCR Estates. ${agent.dealsClosed > 0 ? `${agent.dealsClosed} deals closed` : 'Approved by our team'}${agent.rating > 0 ? `, rated ${agent.rating}/5` : ''}. View active listings and contact directly.`}
         path={`/agents/${agent.id}`}
         image={agent.avatar}
         jsonLd={[
@@ -60,8 +60,8 @@ export default function AgentProfile() {
           <p className="text-secondary mb-3">{agent.role}</p>
           <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-secondary mb-4">
             <span className="flex items-center gap-1"><MapPin size={14} /> {agent.city}</span>
-            <span className="flex items-center gap-1"><Star size={14} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating} Rating</span>
-            <span className="flex items-center gap-1"><Award size={14} /> {agent.dealsClosed} Deals Closed</span>
+            {agent.rating > 0 && <span className="flex items-center gap-1"><Star size={14} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating} Rating</span>}
+            {agent.dealsClosed > 0 && <span className="flex items-center gap-1"><Award size={14} /> {agent.dealsClosed} Deals Closed</span>}
           </div>
           <p className="text-secondary leading-relaxed max-w-xl">{agent.bio}</p>
         </div>

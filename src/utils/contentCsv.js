@@ -43,7 +43,7 @@ function checkImage(value, label) {
 
 /* ------------------------------------------------------------------ Blog */
 
-const BLOG_COLUMNS = ['slug', 'title', 'description', 'category', 'author', 'date', 'updated', 'cover', 'active', 'featured', 'intro', 'body', 'faqs', 'related']
+const BLOG_COLUMNS = ['slug', 'title', 'description', 'category', 'author', 'date', 'updated', 'cover', 'active', 'featured', 'summary', 'intro', 'body', 'faqs', 'related']
 const MEDIA_LINE = /^!\[[^\]]*\]\(media:[^)]*\)[ \t]*$/gm
 
 const blogToRow = (p) => ({
@@ -57,6 +57,7 @@ const blogToRow = (p) => ({
   cover: linkOrBlank(p.cover),
   active: p.active !== false,
   featured: !!p.featured,
+  summary: p.summary ?? '',
   intro: p.intro ?? '',
   body: (p.body ?? '').replace(MEDIA_LINE, '').replace(/\n{3,}/g, '\n\n').trim(),
   faqs: (p.faqs ?? []).map((f) => `${f.question}::${f.answer}`).join('||'),
@@ -66,7 +67,7 @@ const blogToRow = (p) => ({
 export const blogCsv = {
   entity: 'blog posts',
   filename: 'blog-posts',
-  keyHelp: 'Rows with an existing slug update that post; new slugs are added. faqs = Question::Answer||Question::Answer, related = slug;slug. Body uses the blog markup (## headings, - bullets, | tables |).',
+  keyHelp: 'Rows with an existing slug update that post; new slugs are added. summary = the short direct answer shown at the top (great for Google AI Overviews and ChatGPT), faqs = Question::Answer||Question::Answer, related = slug;slug. Body uses the blog markup (## headings, - bullets, | tables |).',
   toCsv(items) {
     const skipped = items.reduce(
       (n, p) => n + (isDataUrl(p.cover) ? 1 : 0) + ((p.body ?? '').match(MEDIA_LINE)?.length ?? 0),
@@ -79,7 +80,7 @@ export const blogCsv = {
     sample.push({
       slug: 'my-new-guide', title: 'My New Guide', description: 'One-line summary shown in search results.', category: 'Buying Guides',
       author: 'Author Name', date: today(), updated: today(), cover: 'https://example.com/photo.jpg', active: true, featured: false,
-      intro: 'Short intro paragraph.', body: '## First heading\n\nA paragraph of text.\n\n- Point one\n- Point two', faqs: 'A question?::The answer.', related: '',
+      summary: 'A 1–2 sentence direct answer to the question the article answers.', intro: 'Short intro paragraph.', body: '## First heading\n\nA paragraph of text.\n\n- Point one\n- Point two', faqs: 'A question?::The answer.', related: '',
     })
     return buildCsv(BLOG_COLUMNS, sample)
   },
@@ -114,6 +115,7 @@ export const blogCsv = {
         cover: cover || (prev && isDataUrl(prev.cover) ? prev.cover : ''),
         active: toBool(row.active, true),
         featured: toBool(row.featured, false),
+        summary: clean(row.summary),
         intro: clean(row.intro),
         body: String(row.body ?? '').replace(/\r\n?/g, '\n').trim(),
         faqs: clean(row.faqs)

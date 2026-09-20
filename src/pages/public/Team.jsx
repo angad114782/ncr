@@ -3,6 +3,7 @@ import { Award, BadgeCheck, Briefcase, MapPin, Quote, Star } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import CeoAvatar from '../../components/company/CeoAvatar'
+import AgentRegisterCta from '../../components/common/AgentRegisterCta'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
@@ -96,9 +97,11 @@ export default function Team() {
                   <p className="text-secondary text-sm mb-3">{agent.role}</p>
                   <div className="flex items-center justify-center gap-3 text-xs text-secondary">
                     <span className="flex items-center gap-1"><MapPin size={12} /> {agent.city}</span>
-                    <span className="flex items-center gap-1">
-                      <Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}
-                    </span>
+                    {agent.rating > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Star size={12} className="fill-[var(--color-warning)] text-[var(--color-warning)]" /> {agent.rating}
+                      </span>
+                    )}
                   </div>
                 </GlassCard>
               </Link>
@@ -128,6 +131,8 @@ export default function Team() {
         <p className="text-secondary max-w-xl mx-auto mb-5">{fill(c.joinText)}</p>
         <Link to="/contact?intent=partner"><GlassButton>Get in touch</GlassButton></Link>
       </GlassCard>
+
+      <AgentRegisterCta className="mt-8" />
     </div>
   )
 }

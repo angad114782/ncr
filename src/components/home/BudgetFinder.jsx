@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Wallet } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
@@ -23,7 +23,6 @@ const LOAN_TO_VALUE = 0.8
 
 export default function BudgetFinder() {
   const { activeProperties } = useData()
-  const navigate = useNavigate()
   const [income, setIncome] = useState(150000)
   const [rate, setRate] = useState(8.5)
   const [years, setYears] = useState(20)
@@ -101,7 +100,8 @@ export default function BudgetFinder() {
               <GlassButton
                 variant="glass"
                 size="sm"
-                onClick={() => navigate(`/listings?purpose=Buy&maxPrice=${Math.round(result.maxBudget)}`)}
+                as={Link}
+                to={`/buy?maxPrice=${Math.round(result.maxBudget)}`}
               >
                 View All
               </GlassButton>

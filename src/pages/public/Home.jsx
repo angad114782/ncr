@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Building, Building2, Home as HomeIcon, KeyRound, MapPin, Search, TrendingUp, Users } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
@@ -25,12 +25,13 @@ import PromoTicker from '../../components/home/PromoTicker'
 import LatestPosts from '../../components/home/LatestPosts'
 import HomeShowcase from '../../components/home/HomeShowcase'
 import CeoSpotlight from '../../components/home/CeoSpotlight'
+import RecommendedForYou from '../../components/home/RecommendedForYou'
 import Reveal from '../../components/glass/Reveal'
 import Seo, { SITE_URL } from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { normalizeSections } from '../../data/siteDefaults'
-import { organizationLd } from '../../utils/seo'
+import { listingsPath, organizationLd } from '../../utils/seo'
 
 const typeIcons = {
   Apartment: Building2,
@@ -55,11 +56,8 @@ export default function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    const params = new URLSearchParams()
-    params.set('purpose', purpose)
-    if (city) params.set('city', city)
-    if (keyword) params.set('q', keyword)
-    navigate(`/listings?${params.toString()}`)
+    const base = listingsPath({ purpose, city })
+    navigate(keyword.trim() ? `${base}?q=${encodeURIComponent(keyword.trim())}` : base)
   }
 
   const jsonLd = {
@@ -103,7 +101,7 @@ export default function Home() {
       <section className="mb-16">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
-          <GlassButton variant="glass" size="sm" onClick={() => navigate('/listings')}>
+          <GlassButton variant="glass" size="sm" as={Link} to="/buy">
             View All
           </GlassButton>
         </div>
@@ -114,6 +112,7 @@ export default function Home() {
         </div>
       </section>
     ),
+    recommended: <RecommendedForYou />,
     showcase: <HomeShowcase />,
     budget: <BudgetFinder />,
     newest: <NewestListings excludeIds={featured.map((p) => p.id)} />,
@@ -211,13 +210,13 @@ export default function Home() {
 
         <div className="flex flex-wrap justify-center gap-3 mt-6">
           {categories.map((c) => (
-            <button
+            <Link
               key={c.label}
-              onClick={() => navigate(`/listings?type=${encodeURIComponent(c.label)}`)}
+              to={listingsPath({ purpose, type: c.label })}
               className="glass px-5 py-2.5 rounded-full flex items-center gap-2 text-sm font-medium spring hover:scale-105"
             >
               <c.icon size={16} /> {c.label}
-            </button>
+            </Link>
           ))}
         </div>
       </section>

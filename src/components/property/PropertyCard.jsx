@@ -2,10 +2,14 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BadgeCheck, BedDouble, Bath, GitCompare, Heart, MapPin, Ruler } from 'lucide-react'
 import Tilt from '../effects/Tilt'
+import Img from '../common/Img'
+import { propertyPath } from '../../utils/seo'
 import { useData } from '../../context/DataContext'
+import { useInterest } from '../../context/InterestContext'
 
 export default function PropertyCard({ property }) {
   const { savedIds, toggleSaved, compareIds, toggleCompare } = useData()
+  const { track } = useInterest()
   const isSaved = savedIds.includes(property.id)
   const isComparing = compareIds.includes(property.id)
 
@@ -18,10 +22,13 @@ export default function PropertyCard({ property }) {
     >
       <div className="relative h-52 overflow-hidden">
         {property.images?.[0] ? (
-          <img
+          <Img
             src={property.images[0]}
             alt={`${property.title} in ${property.locality}, ${property.city}`}
-            loading="lazy"
+            width={600}
+            height={416}
+            sizes="(min-width:1280px) 360px, (min-width:640px) 45vw, 92vw"
+            widths={[400, 640, 900]}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
@@ -39,6 +46,7 @@ export default function PropertyCard({ property }) {
           <button
             onClick={(e) => {
               e.preventDefault()
+              if (!isComparing) track('compare', property)
               toggleCompare(property.id)
             }}
             className={`glass-strong w-9 h-9 rounded-full flex items-center justify-center spring hover:scale-110 ${
@@ -51,6 +59,7 @@ export default function PropertyCard({ property }) {
           <button
             onClick={(e) => {
               e.preventDefault()
+              if (!isSaved) track('save', property)
               toggleSaved(property.id)
             }}
             className="glass-strong w-9 h-9 rounded-full flex items-center justify-center spring hover:scale-110"
@@ -69,7 +78,7 @@ export default function PropertyCard({ property }) {
         )}
       </div>
 
-      <Link to={`/property/${property.id}`} className="block p-5">
+      <Link to={propertyPath(property)} className="block p-5">
         <h3 className="font-semibold text-lg mb-1 truncate">{property.title}</h3>
         <p className="text-secondary text-sm flex items-center gap-1 mb-4">
           <MapPin size={14} /> {property.locality}, {property.city}

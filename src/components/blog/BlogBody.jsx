@@ -1,23 +1,27 @@
 import { Link } from 'react-router-dom'
 import { isSafeHref, parseBody, parseInline, slugifyText } from '../../utils/blogBody'
+import { renderAutoLinked, AUTO_LINK_CLASS } from '../common/AutoLinkedText'
+import { useAutoLinkRules } from '../../hooks/useAutoLinkRules'
 
-function Inline({ text }) {
+function Inline({ text, link, id }) {
   return parseInline(text).map((seg, i) => {
     if (seg.t === 'bold') return <strong key={i} className="text-primary">{seg.v}</strong>
     if (seg.t === 'link') {
       if (!isSafeHref(seg.href)) return <span key={i}>{seg.v}</span>
-      const cls = 'text-[var(--color-accent)] font-medium underline underline-offset-2'
+      const cls = AUTO_LINK_CLASS
       return /^https?:|^mailto:|^tel:/i.test(seg.href)
         ? <a key={i} href={seg.href} target="_blank" rel="noopener noreferrer" className={cls}>{seg.v}</a>
         : <Link key={i} to={seg.href} className={cls}>{seg.v}</Link>
     }
-    return <span key={i}>{seg.v}</span>
+    return link ? <span key={i}>{renderAutoLinked(seg.v, link.rules, { ...link, id: `${id}.${i}` })}</span> : <span key={i}>{seg.v}</span>
   })
 }
 
 /** Renders the blog markup (see utils/blogBody.js). `media` resolves media:key images. */
-export default function BlogBody({ body, media = {} }) {
+export default function BlogBody({ body, media = {}, currentPath = '', claims = new Map() }) {
   const blocks = parseBody(body)
+  // Dynamic internal links: each keyword / city links once per article, never to the page itself.
+  const link = { rules: useAutoLinkRules(), claims, currentPath }
 
   return blocks.map((b, i) => {
     switch (b.type) {
@@ -26,13 +30,13 @@ export default function BlogBody({ body, media = {} }) {
       case 'h3':
         return <h3 key={i} className="text-xl font-semibold mt-6 mb-2">{b.text}</h3>
       case 'p':
-        return <p key={i} className="text-secondary leading-relaxed mb-4"><Inline text={b.text} /></p>
+        return <p key={i} className="text-secondary leading-relaxed mb-4"><Inline text={b.text} link={link} id={i} /></p>
       case 'ul':
       case 'ol': {
         const Tag = b.type
         return (
           <Tag key={i} className={`${b.type === 'ol' ? 'list-decimal' : 'list-disc'} pl-6 flex flex-col gap-2 text-secondary leading-relaxed mb-4`}>
-            {b.items.map((item, j) => <li key={j}><Inline text={item} /></li>)}
+            {b.items.map((item, j) => <li key={j}><Inline text={item} link={link} id={`${i}-${j}`} /></li>)}
           </Tag>
         )
       }
