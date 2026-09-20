@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { getMotionComponent } from './motionComponent'
 
 const variants = {
   primary:
@@ -25,7 +25,7 @@ export default function GlassButton({
     lg: 'px-8 py-4 text-base gap-2.5',
   }
 
-  const MotionComponent = motion.create(Component)
+  const MotionComponent = getMotionComponent(Component)
   const typeProp = Component === 'button' ? { type } : {}
 
   return (

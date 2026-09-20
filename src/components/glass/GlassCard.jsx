@@ -1,7 +1,7 @@
-import { motion } from 'framer-motion'
+import { getMotionComponent } from './motionComponent'
 
 export default function GlassCard({ children, className = '', strong = false, hover = true, as: Component = 'div', ...props }) {
-  const MotionComponent = motion.create(Component)
+  const MotionComponent = getMotionComponent(Component)
   return (
     <MotionComponent
       className={`${strong ? 'glass-strong' : 'glass'} rounded-[22px] ${className}`}
