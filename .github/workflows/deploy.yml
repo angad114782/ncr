@@ -1,0 +1,44 @@
+name: Deploy PropertyInNCR
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to PropertyInNCR VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true
+
+          script: |
+            set -e
+
+            echo "==> Updating repository"
+            cd /var/www/propertyinncr.com
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> Installing dependencies"
+            npm ci
+
+            echo "==> Building frontend"
+            npm run build
+
+            echo "==> Testing Nginx"
+            nginx -t
+
+            echo "==> Reloading Nginx"
+            systemctl reload nginx
+
+            echo "==> Deployment completed successfully"
