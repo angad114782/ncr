@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# One-time: makes nginx send /api and /uploads to the backend.
+# One-time (safe to repeat): sets nginx up for the site — /api and /uploads to the backend, www → non-www redirect,
+# and gzip for JavaScript / CSS (see deploy/nginx-*.snippet.conf).
 #   bash /var/www/propertyinncr.com/deploy/setup-nginx.sh
 #
 # It finds the nginx config of propertyinncr.com, backs it up, adds
 #     include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;
 # inside the HTTPS server block (before `location / {`), runs `nginx -t`, and reloads. If `nginx -t` fails the
-# backup is put back, so the site is never left broken. Safe to run again: it does nothing if the line is there.
+# backup is put back, so the site is never left broken. Safe to run again: it only adds the lines that are missing.
 set -euo pipefail
 
 APP="${APP:-/var/www/propertyinncr.com}"
@@ -45,22 +46,27 @@ FILES=$(grep -RlE "server_name[^;]*propertyinncr\.com" /etc/nginx/sites-enabled 
 [ -n "$FILES" ] || FILES=$(grep -lE "server_name[^;]*propertyinncr\.com" /etc/nginx/nginx.conf 2>/dev/null || true)
 [ -n "$FILES" ] || die "No nginx config mentions propertyinncr.com. Find it with:  grep -rn propertyinncr /etc/nginx"
 
-# Which include lines are still missing?  nginx-site = www→apex redirect + charset;  nginx-api = /api + /uploads
+# Which include lines are still missing?  api = /api + /uploads · site = www→apex redirect + charset · speed = gzip for JS/CSS.
+# Each one is added on its own, tested with `nginx -t` and rolled back alone if nginx refuses it (for example because the
+# server block already has that setting) — so one problem never blocks the others.
 MISSING=""
-[ -f "$SITE_SNIPPET" ] && ! grep -Rq "nginx-site.snippet.conf" /etc/nginx 2>/dev/null && MISSING="$MISSING $SITE_SNIPPET"
-grep -Rq "nginx-api.snippet.conf" /etc/nginx 2>/dev/null || MISSING="$MISSING $SNIPPET"
+for NAME in api site speed; do
+  [ -f "$APP/deploy/nginx-$NAME.snippet.conf" ] && ! grep -Rq "nginx-$NAME.snippet.conf" /etc/nginx 2>/dev/null && MISSING="$MISSING $APP/deploy/nginx-$NAME.snippet.conf"
+done
 
+FAILED=""
 if [ -z "$MISSING" ]; then
   say "The include lines are already there ($(grep -Rl 'nginx-.*snippet.conf' /etc/nginx | tr '\n' ' '))"
 else
-  for F in $FILES; do
-    REAL=$(readlink -f "$F")
-    BACKUP="$REAL.bak-$(date +%Y%m%d%H%M%S)"
-    say "Editing $REAL (backup: $BACKUP)"
-    $SUDO cp "$REAL" "$BACKUP"
-    TMP=$(mktemp)
-    python3 - "$REAL" "$TMP" $MISSING <<'PY'
-import re, sys
+  for SN in $MISSING; do
+    for F in $FILES; do
+      REAL=$(readlink -f "$F")
+      BACKUP="$REAL.bak-$(date +%Y%m%d%H%M%S)"
+      say "Adding $(basename "$SN") to $REAL (backup: $BACKUP)"
+      $SUDO cp "$REAL" "$BACKUP"
+      TMP=$(mktemp)
+      python3 - "$REAL" "$TMP" "$SN" <<'PY'
+import os, re, sys
 src, out, *snippets = sys.argv[1:]
 lines = open(src, encoding='utf8').read().split('\n')
 strip = lambda l: re.sub(r'#.*$', '', l)
@@ -94,21 +100,22 @@ for s, e in targets:
     loc = next((j for j in range(s, e + 1) if re.match(r'^\s*location\s+/\s*\{', strip(lines[j]))), None)
     at = loc if loc is not None else e
     indent = re.match(r'^(\s*)', lines[at]).group(1) if loc is not None else '    '
-    inserts.append((at, [f'{indent}# www redirect, charset, backend API + uploads (added by deploy/setup-nginx.sh)'] + [f'{indent}{inc}' for inc in includes] + ['']))
+    inserts.append((at, [f'{indent}# {os.path.basename(snippets[0])} (added by deploy/setup-nginx.sh)'] + [f'{indent}{inc}' for inc in includes] + ['']))
 for at, new in sorted(inserts, reverse=True):
     lines[at:at] = new
 open(out, 'w', encoding='utf8').write('\n'.join(lines))
 print(f'inserted into {len(targets)} server block(s)')
 PY
-    $SUDO cp "$TMP" "$REAL"
-    rm -f "$TMP"
-    if $SUDO nginx -t 2>&1; then
-      echo "nginx config is valid."
-    else
-      echo "nginx -t FAILED — restoring the backup." >&2
-      $SUDO cp "$BACKUP" "$REAL"
-      die "Nothing was changed. Send me the nginx -t message above."
-    fi
+      $SUDO cp "$TMP" "$REAL"
+      rm -f "$TMP"
+      if $SUDO nginx -t 2>&1; then
+        echo "nginx config is valid."
+      else
+        echo "nginx -t FAILED for $(basename "$SN") — restoring the backup (nothing changed by this step)." >&2
+        $SUDO cp "$BACKUP" "$REAL"
+        FAILED="$FAILED $(basename "$SN")"
+      fi
+    done
   done
 fi
 
@@ -133,5 +140,22 @@ case "$WWW" in
   "301 https://propertyinncr.com/"*) echo "OK — www.propertyinncr.com redirects to https://propertyinncr.com/ ($WWW)" ;;
   *) echo "Note: www did not redirect (got: $WWW). Check that nginx-site.snippet.conf is included in the HTTPS server block." ;;
 esac
+
+say "Compression of JavaScript / CSS"
+ASSET=$(ls "$APP"/dist/assets/*.js 2>/dev/null | head -1 || true)
+if [ -n "$ASSET" ]; then
+  ENC=$(curl -sk --max-time 15 -o /dev/null -D - -H 'Host: propertyinncr.com' -H 'Accept-Encoding: gzip' "https://127.0.0.1/assets/$(basename "$ASSET")" | grep -i '^content-encoding' || true)
+  case "$ENC" in
+    *gzip*) echo "OK — JavaScript is sent compressed ($ENC)" ;;
+    *) echo "Note: JavaScript is still sent uncompressed. Check that nginx-speed.snippet.conf is included in the HTTPS server block." ;;
+  esac
+fi
+
+if [ -n "$FAILED" ]; then
+  echo
+  echo "Some steps were refused by nginx and rolled back:$FAILED"
+  echo "Send me the 'nginx -t FAILED' message above (usually the server block already has the same setting)."
+  exit 1
+fi
 echo
 echo "Done. Try the admin login again: https://propertyinncr.com"

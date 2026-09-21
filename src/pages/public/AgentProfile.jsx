@@ -7,14 +7,16 @@ import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
+import { DetailSkeleton } from '../../components/common/Skeleton'
 
 export default function AgentProfile() {
   const { id } = useParams()
-  const { approvedAgents, activeProperties: properties } = useData()
+  const { approvedAgents, activeProperties: properties, dataReady } = useData()
   const navigate = useNavigate()
 
   // Only approved agents get a public profile — pending / rejected ones 404.
   const agent = approvedAgents.find((a) => a.id === id)
+  if (!agent && !dataReady) return <DetailSkeleton />
   if (!agent) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">

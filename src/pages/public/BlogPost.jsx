@@ -13,13 +13,15 @@ import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { formatDate, readingMinutes, relatedPosts } from '../../utils/blog'
 import { extractHeadings } from '../../utils/blogBody'
+import { DetailSkeleton } from '../../components/common/Skeleton'
 import { SITE_URL, breadcrumbLd, crawlableImage, faqLd, personLd } from '../../utils/seo'
 
 export default function BlogPost() {
   const { slug } = useParams()
-  const { activeBlogPosts } = useData()
+  const { activeBlogPosts, dataReady } = useData()
   const { company } = useSettings()
   const post = activeBlogPosts.find((p) => p.slug === slug)
+  if (!post && !dataReady) return <DetailSkeleton />
   if (!post) return <NotFound />
 
   // Hand-picked related guides first, topped up automatically from the same category / shared keywords

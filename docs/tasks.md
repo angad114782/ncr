@@ -119,6 +119,13 @@ _Last updated: 2026-09-21_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Loading skeletons & speed (this batch)
+- [x] **Skeleton placeholders** (YouTube-style grey shimmer, `components/common/Skeleton.jsx` + `.skeleton` in `index.css`): images shimmer until loaded (`<Img>`), panels while their code loads (`PanelSkeleton`), a listing / agent / article page whose data is still coming (`DetailSkeleton`; `DataContext.dataReady` — no more "not found" flash for a listing published after the last build), the map and 3D showcase, and a **boot skeleton in `index.html`** for URLs without a pre-rendered page (admin, dashboard, agent panel) so the home page's HTML no longer flashes first
+- [x] **gzip for JavaScript / CSS** (`deploy/nginx-speed.snippet.conf`): nginx was sending them uncompressed (762 KB JS + 54 KB CSS → ~235 KB). Measured on a throttled phone profile (slow 4G, 4× CPU): load 4.6 s → 2.2 s, first paint 3.2 s → 1.9 s
+- [x] Vendor chunks (`vendor-react`, `vendor-router`, `vendor-motion`) so a returning visitor re-downloads only the small app file after a deploy
+- [x] The deploy now runs `deploy/setup-nginx.sh` itself (adds only the missing include lines, each tested and rolled back alone; never fails the deploy)
+- [ ] Ideas not done: route-level code splitting of the public pages (needs chunk preloading before hydration), Brotli (needs the nginx module), replacing framer-motion in cards with CSS hover, an India-region server / CDN
+
 ### SEO audit fixes (this batch)
 - [x] **www → apex 301 redirect + `charset utf-8`** via `deploy/nginx-site.snippet.conf` (fixes: canonical points to a different page, missing self-referential hreflang on www, duplicate www/non-www). Applied by `bash deploy/setup-nginx.sh` (re-run it once — it only adds the missing include)
 - [x] Home **title 73 → 56 chars** and **description 200 → 139 chars**; both now editable in Admin → Site Content → Home page (`home.seoTitle` / `home.seoDescription`)

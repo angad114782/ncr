@@ -14,6 +14,7 @@ import ManageTestimonials from '../pages/admin/ManageTestimonials'
 import ManageAgents from '../pages/admin/ManageAgents'
 import SiteContent from '../pages/admin/SiteContent'
 import { useSettings } from '../context/SettingsContext'
+import { ListSkeleton } from '../components/common/Skeleton'
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -32,7 +33,7 @@ const adminNav = [
 /** These forms copy the settings when they open, so they wait until the live values have arrived. */
 function WaitForSettings({ children }) {
   const { settingsLoaded } = useSettings()
-  return settingsLoaded ? children : <p className="text-secondary p-6" aria-busy="true">Loading settings…</p>
+  return settingsLoaded ? children : <ListSkeleton rows={5} />
 }
 
 /**

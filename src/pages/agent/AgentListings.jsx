@@ -4,6 +4,7 @@ import CollectionAdmin from '../../components/admin/CollectionAdmin'
 import { emptyListing, listingFields, prepareListing, reviewOf, today } from '../../components/admin/listingForm'
 import { propertyCsv } from '../../components/admin/propertyCsv'
 import AgentStatusBanner from './AgentStatusBanner'
+import { ListSkeleton } from '../../components/common/Skeleton'
 import { useData } from '../../context/DataContext'
 import { newId } from '../../utils/ids'
 import { propertyPath } from '../../utils/seo'
@@ -34,7 +35,7 @@ export default function AgentListings() {
   const formCtx = { cities, propertyTypes, furnishing, possession }
   const schema = useMemo(() => listingFields({ ...formCtx, mode: 'agent' }), [cities, propertyTypes, furnishing, possession]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!agent) return <p className="text-secondary">Loading your agent profile…</p>
+  if (!agent) return <ListSkeleton />
   if (status === 'rejected') return <AgentStatusBanner status={status} />
 
   const owns = (id) => mine.some((p) => p.id === id)

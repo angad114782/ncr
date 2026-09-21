@@ -33,6 +33,7 @@ import ExploreLinks from '../../components/common/ExploreLinks'
 import GuideLinks from '../../components/common/GuideLinks'
 import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath, propertyPath } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
+import { DetailSkeleton, Skeleton } from '../../components/common/Skeleton'
 
 // Leaflet needs `window`, so the map is a client-only lazy chunk. Until it loads (and in the
 // pre-rendered HTML) we render the address and nearby places as plain, crawlable text.
@@ -45,7 +46,7 @@ function MapPlaceholder({ address, nearby = [] }) {
         <MapPin size={16} className="text-[var(--color-accent)] shrink-0" />
         <p className="text-sm font-medium">{address}</p>
       </div>
-      <div className="h-64 rounded-[16px] glass-weak flex items-center justify-center text-tertiary text-sm">Loading map…</div>
+      <Skeleton className="h-64 !rounded-[16px]" />
       {nearby.length > 0 && (
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 px-1">
           {nearby.map((n) => (
@@ -81,7 +82,7 @@ export default function PropertyDetail() {
 }
 
 function PropertyDetailInner({ id }) {
-  const { properties, activeProperties, agents, savedIds, toggleSaved, trackRecentlyViewed } = useData()
+  const { properties, activeProperties, agents, savedIds, toggleSaved, trackRecentlyViewed, dataReady } = useData()
   const navigate = useNavigate()
   const { track } = useInterest()
   const [activeImg, setActiveImg] = useState(0)
@@ -100,6 +101,7 @@ function PropertyDetailInner({ id }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property?.id])
 
+  if (!property && !dataReady) return <DetailSkeleton />
   if (!property) {
     return (
       <GlassCard hover={false} className="p-12 text-center my-12">

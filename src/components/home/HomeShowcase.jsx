@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Hand, Loader2, Moon, Sun } from 'lucide-react'
+import { ArrowRight, Hand, Moon, Sun } from 'lucide-react'
 import GlassButton from '../glass/GlassButton'
 import { useSettings } from '../../context/SettingsContext'
 
@@ -90,9 +90,7 @@ export default function HomeShowcase() {
           )}
 
           {near && webgl && !ready && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
-              <Loader2 className="animate-spin text-[var(--color-accent)]" size={28} />
-            </div>
+            <div className="absolute inset-0 skeleton !rounded-none pointer-events-none" aria-hidden="true" />
           )}
 
           <div className="absolute top-4 left-4 glass-strong rounded-full px-3.5 py-1.5 text-xs font-medium flex items-center gap-1.5 pointer-events-none">

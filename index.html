@@ -44,6 +44,21 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Boot skeleton: for a URL that has no pre-rendered page (admin, dashboard, agent panel, unknown addresses) the
+         server sends the home page's HTML, which would flash before the real page. Swap it for a grey skeleton at once
+         (the same condition main.jsx uses to decide whether to hydrate). -->
+    <script>
+      ;(function () {
+        var r = document.getElementById('root')
+        var p = location.pathname.replace(/\/+$/, '') || '/'
+        if (!r || r.dataset.route === p) return
+        var b = function (h, x) { return '<div class="skeleton" style="height:' + h + 'px;border-radius:' + (x || 24) + 'px"></div>' }
+        r.innerHTML =
+          '<div role="status" aria-busy="true" aria-label="Loading" style="max-width:72rem;margin:0 auto;padding:1.25rem 1rem 2rem;display:flex;flex-direction:column;gap:1.25rem">' +
+          b(56, 999) + b(300, 32) +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.25rem">' + b(270) + b(270) + b(270) + '</div></div>'
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

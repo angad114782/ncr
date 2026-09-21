@@ -26,6 +26,21 @@ export default defineConfig({
       '/uploads': { target: target, changeOrigin: true },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Libraries change rarely, the app code changes on every deploy: keeping them in their own files means a
+        // returning visitor re-downloads only the (small) app file after a deploy, not React / the router / motion again.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'vendor-react'
+          if (/node_modules\/(react-router|react-router-dom|react-helmet-async)\//.test(id)) return 'vendor-router'
+          if (/node_modules\/(framer-motion|motion-dom|motion-utils)\//.test(id)) return 'vendor-motion'
+          return undefined
+        },
+      },
+    },
+  },
   preview: {
     proxy: {
       '/api': { target: target, changeOrigin: true },

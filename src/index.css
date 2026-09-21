@@ -235,6 +235,25 @@ a.glass:hover {
 .bg-base { background: var(--bg-base); }
 .bg-base-2 { background: var(--bg-base-2); }
 
+/* ---- Loading skeletons (components/common/Skeleton.jsx, <Img>, and the boot skeleton in index.html) ---- */
+/* A grey block with a light band sweeping across it. Colours come from the text colour, so it suits light and dark. */
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton,
+.img-skeleton:not([data-loaded]) {
+  background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--text-primary) 13%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s linear infinite;
+}
+.skeleton { border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .img-skeleton:not([data-loaded]) { animation-duration: 3s; } /* calmer, but still visibly "loading" */
+}
+
 /* ---- Running strip (PromoTicker) ---- */
 @keyframes ticker-scroll {
   from { transform: translateX(0); }

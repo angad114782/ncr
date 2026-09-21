@@ -6,7 +6,7 @@ name: Deploy PropertyInNCR
 #
 # One-time server setup (see backend/README.md → Deploy):
 #   1. Create /var/www/propertyinncr.com/backend/.env on the server (MongoDB URL, JWT secret …). It never goes in git.
-#   2. Run once:  bash /var/www/propertyinncr.com/deploy/setup-nginx.sh   (adds the /api proxy to nginx)
+#   2. nginx is set up by the deploy itself (deploy/setup-nginx.sh adds only the missing include lines); you can also run it by hand
 # After that, every push deploys itself.
 
 on:
@@ -151,6 +151,11 @@ jobs:
 
             echo "==> Website: building from the live database and swapping it in (no downtime)"
             npm run release
+
+            # Adds only the nginx include lines that are still missing (/api proxy, www redirect, gzip) — each one is
+            # tested with `nginx -t` and rolled back on its own if nginx refuses it. It never fails the deploy.
+            echo "==> nginx: applying deploy/nginx-*.snippet.conf (only what is missing)"
+            bash deploy/setup-nginx.sh || echo "::warning::nginx setup did not finish — read the messages above, or run by hand:  bash $APP/deploy/setup-nginx.sh"
 
             echo "==> Testing and reloading nginx"
             nginx -t

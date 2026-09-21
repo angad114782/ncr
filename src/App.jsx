@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { PanelSkeleton } from './components/common/Skeleton'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
 import { DataProvider } from './context/DataContext'
@@ -33,11 +33,8 @@ const AdminArea = lazy(() => import('./areas/AdminArea'))
 const DashboardArea = lazy(() => import('./areas/DashboardArea'))
 const AgentArea = lazy(() => import('./areas/AgentArea'))
 
-const PageLoader = (
-  <div className="min-h-screen flex items-center justify-center" aria-busy="true">
-    <Loader2 className="animate-spin text-[var(--color-accent)]" size={28} />
-  </div>
-)
+// While a panel's code downloads: the shape of a panel, not a lone spinner.
+const PageLoader = <PanelSkeleton />
 
 /** Global state. Shared by the browser entry (main.jsx) and the pre-render entry (entry-server.jsx). */
 export function Providers({ children }) {

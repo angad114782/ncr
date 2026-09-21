@@ -6,7 +6,6 @@ import {
   Expand,
   GraduationCap,
   Hospital,
-  Loader2,
   MapPin,
   Minimize2,
   Navigation,
@@ -168,9 +167,7 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
         </MapContainer>
 
         {!tilesReady && (
-          <div className="absolute inset-0 z-[900] flex items-center justify-center bg-[var(--bg-base-2)] pointer-events-none">
-            <Loader2 size={22} className="animate-spin text-[var(--color-accent)]" />
-          </div>
+          <div className="absolute inset-0 z-[900] skeleton !rounded-none bg-[var(--bg-base-2)] pointer-events-none" aria-hidden="true" />
         )}
 
         <div className="absolute top-3 right-3 z-[1000] flex gap-1.5">

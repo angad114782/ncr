@@ -152,6 +152,10 @@ export function DataProvider({ children }) {
   const [faqs, setFaqs] = useStore('re-faqs', SEED.faqs)
   const [testimonials, setTestimonials] = useStore('re-testimonials', SEED.testimonials)
 
+  // API mode: false until the first answer from the server has arrived (or failed). Until then a page for something
+  // that is not in the build snapshot (a listing published after the last build) shows a skeleton, not "not found".
+  const [dataReady, setDataReady] = useState(!USE_API)
+
   const isActive = (x) => x.active !== false
 
   // What visitors see: hidden / draft / unapproved items never leak to public pages.
@@ -225,6 +229,8 @@ export function DataProvider({ children }) {
       setInquiries(next.inquiries)
     } catch {
       /* offline or the API is down: keep showing the snapshot the site was built with */
+    } finally {
+      setDataReady(true)
     }
   }, [role, setProperties, setAgents, setBlogPosts, setFaqs, setTestimonials, setInquiries])
 
@@ -340,6 +346,7 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider
       value={{
+        dataReady,
         properties,
         activeProperties,
         inquiries,
