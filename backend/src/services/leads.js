@@ -2,6 +2,7 @@ import { Agent, Lead, Property } from '../models/index.js'
 import { emptyProfile, leadInterest, summarise } from '../lib/interest.js'
 import { notifyNewLead } from '../lib/notify.js'
 import { recordConsent } from './auth.js'
+import { getSetting } from './settings.js'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const RANK = { Cold: 0, Warm: 1, Hot: 2 }
@@ -71,7 +72,22 @@ export async function createLead(req, data, { user, verified = false, source, co
       interest,
       assignedAgentId: agent?.id ?? '',
     })
-    notifyNewLead(lead, { propertyTitle: property?.title, agent }).catch(() => {})
+    // The team is told about every new lead. The visitor gets a welcome only for an enquiry form they filled in
+    // (they agreed to be contacted), never twice within 24 h for the same number, and only if the admin allows it.
+    const wa = await getSetting('whatsapp')
+    let welcome = false
+    if (enquiry && contactConsent && wa.leadWelcomeEnabled !== false && (!wa.leadWelcomeVerifiedOnly || verified)) {
+      welcome = !(await Lead.exists({ phone, welcomeSentAt: { $gt: since } }))
+      if (welcome) await Lead.updateOne({ _id: lead.id }, { $set: { welcomeSentAt: new Date() } }) // claim it first: two quick submissions send one
+    }
+    notifyNewLead(lead, { propertyTitle: property?.title, agent, welcome })
+      .then(async (sent) => {
+        const update = {}
+        if (sent.admin) update.$set = { adminNotifiedAt: new Date() }
+        if (welcome && !sent.client) update.$unset = { welcomeSentAt: '' } // it did not go out: allow another try later
+        if (Object.keys(update).length) await Lead.updateOne({ _id: lead.id }, update)
+      })
+      .catch(() => {})
   }
 
   if (contactConsent) {

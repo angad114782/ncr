@@ -23,11 +23,20 @@ async function fetchJson(url, options, timeoutMs = 8000) {
   }
 }
 
-/** WhatsApp Cloud API template message. Returns true when it was accepted. */
-export async function sendWhatsAppTemplate(to, template, params = [], { button } = {}) {
+/** A template variable: one line, no runs of spaces, never empty (WhatsApp rejects all three). */
+const cleanParam = (v) => String(v ?? '').replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').trim().slice(0, 500) || '-'
+const last10 = (v) => String(v ?? '').replace(/\D/g, '').slice(-10)
+
+/**
+ * WhatsApp Cloud API template message. Resolves to `{ ok, error }` — the reason is what Meta answered
+ * (for example "Template name does not exist"), so a broken setup can be diagnosed instead of failing silently.
+ */
+export async function whatsappSend(to, template, params = [], { button } = {}) {
   const wa = await getSetting('whatsapp')
-  if (!wa.phoneNumberId || !wa.accessToken || !template) return false
-  const components = [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text: String(text).slice(0, 500) })) }]
+  if (!wa.phoneNumberId || !wa.accessToken) return { ok: false, error: 'WhatsApp is not configured (Phone Number ID / Access Token).' }
+  if (!template) return { ok: false, error: 'No template name is set for this message.' }
+  if (!/^\d{10}$/.test(String(to))) return { ok: false, error: 'No valid 10-digit phone number to send to.' }
+  const components = [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text: cleanParam(text) })) }]
   if (button) components.push({ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: String(button) }] })
   try {
     await fetchJson(`https://graph.facebook.com/v20.0/${wa.phoneNumberId}/messages`, {
@@ -35,11 +44,16 @@ export async function sendWhatsAppTemplate(to, template, params = [], { button }
       headers: { Authorization: `Bearer ${wa.accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to: `91${to}`, type: 'template', template: { name: template, language: { code: 'en' }, components } }),
     })
-    return true
+    return { ok: true }
   } catch (err) {
-    log(`WhatsApp to ${maskPhone(to)} failed: ${err.message}`)
-    return false
+    log(`WhatsApp "${template}" to ${maskPhone(to)} failed: ${err.message}`)
+    return { ok: false, error: err.message }
   }
+}
+
+/** Same, when only "was it accepted?" matters. */
+export async function sendWhatsAppTemplate(to, template, params = [], options) {
+  return (await whatsappSend(to, template, params, options)).ok
 }
 
 let transporter
@@ -80,15 +94,38 @@ export async function sendOtpMessage(phone, code) {
   return { delivered: ok, channel: ok ? 'whatsapp' : 'none' }
 }
 
-/** Tells the team about a new lead (WhatsApp template + e-mail, whichever is configured). */
-export async function notifyNewLead(lead, { propertyTitle = '', agent } = {}) {
-  const [wa, mail] = await Promise.all([getSetting('whatsapp'), getSetting('mail')])
+/** What the lead was about, in words that read well inside a WhatsApp sentence. */
+const CONTACT_TOPIC = { buy: 'buying a property', rent: 'renting a property', sell: 'selling or listing your property', invest: 'property investment' }
+export function leadTopic(lead, propertyTitle = '') {
+  if (propertyTitle) return propertyTitle
+  if (CONTACT_TOPIC[lead.contactIntent]) return CONTACT_TOPIC[lead.contactIntent]
+  return lead.source?.startsWith('signup') ? 'your property search' : 'your enquiry'
+}
+
+/** Who on the team gets the WhatsApp: the site's WhatsApp number and the admin's login number (once each). */
+export async function adminNumbers() {
+  const wa = await getSetting('whatsapp')
+  return [...new Set([last10(wa.displayPhone), last10(config.adminPhone)].filter((n) => n.length === 10))]
+}
+
+/**
+ * A new lead: the team (admin numbers + the assigned agent) is told by WhatsApp and e-mail, and — when `welcome`
+ * is true — the person who filled the form gets a welcome message. Every part is best-effort and independent.
+ * Resolves to `{ admin, client }` (was a WhatsApp accepted for the team / for the visitor).
+ */
+export async function notifyNewLead(lead, { propertyTitle = '', agent, welcome = false } = {}) {
+  const [wa, mail, company] = await Promise.all([getSetting('whatsapp'), getSetting('mail'), getSetting('company')])
+  const topic = leadTopic(lead, propertyTitle)
   const summary = `${lead.userName} · ${lead.phone}${propertyTitle ? ` · ${propertyTitle}` : ''}${lead.intent ? ` · ${lead.intent}` : ''}`
-  await Promise.all([
-    sendWhatsAppTemplate(String(wa.displayPhone ?? '').replace(/\D/g, '').slice(-10), wa.leadNotificationTemplate, [lead.userName, lead.phone, propertyTitle || lead.source]),
+  const team = await adminNumbers()
+  const agentPhone = last10(agent?.phone)
+  const [adminResults, , agentResult, clientResult] = await Promise.all([
+    Promise.all(team.map((n) => whatsappSend(n, wa.leadNotificationTemplate, [lead.userName, lead.phone, topic]))),
     sendEmail({ to: mail.replyTo || mail.fromEmail, subject: `New lead: ${lead.userName}`, text: `${summary}\n\n${lead.message ?? ''}\n\n${lead.interest?.line ?? ''}` }),
-    agent?.phone ? sendWhatsAppTemplate(String(agent.phone).replace(/\D/g, '').slice(-10), wa.leadNotificationTemplate, [lead.userName, lead.phone, propertyTitle || lead.source]) : null,
+    agentPhone.length === 10 && !team.includes(agentPhone) ? whatsappSend(agentPhone, wa.leadNotificationTemplate, [lead.userName, lead.phone, topic]) : null,
+    welcome ? whatsappSend(last10(lead.phone), wa.leadThankYouTemplate, [String(lead.userName).trim().split(/\s+/)[0], company?.name || 'our team', topic]) : null,
   ])
+  return { admin: adminResults.some((r) => r.ok) || Boolean(agentResult?.ok), client: Boolean(clientResult?.ok) }
 }
 
 /** Agent registered / listing submitted / status changed → the right person is told. */
@@ -97,7 +134,8 @@ export async function notifyTeam(subject, text) {
   await sendEmail({ to: mail.replyTo || mail.fromEmail, subject, text })
 }
 
+/** Agent account / listing status changes: e-mail always; WhatsApp only when an "account update" template is set. */
 export async function notifyPerson({ phone, email }, subject, text) {
   const wa = await getSetting('whatsapp')
-  await Promise.all([email ? sendEmail({ to: email, subject, text }) : null, phone ? sendWhatsAppTemplate(String(phone).replace(/\D/g, '').slice(-10), wa.leadThankYouTemplate, [text.slice(0, 200)]) : null])
+  await Promise.all([email ? sendEmail({ to: email, subject, text }) : null, phone && wa.accountUpdateTemplate ? sendWhatsAppTemplate(last10(phone), wa.accountUpdateTemplate, [text.slice(0, 200)]) : null])
 }

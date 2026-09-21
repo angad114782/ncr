@@ -308,7 +308,7 @@ Seams to swap (nothing else should need to change): `usePersistedState` in `Sett
 2. **Store the consent record**, not just `consent: true`: the exact sentence shown (`siteContent.nudge.consentText` version), timestamp, IP and user-agent, and the form/`source`. This is the proof DPDP Act 2023 expects.
 3. **De-duplicate by phone**: a returning number updates its lead (append the new interest, bump `intent`) instead of creating a new row.
 4. **Recompute `intent` server-side** from the stored events (do not trust the client). Same rule as `summarise()` today: score = viewed homes×2 + searches×2 + saves×4 + compares×3 + (returning visitor 3) + (≥3 homes 2); Hot ≥ 12, Warm ≥ 5.
-5. **Notify + assign**: WhatsApp `lead_notification` template to the team (and `lead_thank_you` to the visitor if they opted in), assign to an agent by city, keep `status` and a follow-up note/timestamp.
+5. **Notify + assign**: WhatsApp `lead_notification` template to the team and `lead_thank_you` (welcome) to the visitor who filled an enquiry form — built (`lib/notify.js`, `services/leads.js`), assign to an agent by city, keep `status` and a follow-up note/timestamp.
 6. Fire the ad conversion from the browser as today (`fireLeadEvent(name, { city, property_type, intent })`) — **never send name / phone / e-mail** to Meta / Google from the client; if server-side conversions (Meta CAPI) are added, hash identifiers and only with consent.
 7. Admin endpoints: list / filter (`intent=Hot`, `status`), export CSV (columns `source, intent, interest, consent` already in `inquiriesToCsv`), change status, delete.
 

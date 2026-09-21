@@ -18,6 +18,9 @@ const DEFAULT_WHATSAPP_CONFIG = {
   otpTemplate: 'otp_verification',
   leadNotificationTemplate: 'lead_notification',
   leadThankYouTemplate: 'lead_thank_you',
+  leadWelcomeEnabled: true,
+  leadWelcomeVerifiedOnly: false,
+  accountUpdateTemplate: '',
   webhookVerifyToken: '',
 }
 

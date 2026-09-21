@@ -29,6 +29,7 @@ import GlassInput from '../../components/glass/GlassInput'
 import GlassButton from '../../components/glass/GlassButton'
 import PromoTicker from '../../components/home/PromoTicker'
 import { useSettings } from '../../context/SettingsContext'
+import { USE_API, api } from '../../api/client'
 
 const encryptionOptions = ['TLS', 'SSL', 'None']
 
@@ -69,6 +70,7 @@ export default function AdminSettings() {
 
   const [contactSaved, setContactSaved] = useState(false)
   const [waSaved, setWaSaved] = useState(false)
+  const [waTest, setWaTest] = useState(null) // result of "Send test messages": { busy } | { to, results } | { error }
   const [mailSaved, setMailSaved] = useState(false)
   const [marketingSaved, setMarketingSaved] = useState(false)
 
@@ -110,6 +112,16 @@ export default function AdminSettings() {
     setContactForm((f) => ({ ...f, phone: waForm.displayPhone }))
     setWaSaved(true)
     setTimeout(() => setWaSaved(false), 2000)
+  }
+
+  /** Sends both lead messages to the admin's own number using the SAVED settings, and shows Meta's answer for each. */
+  const handleWaTest = async () => {
+    setWaTest({ busy: true })
+    try {
+      setWaTest(await api('/admin/settings/whatsapp/test', { method: 'POST' }))
+    } catch (err) {
+      setWaTest({ error: err.message })
+    }
   }
 
   const handleMailSave = (e) => {
@@ -430,8 +442,8 @@ export default function AdminSettings() {
             Credentials from your Meta WhatsApp Cloud API app. Powers the Call/WhatsApp buttons now, and once a
             server is wired up, sends the <span className="text-primary font-medium">OTP</span> template to verify a
             mobile number (login, signup, and the lead form), the <span className="text-primary font-medium">Lead Notification</span> template
-            to you the moment a lead is verified, and the <span className="text-primary font-medium">Lead Thank You</span> template
-            to the lead themselves.
+            to you the moment a lead comes in, and the <span className="text-primary font-medium">Lead Thank You</span> template
+            as a welcome to the lead themselves. Templates must be created and approved in Meta first (names must match exactly).
           </p>
 
           <form onSubmit={handleWaSave} className="flex flex-col gap-3.5">
@@ -487,6 +499,13 @@ export default function AdminSettings() {
               onChange={(e) => setWaForm({ ...waForm, leadThankYouTemplate: e.target.value })}
             />
             <GlassInput
+              label="Account Update Template (optional)"
+              icon={Tag}
+              placeholder="Leave empty to tell agents by e-mail only"
+              value={waForm.accountUpdateTemplate ?? ''}
+              onChange={(e) => setWaForm({ ...waForm, accountUpdateTemplate: e.target.value })}
+            />
+            <GlassInput
               label="Webhook Verify Token"
               icon={Hash}
               placeholder="Optional — for inbound message webhooks"
@@ -494,9 +513,52 @@ export default function AdminSettings() {
               onChange={(e) => setWaForm({ ...waForm, webhookVerifyToken: e.target.value })}
             />
 
+            <div className="glass-weak rounded-[16px] p-4 flex flex-col gap-3">
+              <p className="text-sm font-medium">When someone fills a lead form</p>
+              <p className="text-secondary text-xs -mt-1.5 leading-relaxed">
+                The <strong>team</strong> (the Display Phone Number above and the admin login number, plus the assigned agent) always gets the
+                Lead Notification. The <strong>visitor</strong> gets the Lead Thank You (welcome) message — once a day per number, and only for
+                the contact and property enquiry forms.
+              </p>
+              {[
+                ['leadWelcomeEnabled', 'Send the welcome message to the person who filled the form'],
+                ['leadWelcomeVerifiedOnly', 'Only to numbers confirmed with an OTP (stricter — the contact page does not ask for an OTP, so it sends none)'],
+              ].map(([key, label]) => (
+                <label key={key} className="flex items-start gap-2.5 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={key === 'leadWelcomeEnabled' ? waForm[key] !== false : Boolean(waForm[key])}
+                    onChange={(e) => setWaForm({ ...waForm, [key]: e.target.checked })}
+                    className="mt-0.5 w-4 h-4 accent-[var(--color-accent)] shrink-0"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
             <GlassButton type="submit" className="w-full justify-center mt-2">
               {waSaved ? <><Check size={16} /> Saved</> : 'Save WhatsApp Config'}
             </GlassButton>
+
+            {USE_API && (
+              <div className="flex flex-col gap-2.5">
+                <GlassButton type="button" variant="glass" className="w-full justify-center" disabled={waTest?.busy} onClick={handleWaTest}>
+                  <Send size={15} /> {waTest?.busy ? 'Sending…' : 'Send test messages to my number'}
+                </GlassButton>
+                <p className="text-tertiary text-xs px-1">Save first — the test uses the saved settings and sends both lead messages to the admin number you are logged in with.</p>
+                {waTest?.error && <p className="text-[var(--color-danger)] text-sm px-1">{waTest.error}</p>}
+                {waTest?.results && (
+                  <ul className="flex flex-col gap-2" aria-live="polite">
+                    {waTest.results.map((r) => (
+                      <li key={r.label} className="glass-weak rounded-[14px] px-4 py-3 text-sm">
+                        <span className={`font-semibold ${r.ok ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{r.ok ? '✓ Sent' : '✗ Not sent'}</span> · {r.label} <span className="text-tertiary">({r.template || 'no template name'}) → {waTest.to}</span>
+                        {!r.ok && <span className="block text-secondary text-xs mt-1">{r.error}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </form>
         </GlassCard>
 

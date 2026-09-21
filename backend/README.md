@@ -59,6 +59,25 @@ WhatsApp (OTP + lead alerts) and e-mail (SMTP) credentials are **not** in `.env`
 the panel (`PUT /api/admin/settings/whatsapp` / `mail`); tokens are stored server-side and never returned.
 Without a WhatsApp provider OTPs cannot be delivered: in production the API answers `503 otp_unavailable`.
 
+### WhatsApp messages when a lead form is filled
+
+| Who | Template (Admin → Settings → WhatsApp) | Variables |
+|---|---|---|
+| **The team** — the *Display Phone Number*, the admin login number (`ADMIN_PHONE`) and the assigned agent, on every new lead | `lead_notification` | `{{1}}` name · `{{2}}` phone · `{{3}}` property title, or the topic (buying / renting / selling a property, your enquiry) |
+| **The visitor** — a welcome, for the contact and property enquiry forms, once per number per 24 h | `lead_thank_you` | `{{1}}` first name · `{{2}}` company name · `{{3}}` the same property / topic |
+
+WhatsApp only allows a business to start a chat with a **pre-approved template**, so both must first be created in
+Meta (Business Manager → WhatsApp Manager → Message templates), language **English** (`en`), category **Utility**, named exactly as above. Suggested text:
+
+- `lead_notification`: `New enquiry on NCR Estates: {{1}} ({{2}}) is interested in {{3}}. Please call or WhatsApp them soon.`
+- `lead_thank_you`: `Hi {{1}}, thank you for contacting {{2}}! We have received your enquiry about {{3}}. One of our property advisors will call or WhatsApp you shortly. You can also reply here anytime.`
+
+Admin → Settings → WhatsApp has **Send test messages to my number**: it sends both to your own login number and shows
+Meta's reason when one fails (template not approved yet, wrong name, expired token, recipient not allowed…). A message that
+cannot be sent never blocks the lead; the lead records `welcomeSentAt` / `adminNotifiedAt` when they went out. The admin can
+switch the visitor welcome off, or restrict it to OTP-verified numbers (the contact page does not ask for an OTP; the property form does).
+`accountUpdateTemplate` (optional, one variable) is used for agent-account / listing status messages; empty = e-mail only.
+
 ## 3. How it fits together
 
 - **Auth**: phone + OTP → JWT in an `HttpOnly` cookie (`ncr_token`, 7 days). Roles: `user` (client), `agent`, `admin`. `Authorization: Bearer <jwt>` also works for tools.
@@ -108,6 +127,7 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 | `users` | list, create, update, delete (the last active admin can never be removed or demoted) |
 | `leads` | list (`q status intent source`), get, update (`status assignedAgentId note`), delete, `export.csv` |
 | `settings`, `PUT settings/:key` | keys: `company siteContent ticker topBanner cities propertyTypes marketing whatsapp mail` (secrets are write-only) |
+| `POST settings/whatsapp/test` | sends the two lead messages to the signed-in admin's own number and returns each result (with Meta's error) |
 | `legal-history?kind=` | every published version of privacy / terms / disclaimer |
 | `stats`, `audit`, `consents?q=phone`, `backup`, `rebuild` | dashboard numbers, action log, consent proof, JSON backup (no secrets), trigger the site rebuild |
 

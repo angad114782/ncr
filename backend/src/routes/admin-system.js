@@ -6,7 +6,9 @@ import { audit, contentChanged, rebuildNow, rebuildStatus } from '../lib/misc.js
 import { listQuery, parse, settingBody } from '../lib/schemas.js'
 import { escapeRegex } from '../lib/security.js'
 import { out, paginate } from '../lib/serialize.js'
-import { SETTING_KEYS, adminSettings, saveSetting } from '../services/settings.js'
+import { whatsappSend } from '../lib/notify.js'
+import { maskPhone } from '../lib/phone.js'
+import { SETTING_KEYS, adminSettings, getSetting, saveSetting } from '../services/settings.js'
 
 const router = Router()
 
@@ -23,6 +25,26 @@ router.put('/settings/:key', async (req, res) => {
   audit(req, 'update-settings', 'setting', key)
   if (!['whatsapp', 'mail'].includes(key)) contentChanged(`settings-${key}`)
   res.json({ key, value: saved })
+})
+
+/**
+ * Sends both lead messages once to the signed-in admin's own number, so a wrong template name, a template Meta has not
+ * approved yet, an expired token or a recipient that is not allowed shows up here — with Meta's own explanation —
+ * instead of leads silently going out without a notification.
+ */
+router.post('/settings/whatsapp/test', async (req, res) => {
+  const [wa, company] = await Promise.all([getSetting('whatsapp'), getSetting('company')])
+  const phone = String(req.user.phone ?? '').replace(/\D/g, '').slice(-10)
+  const results = []
+  for (const [label, template, params] of [
+    ['Lead notification (to the team)', wa.leadNotificationTemplate, ['Test Lead', '9999999999', 'a test enquiry']],
+    ['Welcome message (to the visitor)', wa.leadThankYouTemplate, ['Test', company?.name || 'our team', 'a test enquiry']],
+  ]) {
+    const r = await whatsappSend(phone, template, params)
+    results.push({ label, template, ok: r.ok, error: r.error ?? '' })
+  }
+  audit(req, 'test-whatsapp', 'setting', 'whatsapp')
+  res.json({ to: maskPhone(phone), results })
 })
 
 /** Legal pages: every published version, newest first. */

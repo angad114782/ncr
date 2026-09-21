@@ -119,6 +119,12 @@ _Last updated: 2026-09-21_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### WhatsApp lead messages (this batch)
+- [x] A filled lead form now WhatsApps **the team** (`lead_notification`: display number + admin number + assigned agent) **and welcomes the visitor** (`lead_thank_you`, once per number per 24 h; contact + property forms). Admin switches: welcome on/off, OTP-verified numbers only. See `backend/README.md` (template texts to create in Meta)
+- [x] Admin → Settings → WhatsApp → **Send test messages to my number** (shows Meta's error per template); leads record `welcomeSentAt` / `adminNotifiedAt`
+- [x] Agent-status WhatsApp no longer shares the lead template (own optional `accountUpdateTemplate`)
+- [ ] 🔴 **You**: create + get approved the two templates in Meta (names exactly `lead_notification`, `lead_thank_you`), then press *Send test messages*. Until approved, leads are still saved but no WhatsApp goes out
+
 ### Loading skeletons & speed (this batch)
 - [x] **Skeleton placeholders** (YouTube-style grey shimmer, `components/common/Skeleton.jsx` + `.skeleton` in `index.css`): images shimmer until loaded (`<Img>`), panels while their code loads (`PanelSkeleton`), a listing / agent / article page whose data is still coming (`DetailSkeleton`; `DataContext.dataReady` — no more "not found" flash for a listing published after the last build), the map and 3D showcase, and a **boot skeleton in `index.html`** for URLs without a pre-rendered page (admin, dashboard, agent panel) so the home page's HTML no longer flashes first
 - [x] **gzip for JavaScript / CSS** (`deploy/nginx-speed.snippet.conf`): nginx was sending them uncompressed (762 KB JS + 54 KB CSS → ~235 KB). Measured on a throttled phone profile (slow 4G, 4× CPU): load 4.6 s → 2.2 s, first paint 3.2 s → 1.9 s
@@ -134,7 +140,7 @@ _Last updated: 2026-09-21_
 - [ ] Not code: response time (server is in Germany → India-region VPS or a CDN such as Cloudflare), backlinks, social sharing. `/contact?intent=…` and filter links keep their parameters on purpose (canonical points to the clean page)
 
 ### Welcome, exit prompt & agent entry (this batch)
-- [x] **"List My Property" → agent sign-up**: the Home banner button opens the agent registration directly (no buyer/agent switch, intro line), then lands the new agent on *My listings* to post the property (admin reviews it before it goes live). A signed-in agent goes straight to *My listings*; clients / the switch-off (`cta.agentSignup`) still follow `cta.link`. Files: `ListPropertyCta.jsx`, `AuthSheet.jsx`
+- [x] **"List My Property" → agent sign-up**: the Home banner button opens the agent registration directly (no buyer/agent switch, intro line), then lands the new agent on *My listings* to post the property (admin reviews it before it goes live). A signed-in agent goes straight to *My listings*; a signed-in buyer or the admin gets the same agent form with a "continuing signs you out" note. This door is **agents only**: tabs read *Agent login* / *Register as agent*, a buyer number is refused at the agent login (and signed out again). Only the switch-off (`cta.agentSignup`) makes the button follow `cta.link`. Files: `ListPropertyCta.jsx`, `AuthSheet.jsx`
 - [x] **Luxury welcome card** on arrival (`WelcomeModal.jsx`, once per session, delayed, not on forms/panels/for crawlers); closing it can open the sign-up form (`welcome.onClose`)
 - [x] **Exit-intent card**: mouse leaving through the top (desktop) or a quick swipe up after reading down the page (phones); once per session, after 8 s
 - [x] **Login with an unknown number → sign-up**, number kept and a notice shown (`AuthSheet.switchToSignup`)

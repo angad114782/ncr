@@ -40,7 +40,10 @@ const STATIC_DEFAULTS = {
     accessToken: '',
     otpTemplate: 'otp_verification',
     leadNotificationTemplate: 'lead_notification',
-    leadThankYouTemplate: 'lead_thank_you',
+    leadThankYouTemplate: 'lead_thank_you', // the welcome message to the person who filled a lead form
+    leadWelcomeEnabled: true, // send that welcome at all
+    leadWelcomeVerifiedOnly: false, // true = only to numbers confirmed with an OTP (stricter: never messages a number someone else typed)
+    accountUpdateTemplate: '', // optional: agent account / listing status messages by WhatsApp (one variable); empty = e-mail only
     webhookVerifyToken: '',
   },
   mail: {
