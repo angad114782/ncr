@@ -19,8 +19,8 @@ function MessageItem({ message }) {
 /**
  * Admin-managed running strip shown between the navbar and the hero. Pass
  * `config` to preview unsaved settings (Admin → Settings); otherwise it reads
- * the saved ticker settings. Pauses on hover/focus and is static-scrollable for
- * visitors who prefer reduced motion.
+ * the saved ticker settings. Pauses on mouse hover / keyboard focus / press-and-hold; with
+ * reduced motion it runs at half speed instead of stopping (see index.css).
  */
 export default function PromoTicker({ config, className = '' }) {
   const { ticker } = useSettings()

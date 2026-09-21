@@ -243,15 +243,21 @@ a.glass:hover {
 .ticker-track {
   display: flex;
   width: max-content;
+  will-change: transform; /* keeps the animation running inside the masked, clipped strip on iOS/Android */
   animation: ticker-scroll var(--ticker-duration, 30s) linear infinite;
 }
-.ticker:hover .ticker-track,
-.ticker:focus-within .ticker-track {
+/* Pause for a mouse hovering or keyboard focus only. On a phone :hover "sticks" after a tap and would freeze the strip. */
+@media (hover: hover) {
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+}
+.ticker:has(:focus-visible) .ticker-track,
+.ticker:active .ticker-track { /* press-and-hold on touch also pauses, so a message can be read */
   animation-play-state: paused;
 }
+/* Phones with "remove animations" / battery saver report reduced motion, which used to freeze the strip completely.
+   It is a single line of small text, so it keeps moving — at half speed — instead of going static. */
 @media (prefers-reduced-motion: reduce) {
-  .ticker { overflow-x: auto; }
-  .ticker-track { animation: none; }
+  .ticker-track { animation-duration: calc(var(--ticker-duration, 30s) * 2); }
 }
 
 /* ---- Mobile menu: freeze the page behind the off-canvas panel ---- */
