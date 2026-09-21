@@ -56,7 +56,7 @@ export function ImageField({ label, value, onChange, hint }) {
             <div className="flex items-center gap-2 glass rounded-[12px] px-3 h-10">
               <Link2 size={15} className="text-tertiary shrink-0" />
               <input
-                type="url"
+                type="text" inputMode="url" autoComplete="off"
                 aria-label={`${label ?? 'Image'} link`}
                 value={value ?? ''}
                 onChange={(e) => handleLink(e.target.value)}
@@ -144,7 +144,7 @@ export function ImageListField({ label, value = [], onChange, hint, max = 12 }) 
           <div className="flex-1 min-w-[220px] flex items-center gap-2 glass rounded-full pl-4 pr-1.5 h-10">
             <Link2 size={15} className="text-tertiary shrink-0" />
             <input
-              type="url"
+              type="text" inputMode="url" autoComplete="off"
               aria-label={`${label ?? 'Images'} — add link`}
               value={link}
               onChange={(e) => setLink(e.target.value)}

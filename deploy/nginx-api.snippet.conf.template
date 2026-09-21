@@ -9,7 +9,9 @@
 # It sends /api and /uploads to the backend (Node on 127.0.0.1:__PORT__, run by pm2). The website and the API are
 # then on the SAME origin, so the login cookie needs no CORS and cannot be sent to another site.
 
-location /api/ {
+# ^~ = "this prefix wins over any regex location" (e.g. the usual `location ~* .(jpg|png|css|js)$ { … }` static-file rule,
+# which would otherwise catch /uploads/photo.jpg and answer 404 from the empty dist folder).
+location ^~ /api/ {
     proxy_pass http://127.0.0.1:__PORT__;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -21,7 +23,7 @@ location /api/ {
     add_header Cache-Control "no-store" always;   # never cache API answers
 }
 
-location /uploads/ {
+location ^~ /uploads/ {
     proxy_pass http://127.0.0.1:__PORT__;
     proxy_set_header Host $host;
     expires 30d;
