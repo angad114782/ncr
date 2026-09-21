@@ -119,6 +119,7 @@ npm run build
 visitor clicks (PropertyDetail / Listings / PropertyCard) ─▶ InterestContext.track()  ─▶ localStorage 're-interest'
                                                               │
                             summarise() ─▶ { focus, budget, intent, score }
+                              ├─ WelcomeModal        luxury welcome card on arrival + "before you go" on exit intent (admin: Site Content → Welcome & exit card)
                               ├─ LoginNudge          soft card after real interest (admin: Site Content → Login prompt)
                               ├─ RecommendedForYou   "Picked for you" home section (matchScore)
                               └─ AuthSheet (signup)  benefits + consent checkbox ─▶ addInquiry({ source, consent, intent, interest })
@@ -185,7 +186,7 @@ description, active?, images[], floorPlans[], amenities[], nearby[{type,name,dis
 **Faq** — `id, question, answer, category, pages[home|about|contact], active` (array order = display order)
 **Testimonial** — `id, name, city, rating, text, avatar, active` (seeds are inactive samples)
 **Company** (defaults `src/data/company.js` → live in `re-company`, read with `useSettings().company`) — `name, domain, tagline, foundedYear, reraAgentId, address{}, officeHours, social{}, ceo{name,title,experienceYears,photo,summary,expertise[],quote}`
-**Site content** (defaults `src/data/siteDefaults.js` → live in `re-site-content`, read with `useSettings().siteContent`, tokens via `fill()`) — `nav[], home{hero…, sections[{id,enabled}]}, why, how, cta, about, team, contact, footer, forms{buyBudgets,rentBudgets}, options{possession,furnishing}, nudge{enabled,delaySeconds,minScore,cooldownDays,title,titleFallback,text,buttonLabel,dismissLabel,benefits[],consentText}, seo{autoLinkCities,autoLinks[{keyword,to}]}`
+**Site content** (defaults `src/data/siteDefaults.js` → live in `re-site-content`, read with `useSettings().siteContent`, tokens via `fill()`) — `nav[], home{hero…, sections[{id,enabled}]}, why, how, cta, about, team, contact, footer, forms{buyBudgets,rentBudgets}, options{possession,furnishing}, nudge{enabled,delaySeconds,minScore,cooldownDays,title,titleFallback,text,buttonLabel,dismissLabel,benefits[],consentText}, welcome{enabled,delaySeconds,eyebrow,title,text,loginLabel,signupLabel,closeLabel,onClose,exitEnabled,exitEyebrow,exitTitle,exitText}, cta{…,agentSignup}, agentProgram{…,listIntro}, seo{autoLinkCities,autoLinks[{keyword,to}]}`
 **Property** additionally carries `active`, and for agent-posted listings `agentId, submittedBy (user id), reviewStatus("pending"|"approved"|"rejected"; missing = approved), reviewNote`. Only `active && reviewStatus approved` listings are public.
 **Legal pages** — `siteContent.legal.{privacy|terms|disclaimer} = { title, updated, intro, sections[{title, body}] }`; **Agent program** — `siteContent.agentProgram = { enabled, registerLabel, title, benefits[], consentText, pendingNotice, rejectedNotice, listingReviewNote }`.
 

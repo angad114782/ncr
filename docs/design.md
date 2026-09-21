@@ -107,6 +107,9 @@ Sign-up sheet: a two-option pill switch ("I'm a buyer / tenant" | "I'm a propert
 ### Login prompt
 Bottom-left glass-strong card (full-width above the call bar on phones), sparkles label "Free · takes 20 seconds", personalised headline, ≤ 3 check-mark benefits, primary pill button + quiet "Not now". Spring in/out, always dismissible, never over forms.
 
+### Welcome & exit card (WelcomeModal)
+Centered dark-espresso card with a caramel-gold hairline border, gold gem badge, tracked-out gold eyebrow, serif title with a diamond divider, ≤ 3 gold check-mark benefits, gold gradient **Login** pill, outlined **Create a free account** pill and a quiet close link. Always dark (a luxury feel in both themes). Same card for the exit-intent variant (different text). Text: Admin → Site Content → *Welcome & exit card*.
+
 ### Content & linking blocks
 - **Quick answer** (blog): `glass-strong` box with an accent left border and a sparkles label, directly under the article header — the answer first, then the intro.
 - **Explore related searches / Buying guides**: pill chips (`glass-weak`, map-pin icon) and 3 guide cards at the bottom of listing and article pages.

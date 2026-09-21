@@ -105,6 +105,9 @@ export const SITE_DEFAULTS = {
     text: 'List it on {brand} and reach thousands of verified buyers and tenants across India.',
     buttonLabel: 'List My Property',
     link: '/contact?intent=sell',
+    // true = the button opens agent registration (then the agent posts the property from their panel);
+    // false = it just goes to `link`. Needs the agent program to be on.
+    agentSignup: true,
   },
 
   about: {
@@ -237,6 +240,26 @@ export const SITE_DEFAULTS = {
     pendingNotice: 'Your agent account is waiting for approval by our team. You can already prepare listings — they go live after approval.',
     rejectedNotice: 'Your agent registration was not approved, so new listings stay hidden. Please contact us to find out more.',
     listingReviewNote: 'New listings are checked by our team before they appear on the site.',
+    listIntro: 'Register as an agent once — then you can post your property straight away.',
+  },
+
+  // The welcome card a first-time visitor sees on arrival, and the "before you go" card shown when they are about to
+  // leave. Both invite a login / sign-up with the mobile number; both are dismissible and appear once per visit.
+  // onClose: 'signup' = closing the welcome card opens the sign-up form; 'nothing' = it just closes.
+  welcome: {
+    enabled: true,
+    delaySeconds: 2,
+    eyebrow: 'Welcome',
+    title: 'Welcome to {brand}',
+    text: 'Sign in with only your mobile number — no password — to save homes, get matches on WhatsApp and book site visits.',
+    loginLabel: 'Login',
+    signupLabel: 'Create a free account',
+    closeLabel: 'Not now',
+    onClose: 'signup',
+    exitEnabled: true,
+    exitEyebrow: 'Before you go',
+    exitTitle: 'Keep your search — free',
+    exitText: 'Create a free account with your mobile number and we will line up homes that match what you looked at.',
   },
 
   // Privacy Policy, Terms & Conditions and Disclaimer pages (see legalDefaults.js).

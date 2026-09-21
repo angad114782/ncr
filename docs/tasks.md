@@ -119,6 +119,13 @@ _Last updated: 2026-09-21_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Welcome, exit prompt & agent entry (this batch)
+- [x] **"List My Property" → agent sign-up**: the Home banner button opens the agent registration directly (no buyer/agent switch, intro line), then lands the new agent on *My listings* to post the property (admin reviews it before it goes live). A signed-in agent goes straight to *My listings*; clients / the switch-off (`cta.agentSignup`) still follow `cta.link`. Files: `ListPropertyCta.jsx`, `AuthSheet.jsx`
+- [x] **Luxury welcome card** on arrival (`WelcomeModal.jsx`, once per session, delayed, not on forms/panels/for crawlers); closing it can open the sign-up form (`welcome.onClose`)
+- [x] **Exit-intent card**: mouse leaving through the top (desktop) or a quick swipe up after reading down the page (phones); once per session, after 8 s
+- [x] **Login with an unknown number → sign-up**, number kept and a notice shown (`AuthSheet.switchToSignup`)
+- [x] Admin: Site Content → *Welcome & exit card*, *Home → Banner* toggle, *Agent program → list intro*
+
 ### Readable property URLs (this batch)
 - [x] `/property/<slug>` — slug from the title; duplicates get city → locality → type / purpose / BHK → number; unique against slugs, old slugs and ids
 - [x] Old `/property/p6` links keep working (client redirect, pre-rendered stub with canonical + refresh, generated nginx 301 map); renamed slugs redirect via `previousSlugs`

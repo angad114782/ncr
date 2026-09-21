@@ -32,6 +32,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('') // friendly info above the form (e.g. "no account yet — create one")
   const { loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp } = useAuth()
   const { fireLeadEvent, siteContent, fill, cities } = useSettings()
   const { addInquiry, agentCrud } = useData()
@@ -63,6 +64,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setSentOtp('')
       setBusy(false)
       setError('')
+      setNotice('')
     }
   }, [open])
 
@@ -71,6 +73,16 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     setOtpDigits(Array(otpLen).fill(''))
     setSentOtp('')
     setError('')
+  }
+
+  /** Login with a number that has no account: carry on as sign-up, with the number already filled in. */
+  const switchToSignup = () => {
+    setStep('phone')
+    setOtpDigits(Array(otpLen).fill(''))
+    setSentOtp('')
+    setMode('signup')
+    setError('')
+    setNotice(`There is no account for +91 ${phone} yet — add your name below and we will create one. Your number is already filled in.`)
   }
 
   const handleSendOtp = async (e) => {
@@ -104,7 +116,8 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
         setStep('otp')
         setTimeout(() => inputRefs.current[0]?.focus(), 100)
       } catch (err) {
-        setError(err.message)
+        if (mode === 'login' && err.status === 404) switchToSignup()
+        else setError(err.message)
       } finally {
         setBusy(false)
       }
@@ -176,7 +189,8 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone, { role: isAgentSignup ? 'agent' : 'user', city: agentCity })
     }
     if (!result.ok) {
-      setError(result.error)
+      if (mode === 'login' && /no account found/i.test(result.error ?? '')) switchToSignup()
+      else setError(result.error)
       return
     }
     if (USE_API && mode === 'signup') {
@@ -229,7 +243,9 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     }
     onClose()
     // From the login prompt they stay exactly where they were browsing; otherwise go to their panel.
-    if (isAgentSignup || !(mode === 'signup' && source)) navigate(panelPath(result.user))
+    // Coming from "List My Property", an agent lands on "My listings" to post the property right away.
+    const home = source === 'list' && result.user.role === 'agent' ? '/agent/listings' : panelPath(result.user)
+    if (isAgentSignup || !(mode === 'signup' && source)) navigate(home)
   }
 
   return (
@@ -244,7 +260,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
             {['login', 'signup'].map((m) => (
               <button
                 key={m}
-                onClick={() => { setMode(m); setError('') }}
+                onClick={() => { setMode(m); setError(''); setNotice('') }}
                 className={`flex-1 py-2 rounded-full text-sm font-medium capitalize spring ${
                   mode === m ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'
                 }`}
@@ -255,7 +271,11 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
           </div>
 
           <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-            {mode === 'signup' && program.enabled !== false && (
+            {notice && <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{notice}</p>}
+            {isAgentSignup && source === 'list' && program.listIntro && (
+              <p className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{fill(program.listIntro)}</p>
+            )}
+            {mode === 'signup' && program.enabled !== false && source !== 'list' && (
               <div role="radiogroup" aria-label="I am a" className="glass-weak p-1 rounded-full flex">
                 {[['user', 'I’m a buyer / tenant'], ['agent', program.registerLabel || 'I’m an agent']].map(([value, label]) => (
                   <button

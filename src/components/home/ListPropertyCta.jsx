@@ -1,17 +1,41 @@
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight, Building2 } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
+import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 
+/**
+ * "List My Property". With the agent program on (Admin → Site Content → Home → Banner), a visitor who is not
+ * signed in lands directly on the agent registration form and, once registered, on their "My listings" page
+ * where the property is posted (our team reviews it before it goes live). An agent goes straight to
+ * "My listings". Everyone else (a client account, or the option switched off) follows the button link.
+ * The href stays a real link, so it still works without JavaScript and for crawlers.
+ */
 export default function ListPropertyCta() {
   const { siteContent, fill } = useSettings()
-  const { title, text, buttonLabel, link } = siteContent.cta
+  const { user } = useAuth()
+  const outlet = useOutletContext()
+  const { title, text, buttonLabel, link, agentSignup } = siteContent.cta
+  const agentsOn = agentSignup !== false && siteContent.agentProgram.enabled !== false
 
   const external = /^https?:\/\//.test(link)
-  const linkProps = external
+  let linkProps = external
     ? { as: 'a', href: link, target: '_blank', rel: 'noopener noreferrer' }
     : { as: Link, to: link || '/contact' }
+
+  if (agentsOn && user?.role === 'agent') {
+    linkProps = { as: Link, to: '/agent/listings' }
+  } else if (agentsOn && !user && outlet?.openAuth) {
+    linkProps = {
+      as: Link,
+      to: link || '/contact',
+      onClick: (e) => {
+        e.preventDefault()
+        outlet.openAuth('signup', 'list', 'agent')
+      },
+    }
+  }
 
   return (
     <section className="mb-16">

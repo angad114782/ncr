@@ -8,6 +8,7 @@ import TopBanner from './TopBanner'
 import CompareBar from '../property/CompareBar'
 import CursorFollower from '../effects/CursorFollower'
 import LoginNudge from './LoginNudge'
+import WelcomeModal from './WelcomeModal'
 import ApiToast from './ApiToast'
 
 export default function PublicLayout() {
@@ -15,6 +16,7 @@ export default function PublicLayout() {
   const [authMode, setAuthMode] = useState('login')
   const [authSource, setAuthSource] = useState('')
   const [authRole, setAuthRole] = useState('user')
+  const [welcomeOpen, setWelcomeOpen] = useState(false)
   const openAuth = (mode = 'login', source = '', role = 'user') => {
     setAuthMode(mode === 'signup' ? 'signup' : 'login')
     setAuthSource(source)
@@ -31,7 +33,8 @@ export default function PublicLayout() {
       </main>
       <Footer />
       <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} source={authSource} initialRole={authRole} />
-      <LoginNudge onOpenAuth={openAuth} authOpen={authOpen} />
+      <WelcomeModal onOpenAuth={openAuth} authOpen={authOpen} onOpenChange={setWelcomeOpen} />
+      <LoginNudge onOpenAuth={openAuth} authOpen={authOpen || welcomeOpen} />
       <ApiToast />
       <ContactRail />
       <CompareBar />
