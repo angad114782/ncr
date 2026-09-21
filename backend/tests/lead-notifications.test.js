@@ -1,14 +1,13 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { ADMIN_PHONE, startTestApp } from './helpers.js'
-import { config } from '../src/config.js'
 
 /**
  * WhatsApp messages when a lead form is filled: the team (admin) gets a notification, the visitor a welcome.
  * The real WhatsApp Cloud API is never called — fetch is replaced by a recorder.
  */
 describe('lead WhatsApp messages', () => {
-  let t, admin, calls, realFetch, failTemplate
+  let t, admin, calls, realFetch, failTemplate, config
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
   const waitFor = async (fn, ms = 2000) => {
     for (let i = 0; i < ms / 25 && !fn(); i++) await sleep(25)
@@ -22,6 +21,7 @@ describe('lead WhatsApp messages', () => {
 
   before(async () => {
     t = await startTestApp()
+    ;({ config } = await import('../src/config.js')) // only after startTestApp has set the test environment (a top-level import would read it too early)
     admin = await t.login(ADMIN_PHONE)
     realFetch = globalThis.fetch
     globalThis.fetch = async (url, opts) => {
