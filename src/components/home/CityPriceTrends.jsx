@@ -38,7 +38,7 @@ export default function CityPriceTrends() {
             className="p-5 text-left block"
           >
             <IndianRupee className="text-[var(--color-accent)] mb-3" size={20} />
-            <h3 className="font-semibold">{r.city}</h3>
+            <p className="font-semibold">{r.city}</p>
             <p className="text-sm font-medium mt-1">₹{r.avgPerSqft.toLocaleString('en-IN')}/sqft</p>
             <p className="text-tertiary text-xs mt-0.5">avg. of {r.count} listing{r.count > 1 ? 's' : ''}</p>
           </GlassCard>

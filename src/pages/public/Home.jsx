@@ -102,7 +102,7 @@ export default function Home() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl md:text-3xl font-bold">Featured Properties</h2>
           <GlassButton variant="glass" size="sm" as={Link} to="/buy">
-            View All
+            View all featured
           </GlassButton>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -133,8 +133,8 @@ export default function Home() {
   return (
     <div className="pb-16">
       <Seo
-        title="Buy & Rent Flats, Villas and Commercial Property in India"
-        description={`Search verified 1, 2, 3 BHK flats, villas, studios and commercial property to buy or rent in ${cities.slice(0, 7).join(', ')}. Free guidance from a team led by ${company.ceo.title} ${company.ceo.name}.`}
+        title={fill(hero.seoTitle)}
+        description={fill(hero.seoDescription)}
         path="/"
         jsonLd={jsonLd}
       />

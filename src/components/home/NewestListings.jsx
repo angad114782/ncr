@@ -18,7 +18,7 @@ export default function NewestListings({ excludeIds = [] }) {
       <div className="flex items-center justify-between mb-6">
         <h2 id="newest-listings-heading" className="text-2xl md:text-3xl font-bold">Newest Listings</h2>
         <GlassButton variant="glass" size="sm" as={Link} to="/buy">
-          View All
+          View all new listings
         </GlassButton>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">

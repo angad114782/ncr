@@ -103,12 +103,12 @@ export default function BudgetFinder() {
                 as={Link}
                 to={`/buy?maxPrice=${Math.round(result.maxBudget)}`}
               >
-                View All
+                View all in this budget
               </GlassButton>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {matches.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+                <PropertyCard key={p.id} property={p} headingAs="p" />
               ))}
             </div>
           </div>

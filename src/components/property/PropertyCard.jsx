@@ -7,7 +7,8 @@ import { propertyPath } from '../../utils/seo'
 import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
 
-export default function PropertyCard({ property }) {
+/** `headingAs`: a listing that is repeated further down the page (budget results…) uses "p" so the page has no duplicate headings. */
+export default function PropertyCard({ property, headingAs: Heading = 'h3' }) {
   const { savedIds, toggleSaved, compareIds, toggleCompare } = useData()
   const { track } = useInterest()
   const isSaved = savedIds.includes(property.id)
@@ -79,7 +80,7 @@ export default function PropertyCard({ property }) {
       </div>
 
       <Link to={propertyPath(property)} className="block p-5">
-        <h3 className="font-semibold text-lg mb-1 truncate">{property.title}</h3>
+        <Heading className="font-semibold text-lg mb-1 truncate">{property.title}</Heading>
         <p className="text-secondary text-sm flex items-center gap-1 mb-4">
           <MapPin size={14} /> {property.locality}, {property.city}
         </p>

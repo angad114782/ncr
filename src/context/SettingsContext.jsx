@@ -53,7 +53,7 @@ const DEFAULT_TICKER = {
   enabled: true,
   speed: 'normal', // 'slow' | 'normal' | 'fast'
   messages: [
-    { text: 'Free site visits — no obligation, no pressure', link: '/contact?intent=buy' },
+    { text: 'Free site visits — no obligation, no pressure', link: '/contact' },
     { text: 'Check RERA before you pay — read our free 2-minute guide', link: '/blog/how-to-check-rera-registration' },
     { text: 'Not sure of your budget? Get a free home-loan estimate', link: '/' },
     { text: 'Want us to call you back? Talk to an expert today', link: '/contact' },

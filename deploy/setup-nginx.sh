@@ -10,6 +10,7 @@ set -euo pipefail
 
 APP="${APP:-/var/www/propertyinncr.com}"
 SNIPPET="$APP/deploy/nginx-api.snippet.conf"
+SITE_SNIPPET="$APP/deploy/nginx-site.snippet.conf"
 SUDO=""
 [ "$(id -u)" != "0" ] && SUDO="sudo"
 
@@ -44,8 +45,13 @@ FILES=$(grep -RlE "server_name[^;]*propertyinncr\.com" /etc/nginx/sites-enabled 
 [ -n "$FILES" ] || FILES=$(grep -lE "server_name[^;]*propertyinncr\.com" /etc/nginx/nginx.conf 2>/dev/null || true)
 [ -n "$FILES" ] || die "No nginx config mentions propertyinncr.com. Find it with:  grep -rn propertyinncr /etc/nginx"
 
-if grep -Rq "nginx-api.snippet.conf" /etc/nginx 2>/dev/null; then
-  say "The include line is already there ($(grep -Rl 'nginx-api.snippet.conf' /etc/nginx | tr '\n' ' '))"
+# Which include lines are still missing?  nginx-site = www→apex redirect + charset;  nginx-api = /api + /uploads
+MISSING=""
+[ -f "$SITE_SNIPPET" ] && ! grep -Rq "nginx-site.snippet.conf" /etc/nginx 2>/dev/null && MISSING="$MISSING $SITE_SNIPPET"
+grep -Rq "nginx-api.snippet.conf" /etc/nginx 2>/dev/null || MISSING="$MISSING $SNIPPET"
+
+if [ -z "$MISSING" ]; then
+  say "The include lines are already there ($(grep -Rl 'nginx-.*snippet.conf' /etc/nginx | tr '\n' ' '))"
 else
   for F in $FILES; do
     REAL=$(readlink -f "$F")
@@ -53,9 +59,9 @@ else
     say "Editing $REAL (backup: $BACKUP)"
     $SUDO cp "$REAL" "$BACKUP"
     TMP=$(mktemp)
-    python3 - "$REAL" "$SNIPPET" "$TMP" <<'PY'
+    python3 - "$REAL" "$TMP" $MISSING <<'PY'
 import re, sys
-src, snippet, out = sys.argv[1:4]
+src, out, *snippets = sys.argv[1:]
 lines = open(src, encoding='utf8').read().split('\n')
 strip = lambda l: re.sub(r'#.*$', '', l)
 
@@ -82,13 +88,13 @@ targets = [b for b, i in mine if i['ssl']] or [b for b, i in mine if not i['redi
 if not targets:
     sys.exit('no suitable server block found (only a redirect block?)')
 
-include = f'include {snippet};'
+includes = [f'include {sn};' for sn in snippets]
 inserts = []
 for s, e in targets:
     loc = next((j for j in range(s, e + 1) if re.match(r'^\s*location\s+/\s*\{', strip(lines[j]))), None)
     at = loc if loc is not None else e
     indent = re.match(r'^(\s*)', lines[at]).group(1) if loc is not None else '    '
-    inserts.append((at, [f'{indent}# backend API + uploads (added by deploy/setup-nginx.sh)', f'{indent}{include}', '']))
+    inserts.append((at, [f'{indent}# www redirect, charset, backend API + uploads (added by deploy/setup-nginx.sh)'] + [f'{indent}{inc}' for inc in includes] + ['']))
 for at, new in sorted(inserts, reverse=True):
     lines[at:at] = new
 open(out, 'w', encoding='utf8').write('\n'.join(lines))
@@ -120,5 +126,12 @@ else
   echo "Check: pm2 status; pm2 logs ncr-api --lines 40; and that the include line is inside the HTTPS server block."
   exit 1
 fi
+
+say "www → apex redirect"
+WWW=$(curl -sk --max-time 15 -o /dev/null -w '%{http_code} %{redirect_url}' -H 'Host: www.propertyinncr.com' https://127.0.0.1/ || true)
+case "$WWW" in
+  "301 https://propertyinncr.com/"*) echo "OK — www.propertyinncr.com redirects to https://propertyinncr.com/ ($WWW)" ;;
+  *) echo "Note: www did not redirect (got: $WWW). Check that nginx-site.snippet.conf is included in the HTTPS server block." ;;
+esac
 echo
 echo "Done. Try the admin login again: https://propertyinncr.com"

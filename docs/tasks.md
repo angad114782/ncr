@@ -119,6 +119,13 @@ _Last updated: 2026-09-21_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### SEO audit fixes (this batch)
+- [x] **www → apex 301 redirect + `charset utf-8`** via `deploy/nginx-site.snippet.conf` (fixes: canonical points to a different page, missing self-referential hreflang on www, duplicate www/non-www). Applied by `bash deploy/setup-nginx.sh` (re-run it once — it only adds the missing include)
+- [x] Home **title 73 → 56 chars** and **description 200 → 139 chars**; both now editable in Admin → Site Content → Home page (`home.seoTitle` / `home.seoDescription`)
+- [x] No duplicate headings on Home (budget results and city rates no longer repeat card / city headings); "View All" links have unique text; ticker default link has no `?param`
+- [x] Real **favicon** (was the Vite template logo) and **apple-touch-icon** (`public/apple-touch-icon.png`)
+- [ ] Not code: response time (server is in Germany → India-region VPS or a CDN such as Cloudflare), backlinks, social sharing. `/contact?intent=…` and filter links keep their parameters on purpose (canonical points to the clean page)
+
 ### Welcome, exit prompt & agent entry (this batch)
 - [x] **"List My Property" → agent sign-up**: the Home banner button opens the agent registration directly (no buyer/agent switch, intro line), then lands the new agent on *My listings* to post the property (admin reviews it before it goes live). A signed-in agent goes straight to *My listings*; clients / the switch-off (`cta.agentSignup`) still follow `cta.link`. Files: `ListPropertyCta.jsx`, `AuthSheet.jsx`
 - [x] **Luxury welcome card** on arrival (`WelcomeModal.jsx`, once per session, delayed, not on forms/panels/for crawlers); closing it can open the sign-up form (`welcome.onClose`)

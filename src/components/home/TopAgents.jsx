@@ -19,7 +19,7 @@ export default function TopAgents() {
           <p className="text-secondary text-sm mt-1">Verified experts ready to help you find the right property.</p>
         </div>
         <GlassButton variant="glass" size="sm" as={Link} to="/agents">
-          View All
+          View all agents
         </GlassButton>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">

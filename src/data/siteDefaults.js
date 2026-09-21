@@ -58,6 +58,10 @@ export const SITE_DEFAULTS = {
     heroPrefix: 'Find Your Next',
     rotatingWords: ['Home', 'Villa', 'Office', 'Studio'],
     heroSuffix: 'Across India',
+    // Search-result snippet of the home page. Keep the title ≈ 45 characters (the brand is added after it) and the
+    // description ≤ 150 — Google cuts anything longer.
+    seoTitle: 'Buy & Rent Flats, Villas & Plots in India',
+    seoDescription: 'Search verified flats, villas, plots and commercial property to buy or rent in Mumbai, Delhi, Bangalore, Pune & more. Free expert guidance.',
     heroSubtitle:
       'Buy or rent 1, 2 & 3 BHK flats, villas and commercial spaces in Mumbai, Delhi, Bangalore, Gurugram & more — verified listings and free expert guidance.',
     sections: Object.keys(HOME_SECTION_LABELS).map((id) => ({ id, enabled: true })),

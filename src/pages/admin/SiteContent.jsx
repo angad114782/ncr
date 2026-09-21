@@ -114,6 +114,8 @@ const TABS = [
       { key: 'home.heroSuffix', label: 'Hero headline — end' },
       { key: 'home.rotatingWords', label: 'Rotating words', type: 'stringList', max: 8 },
       { key: 'home.heroSubtitle', label: 'Hero sub-text', type: 'textarea', rows: 3 },
+      { key: 'home.seoTitle', label: 'Google title (≈ 45 characters; your company name is added after it)', half: false },
+      { key: 'home.seoDescription', label: 'Google description (up to 150 characters)', type: 'textarea', rows: 3 },
       { key: 'home.sections', type: 'custom', render: ({ value, set }) => <SectionsEditor value={value} set={set} /> },
     ],
   },
