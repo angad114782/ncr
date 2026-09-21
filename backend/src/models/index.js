@@ -173,6 +173,7 @@ export const Lead = model(
       intent: { type: String, enum: ['Hot', 'Warm', 'Cold'], default: 'Cold', index: true },
       interest: { type: Mixed, default: null },
       assignedAgentId: str({ default: '', index: true }),
+      otpSentAt: { type: Date, default: null }, // a verification code was sent for this enquiry (phoneVerified says whether it was typed in)
       welcomeSentAt: { type: Date, default: null }, // WhatsApp welcome sent to the visitor (at most one per number per 24 h)
       adminNotifiedAt: { type: Date, default: null }, // WhatsApp lead notification accepted for the team
       notes: { type: [{ _id: false, text: String, by: String, at: Date }], default: [] },

@@ -119,8 +119,15 @@ _Last updated: 2026-09-21_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Keyword research (this batch)
+- [x] `docs/seo/keyword-candidates.txt` / `.csv`: 154 NCR long-tail keywords (all seen in Google autocomplete on 2026-09-21), 9 clusters, with the page to build for each. **Volume and KD are blank** - paste the .txt into Semrush / Ahrefs (India), keep KD < 10 and volume 10-500
+- [ ] Connect Semrush + Search Console (Supermetrics) to get the real competitor gap and the filtered list
+- [ ] To rank for them the site needs Noida / Ghaziabad / Faridabad as cities, a "Gurgaon" alias for "Gurugram", sector / budget landing pages and real listings (today: 7 metro cities, 14 sample listings)
+
 ### WhatsApp lead messages (this batch)
 - [x] A filled lead form now WhatsApps **the team** (`lead_notification`: display number + admin number + assigned agent) **and welcomes the visitor** (`lead_thank_you`, once per number per 24 h; contact + property forms). Admin switches: welcome on/off, OTP-verified numbers only. See `backend/README.md` (template texts to create in Meta)
+- [x] **Lead saved when the OTP is sent** (property form: `stage: "otp_sent"`) — shows in Inquiries as *OTP sent · not verified*, team notified at once; confirming the number later updates the same lead and sends the welcome
+- [x] `lead_notification` now has 5 variables (name, mobile, project interest **+ live property link**, budget, location); `lead_thank_you` has 3 (name, property, number to call)
 - [x] Admin → Settings → WhatsApp → **Send test messages to my number** (shows Meta's error per template); leads record `welcomeSentAt` / `adminNotifiedAt`
 - [x] Agent-status WhatsApp no longer shares the lead template (own optional `accountUpdateTemplate`)
 - [ ] 🔴 **You**: create + get approved the two templates in Meta (names exactly `lead_notification`, `lead_thank_you`), then press *Send test messages*. Until approved, leads are still saved but no WhatsApp goes out

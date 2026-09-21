@@ -19,6 +19,30 @@ async function pickAgent(property, city) {
 }
 
 /**
+ * WhatsApp (and e-mail) after a lead is saved. The visitor's welcome goes only to an enquiry form they filled in
+ * (they agreed to be contacted), never twice within 24 h for the same number, and only if the admin allows it.
+ * Sending is best-effort and never delays or fails the request.
+ */
+async function announceLead(lead, property, { team, welcome: wantWelcome, agent, enquiry, contactConsent, verified, since }) {
+  let welcome = false
+  if (wantWelcome && enquiry && contactConsent) {
+    const wa = await getSetting('whatsapp')
+    if (wa.leadWelcomeEnabled !== false && (!wa.leadWelcomeVerifiedOnly || verified)) {
+      welcome = !(await Lead.exists({ phone: lead.phone, welcomeSentAt: { $gt: since } }))
+      if (welcome) await Lead.updateOne({ _id: lead.id }, { $set: { welcomeSentAt: new Date() } }) // claim it first: two quick submissions send one
+    }
+  }
+  notifyNewLead(lead, { property, agent, welcome, team })
+    .then(async (sent) => {
+      const update = {}
+      if (sent.admin) update.$set = { adminNotifiedAt: new Date() }
+      if (welcome && !sent.client) update.$unset = { welcomeSentAt: '' } // it did not go out: allow another try later
+      if (Object.keys(update).length) await Lead.updateOne({ _id: lead.id }, update)
+    })
+    .catch(() => {})
+}
+
+/**
  * Creates a lead (or merges into a recent one) and does everything that follows: intent (recomputed
  * from the raw browsing profile — never trusted from the browser), consent proof, assignment and
  * notifications.
@@ -45,17 +69,26 @@ export async function createLead(req, data, { user, verified = false, source, co
 
   const message = data.message?.trim() || (property ? `Interested in ${property.title}.${data.budget ? ` Budget: ${data.budget}.` : ''}` : summary.hasSignal ? `New sign-up. ${summary.line}` : 'New sign-up — no browsing history yet.')
 
+  // A code was sent for this enquiry but the number is not confirmed (yet): keep the lead, marked "not verified".
+  const pending = data.stage === 'otp_sent' && !verified
+
   let lead
+  let announce = null // what to tell whom once the lead is saved
   if (existing) {
-    existing.message = `${existing.message}\n— ${today()}: ${message}`.slice(0, 4000)
+    const wasVerified = existing.phoneVerified
+    if (!existing.message.includes(message)) existing.message = `${existing.message}\n— ${today()}: ${message}`.slice(0, 4000) // the verified submit repeats the text of the "code sent" one
     existing.intent = higher(existing.intent, intent)
     if (interest) existing.interest = interest
+    if (pending) existing.otpSentAt = new Date()
     if (verified) existing.phoneVerified = true
     if (user) existing.userId = user.id
     lead = await existing.save()
+    // The team was told when the lead first arrived. Someone who now confirmed the number gets the welcome.
+    if (verified && !wasVerified) announce = { team: false, welcome: true }
   } else {
     const agent = await pickAgent(property, city)
     lead = await Lead.create({
+      otpSentAt: pending ? new Date() : null,
       propertyId,
       userId: user?.id ?? null,
       userName: data.name,
@@ -72,25 +105,15 @@ export async function createLead(req, data, { user, verified = false, source, co
       interest,
       assignedAgentId: agent?.id ?? '',
     })
-    // The team is told about every new lead. The visitor gets a welcome only for an enquiry form they filled in
-    // (they agreed to be contacted), never twice within 24 h for the same number, and only if the admin allows it.
-    const wa = await getSetting('whatsapp')
-    let welcome = false
-    if (enquiry && contactConsent && wa.leadWelcomeEnabled !== false && (!wa.leadWelcomeVerifiedOnly || verified)) {
-      welcome = !(await Lead.exists({ phone, welcomeSentAt: { $gt: since } }))
-      if (welcome) await Lead.updateOne({ _id: lead.id }, { $set: { welcomeSentAt: new Date() } }) // claim it first: two quick submissions send one
-    }
-    notifyNewLead(lead, { propertyTitle: property?.title, agent, welcome })
-      .then(async (sent) => {
-        const update = {}
-        if (sent.admin) update.$set = { adminNotifiedAt: new Date() }
-        if (welcome && !sent.client) update.$unset = { welcomeSentAt: '' } // it did not go out: allow another try later
-        if (Object.keys(update).length) await Lead.updateOne({ _id: lead.id }, update)
-      })
-      .catch(() => {})
+    // The team hears about every new lead at once — including one whose code has not been typed in. The welcome waits
+    // until the number is confirmed.
+    announce = { team: true, welcome: !pending, agent }
   }
 
-  if (contactConsent) {
+  if (announce) await announceLead(lead, property, { ...announce, enquiry, contactConsent, verified, since })
+
+  const alreadyConsented = enquiry && existing && lead.consent // the "code sent" and the "verified" submits are one enquiry: one consent record
+  if (contactConsent && !alreadyConsented) {
     const consent = await recordConsent(req, {
       phone,
       userId: user?.id,

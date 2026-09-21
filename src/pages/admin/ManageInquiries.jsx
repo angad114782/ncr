@@ -70,6 +70,11 @@ export default function ManageInquiries() {
                       <BadgeCheck size={13} />
                     </span>
                   )}
+                  {!inq.phoneVerified && inq.otpSentAt && (
+                    <span className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--color-warning)] text-[#2A2118]" title="A code was sent to this number but it was not typed in — the number may be wrong or belong to someone else">
+                      OTP sent · not verified
+                    </span>
+                  )}
                 </p>
                 {inq.budget && (
                   <p className="text-secondary text-xs mt-0.5 flex items-center gap-1">

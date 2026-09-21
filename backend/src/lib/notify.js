@@ -94,12 +94,26 @@ export async function sendOtpMessage(phone, code) {
   return { delivered: ok, channel: ok ? 'whatsapp' : 'none' }
 }
 
-/** What the lead was about, in words that read well inside a WhatsApp sentence. */
+/** What the lead was about, in words that read well inside the visitor's thank-you sentence. */
 const CONTACT_TOPIC = { buy: 'buying a property', rent: 'renting a property', sell: 'selling or listing your property', invest: 'property investment' }
-export function leadTopic(lead, propertyTitle = '') {
-  if (propertyTitle) return propertyTitle
+export function leadTopic(lead, property) {
+  if (property?.title) return property.title
   if (CONTACT_TOPIC[lead.contactIntent]) return CONTACT_TOPIC[lead.contactIntent]
-  return lead.source?.startsWith('signup') ? 'your property search' : 'your enquiry'
+  return lead.source?.startsWith('signup') ? 'your property search' : 'your property requirement'
+}
+
+/** The same, for the team: the property, or what the contact form / sign-up was about. */
+function teamInterest(lead, property) {
+  if (property?.title) return property.title
+  if (CONTACT_TOPIC[lead.contactIntent]) return CONTACT_TOPIC[lead.contactIntent].replace(/^./, (c) => c.toUpperCase())
+  return lead.source?.startsWith('signup') ? 'New sign-up' : 'General enquiry'
+}
+
+/** The live page the lead came from: the property's page, else the contact page (or the home page for a sign-up). */
+export function leadPageUrl(lead, property) {
+  const base = config.siteUrl
+  if (property) return `${base}/property/${property.slug || property._id}`
+  return lead.source === 'contact_page' ? `${base}/contact` : base
 }
 
 /** Who on the team gets the WhatsApp: the site's WhatsApp number and the admin's login number (once each). */
@@ -109,21 +123,26 @@ export async function adminNumbers() {
 }
 
 /**
- * A new lead: the team (admin numbers + the assigned agent) is told by WhatsApp and e-mail, and — when `welcome`
- * is true — the person who filled the form gets a welcome message. Every part is best-effort and independent.
+ * A lead. Team (`team`, default): the admin numbers and the assigned agent get the `lead_notification` WhatsApp —
+ * name, mobile, project interest with the live link of the page, budget, location — and the team gets an e-mail.
+ * Visitor (`welcome`): the person who filled the form gets the `lead_thank_you` welcome (name, what they asked about,
+ * the number to call). Every part is best-effort and independent.
  * Resolves to `{ admin, client }` (was a WhatsApp accepted for the team / for the visitor).
  */
-export async function notifyNewLead(lead, { propertyTitle = '', agent, welcome = false } = {}) {
-  const [wa, mail, company] = await Promise.all([getSetting('whatsapp'), getSetting('mail'), getSetting('company')])
-  const topic = leadTopic(lead, propertyTitle)
-  const summary = `${lead.userName} · ${lead.phone}${propertyTitle ? ` · ${propertyTitle}` : ''}${lead.intent ? ` · ${lead.intent}` : ''}`
-  const team = await adminNumbers()
-  const agentPhone = last10(agent?.phone)
+export async function notifyNewLead(lead, { property = null, agent, welcome = false, team = true } = {}) {
+  const [wa, mail] = await Promise.all([getSetting('whatsapp'), getSetting('mail')])
+  const url = leadPageUrl(lead, property)
+  const location = (property ? [property.locality, property.city].filter(Boolean).join(', ') : '') || lead.city || 'Not shared'
+  const teamParams = [lead.userName, lead.phone, `${teamInterest(lead, property)} - ${url}`, lead.budget || 'Not shared', location]
+  const numbers = team ? await adminNumbers() : []
+  const agentPhone = team ? last10(agent?.phone) : ''
+  const callNumber = last10(wa.displayPhone) || last10(config.adminPhone)
+  const summary = `${lead.userName} · ${lead.phone}${property ? ` · ${property.title}` : ''}${lead.intent ? ` · ${lead.intent}` : ''}`
   const [adminResults, , agentResult, clientResult] = await Promise.all([
-    Promise.all(team.map((n) => whatsappSend(n, wa.leadNotificationTemplate, [lead.userName, lead.phone, topic]))),
-    sendEmail({ to: mail.replyTo || mail.fromEmail, subject: `New lead: ${lead.userName}`, text: `${summary}\n\n${lead.message ?? ''}\n\n${lead.interest?.line ?? ''}` }),
-    agentPhone.length === 10 && !team.includes(agentPhone) ? whatsappSend(agentPhone, wa.leadNotificationTemplate, [lead.userName, lead.phone, topic]) : null,
-    welcome ? whatsappSend(last10(lead.phone), wa.leadThankYouTemplate, [String(lead.userName).trim().split(/\s+/)[0], company?.name || 'our team', topic]) : null,
+    Promise.all(numbers.map((n) => whatsappSend(n, wa.leadNotificationTemplate, teamParams))),
+    team ? sendEmail({ to: mail.replyTo || mail.fromEmail, subject: `New lead: ${lead.userName}`, text: `${summary}\n${url}\n\n${lead.message ?? ''}\n\n${lead.interest?.line ?? ''}` }) : null,
+    agentPhone.length === 10 && !numbers.includes(agentPhone) ? whatsappSend(agentPhone, wa.leadNotificationTemplate, teamParams) : null,
+    welcome ? whatsappSend(last10(lead.phone), wa.leadThankYouTemplate, [String(lead.userName).trim().split(/\s+/)[0], leadTopic(lead, property), callNumber ? `+91 ${callNumber}` : 'our team']) : null,
   ])
   return { admin: adminResults.some((r) => r.ok) || Boolean(agentResult?.ok), client: Boolean(clientResult?.ok) }
 }

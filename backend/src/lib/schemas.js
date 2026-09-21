@@ -155,6 +155,9 @@ export const leadCreate = z.object({
   source: z.enum(['contact_page', 'property_lead_form']).default('contact_page'),
   contactIntent: optText(40),
   phoneToken: z.string().max(1000).optional(),
+  // "otp_sent": the visitor filled the form and a code was sent, but the number is not confirmed (yet). The lead is
+  // kept — marked as not verified — so the team still sees someone who asked for a callback and never typed the code.
+  stage: z.enum(['otp_sent']).optional(),
   profile: interestProfile.optional(),
 })
 export const leadPatch = z.object({

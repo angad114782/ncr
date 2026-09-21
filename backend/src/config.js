@@ -22,6 +22,9 @@ export const config = {
   cookieSameSite: process.env.COOKIE_SAMESITE ?? 'lax', // 'none' only if the site and the API are on different domains
   clientOrigins: list(process.env.CLIENT_ORIGINS ?? 'http://localhost:5173'),
   publicApiUrl: (process.env.PUBLIC_API_URL ?? '').replace(/\/+$/, ''),
+  // The website's public address, used in messages that link to a page (e.g. the property a lead asked about).
+  // SITE_URL, else the first CLIENT_ORIGINS entry without "www".
+  siteUrl: (process.env.SITE_URL || list(process.env.CLIENT_ORIGINS ?? 'http://localhost:5173').find((o) => !/\/\/www\./i.test(o)) || list(process.env.CLIENT_ORIGINS)[0] || '').replace(/\/+$/, ''),
   otpDevMode: bool(process.env.OTP_DEV_MODE, false),
   otpLength: Number(process.env.OTP_LENGTH) || 6,
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES) || 5,

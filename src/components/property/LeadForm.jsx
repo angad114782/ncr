@@ -46,19 +46,20 @@ export default function LeadForm({ property }) {
   const [error, setError] = useState('')
   const inputRefs = useRef([])
 
+  const leadPayload = () => ({
+    name: form.name.trim(),
+    phone: form.phone,
+    email: form.email.trim() || undefined,
+    budget: form.budget,
+    message: form.message.trim() || `Interested in ${property?.title ?? 'this property'}. Budget: ${form.budget}.`,
+    propertyId: property?.id,
+    source: property ? 'property_lead_form' : 'contact_page',
+    profile,
+  })
+
   /** API mode: sends the enquiry to the server. `phoneToken` proves the number was checked (or the person is signed in with it). */
   const sendLead = async (phoneToken) => {
-    await submitLead({
-      name: form.name.trim(),
-      phone: form.phone,
-      email: form.email.trim() || undefined,
-      budget: form.budget,
-      message: form.message.trim() || `Interested in ${property?.title ?? 'this property'}. Budget: ${form.budget}.`,
-      propertyId: property?.id,
-      source: property ? 'property_lead_form' : 'contact_page',
-      phoneToken,
-      profile,
-    })
+    await submitLead({ ...leadPayload(), phoneToken })
     fireLeadEvent(property ? 'property_lead_form' : 'lead_form')
     navigate('/thank-you', { state: { leadName: form.name } })
   }
@@ -81,6 +82,9 @@ export default function LeadForm({ property }) {
           await sendLead() // their own, already verified number — no second code
           return
         }
+        // The lead is saved right now, marked "not verified": someone who asked for a callback but never types the
+        // code still shows up for the team. The verified submit below updates this same lead.
+        await submitLead({ ...leadPayload(), stage: 'otp_sent' }).catch(() => {})
         const d = await sendOtp(form.phone, 'verify')
         const len = d.length ?? 6
         setOtpLen(len)

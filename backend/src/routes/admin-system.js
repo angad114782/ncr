@@ -6,6 +6,7 @@ import { audit, contentChanged, rebuildNow, rebuildStatus } from '../lib/misc.js
 import { listQuery, parse, settingBody } from '../lib/schemas.js'
 import { escapeRegex } from '../lib/security.js'
 import { out, paginate } from '../lib/serialize.js'
+import { config } from '../config.js'
 import { whatsappSend } from '../lib/notify.js'
 import { maskPhone } from '../lib/phone.js'
 import { SETTING_KEYS, adminSettings, getSetting, saveSetting } from '../services/settings.js'
@@ -33,12 +34,13 @@ router.put('/settings/:key', async (req, res) => {
  * instead of leads silently going out without a notification.
  */
 router.post('/settings/whatsapp/test', async (req, res) => {
-  const [wa, company] = await Promise.all([getSetting('whatsapp'), getSetting('company')])
+  const wa = await getSetting('whatsapp')
   const phone = String(req.user.phone ?? '').replace(/\D/g, '').slice(-10)
+  const callNumber = String(wa.displayPhone ?? '').replace(/\D/g, '').slice(-10)
   const results = []
   for (const [label, template, params] of [
-    ['Lead notification (to the team)', wa.leadNotificationTemplate, ['Test Lead', '9999999999', 'a test enquiry']],
-    ['Welcome message (to the visitor)', wa.leadThankYouTemplate, ['Test', company?.name || 'our team', 'a test enquiry']],
+    ['Lead notification (to the team)', wa.leadNotificationTemplate, ['Test Lead', '9999999999', `A test property - ${config.siteUrl}/property/test`, '₹50 Lakh - ₹1 Crore', 'Gurugram']],
+    ['Thank-you message (to the visitor)', wa.leadThankYouTemplate, ['Test', 'a test property', callNumber ? `+91 ${callNumber}` : 'our team']],
   ]) {
     const r = await whatsappSend(phone, template, params)
     results.push({ label, template, ok: r.ok, error: r.error ?? '' })

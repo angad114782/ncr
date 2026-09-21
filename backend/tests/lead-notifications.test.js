@@ -1,6 +1,7 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { ADMIN_PHONE, startTestApp } from './helpers.js'
+import { config } from '../src/config.js'
 
 /**
  * WhatsApp messages when a lead form is filled: the team (admin) gets a notification, the visitor a welcome.
@@ -53,24 +54,74 @@ describe('lead WhatsApp messages', () => {
     const toAdmin = sentTo(ADMIN_PHONE)
     assert.equal(toAdmin.length, 1)
     assert.equal(toAdmin[0].template.name, 'lead_notification')
-    assert.deepEqual(body(toAdmin[0]), ['Riya Sharma', '9811100001', 'buying a property'])
+    // {{1}} name · {{2}} mobile · {{3}} project interest + the live link · {{4}} budget · {{5}} location
+    assert.deepEqual(body(toAdmin[0]), ['Riya Sharma', '9811100001', `Buying a property - ${config.siteUrl}/contact`, 'Not shared', 'Not shared'])
 
     const toVisitor = sentTo('9811100001')
     assert.equal(toVisitor.length, 1)
     assert.equal(toVisitor[0].template.name, 'lead_thank_you')
-    const [first, brand, topic] = body(toVisitor[0])
-    assert.equal(first, 'Riya')
-    assert.ok(brand.length > 1)
-    assert.equal(topic, 'buying a property')
+    // {{1}} name · {{2}} what they asked about · {{3}} the number to call
+    assert.deepEqual(body(toVisitor[0]), ['Riya', 'buying a property', `+91 ${ADMIN_PHONE}`])
   })
 
-  it('a property enquiry names the property, in both messages', async () => {
-    await t.request.post('/api/leads').send({ name: 'Amit Verma', phone: '9811100002', source: 'property_lead_form', propertyId: 'p1' })
+  it('a property enquiry: the team gets the property with its live link, budget and location; the visitor the property name', async () => {
+    await t.request.post('/api/leads').send({ name: 'Amit Verma', phone: '9811100002', source: 'property_lead_form', propertyId: 'p1', budget: '₹1 Cr - ₹2 Cr' })
     await waitFor(() => calls.length >= 2)
     const { Property } = await import('../src/models/index.js')
-    const title = (await Property.findById('p1').lean()).title
-    assert.equal(body(sentTo(ADMIN_PHONE)[0])[2], title)
-    assert.equal(body(sentTo('9811100002')[0])[2], title)
+    const p = await Property.findById('p1').lean()
+    const [name, phone, interest, budget, location] = body(sentTo(ADMIN_PHONE)[0])
+    assert.equal(name, 'Amit Verma')
+    assert.equal(phone, '9811100002')
+    assert.equal(interest, `${p.title} - ${config.siteUrl}/property/${p.slug}`)
+    assert.match(interest, /^.+ - https?:\/\/\S+\/property\/[a-z0-9-]+$/)
+    assert.equal(budget, '₹1 Cr - ₹2 Cr')
+    assert.equal(location, [p.locality, p.city].filter(Boolean).join(', '))
+    assert.equal(body(sentTo('9811100002')[0])[1], p.title)
+  })
+
+  it('a code was sent but never typed in: the lead is saved as "not verified", the team is told, the visitor is not welcomed yet', async () => {
+    const res = await t.request.post('/api/leads').send({ name: 'Pooja Nair', phone: '9811100011', source: 'property_lead_form', propertyId: 'p1', stage: 'otp_sent' })
+    assert.equal(res.status, 201)
+    await waitFor(() => sentTo(ADMIN_PHONE).length >= 1)
+    await sleep(200)
+    const { Lead } = await import('../src/models/index.js')
+    const lead = await Lead.findById(res.body.id).lean()
+    assert.equal(lead.phoneVerified, false)
+    assert.ok(lead.otpSentAt, 'otpSentAt')
+    assert.equal(sentTo(ADMIN_PHONE).length, 1, 'the team knows at once')
+    assert.equal(sentTo('9811100011').length, 0, 'no welcome to an unconfirmed number')
+    // and the admin sees it in the lead list, marked as such
+    const list = await admin.get('/api/admin/leads?q=9811100011')
+    assert.equal(list.status, 200)
+    const row = list.body.items.find((l) => l.phone === '9811100011')
+    assert.ok(row, 'listed for the admin')
+    assert.equal(row.phoneVerified, false)
+    assert.ok(row.otpSentAt)
+  })
+
+  it('confirming the number afterwards updates that same lead: verified, welcomed once, team not told twice, text not repeated', async () => {
+    const lead = { name: 'Pooja Nair', phone: '9811100012', source: 'property_lead_form', propertyId: 'p1', budget: '₹1 Cr - ₹2 Cr' }
+    await t.request.post('/api/leads').send({ ...lead, stage: 'otp_sent' })
+    await waitFor(() => sentTo(ADMIN_PHONE).length >= 1)
+    await sleep(200)
+    const { Lead, Consent, Otp } = await import('../src/models/index.js')
+    await Otp.deleteMany({ phone: lead.phone })
+    const sent = await t.request.post('/api/auth/otp/send').send({ phone: lead.phone, purpose: 'verify' })
+    const verified = await t.request.post('/api/auth/verify-phone').send({ phone: lead.phone, otp: sent.body.devOtp })
+    assert.equal(verified.status, 200)
+    const res = await t.request.post('/api/leads').send({ ...lead, phoneToken: verified.body.phoneToken })
+    assert.equal(res.status, 201)
+    const welcomes = () => sentTo(lead.phone).filter((c) => c.template.name === 'lead_thank_you') // (the OTP message goes to the same number)
+    await waitFor(() => welcomes().length >= 1)
+    await sleep(200)
+
+    assert.equal(await Lead.countDocuments({ phone: lead.phone }), 1, 'one lead, not two')
+    const saved = await Lead.findOne({ phone: lead.phone }).lean()
+    assert.equal(saved.phoneVerified, true)
+    assert.equal(saved.message.split('Interested in').length - 1, 1, 'the same text is not added twice')
+    assert.equal(welcomes().length, 1, 'welcome once, now that the number is confirmed')
+    assert.equal(sentTo(ADMIN_PHONE).length, 1, 'the team was told once, when the lead arrived')
+    assert.equal(await Consent.countDocuments({ leadId: saved._id }), 1, 'one consent record')
   })
 
   it('the lead records that the messages went out', async () => {
@@ -156,6 +207,8 @@ describe('lead WhatsApp messages', () => {
     assert.equal(res.body.results[1].ok, false)
     assert.match(res.body.results[1].error, /Template name does not exist/)
     assert.equal(calls.every((c) => c.to === `91${ADMIN_PHONE}`), true, 'only ever sent to the admin\'s own number')
+    assert.equal(calls[0].template.components[0].parameters.length, 5, 'lead_notification has 5 variables')
+    assert.equal(calls[1].template.components[0].parameters.length, 3, 'lead_thank_you has 3 variables')
     assert.ok(!JSON.stringify(res.body).includes('test-token'), 'the access token is never returned')
   })
 

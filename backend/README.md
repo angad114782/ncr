@@ -63,18 +63,47 @@ Without a WhatsApp provider OTPs cannot be delivered: in production the API answ
 
 | Who | Template (Admin → Settings → WhatsApp) | Variables |
 |---|---|---|
-| **The team** — the *Display Phone Number*, the admin login number (`ADMIN_PHONE`) and the assigned agent, on every new lead | `lead_notification` | `{{1}}` name · `{{2}}` phone · `{{3}}` property title, or the topic (buying / renting / selling a property, your enquiry) |
-| **The visitor** — a welcome, for the contact and property enquiry forms, once per number per 24 h | `lead_thank_you` | `{{1}}` first name · `{{2}}` company name · `{{3}}` the same property / topic |
+| **The team** — the *Display Phone Number*, the admin login number (`ADMIN_PHONE`) and the assigned agent, the moment a lead arrives | `lead_notification` | `{{1}}` name · `{{2}}` mobile · `{{3}}` project interest **with the live link of the page** (`Property title - https://propertyinncr.com/property/<slug>`; the contact page or home page link for other leads) · `{{4}}` budget (`Not shared` if empty) · `{{5}}` location |
+| **The visitor** — a welcome, for the contact and property enquiry forms, once per number per 24 h, after the number is confirmed | `lead_thank_you` | `{{1}}` first name · `{{2}}` the property (or what they asked about) · `{{3}}` the number to call (`+91` + the Display Phone Number) |
+
+**A code was sent but never typed in:** the property form saves the lead as soon as the visitor asks for the code (`POST /leads` with `stage: "otp_sent"`), marked *OTP sent · not verified* in Admin → Inquiries, and the team is told right away. If the visitor then confirms the number, the **same** lead is updated (verified, no second team message, one consent record) and the welcome goes out. The welcome never goes to an unconfirmed number.
 
 WhatsApp only allows a business to start a chat with a **pre-approved template**, so both must first be created in
-Meta (Business Manager → WhatsApp Manager → Message templates), language **English** (`en`), category **Utility**, named exactly as above. Suggested text:
+Meta (Business Manager → WhatsApp Manager → Message templates), language **English** (`en`), category **Utility**, named exactly as above. Text:
 
-- `lead_notification`: `New enquiry on NCR Estates: {{1}} ({{2}}) is interested in {{3}}. Please call or WhatsApp them soon.`
-- `lead_thank_you`: `Hi {{1}}, thank you for contacting {{2}}! We have received your enquiry about {{3}}. One of our property advisors will call or WhatsApp you shortly. You can also reply here anytime.`
+```
+lead_notification
+New lead received! 🔔
+
+Name: {{1}}
+Mobile: {{2}}
+Project Interest: {{3}}
+Budget: {{4}}
+Location: {{5}}
+
+Please follow up immediately.
+```
+
+```
+lead_thank_you
+Hi {{1}}! 🎉
+
+Thank you for your enquiry about *{{2}}*.
+
+✅ Your request has been received.
+📞 Our advisor will call you within 2 hours.
+
+To speak now, call: {{3}}
+
+RERA Verified | Zero Brokerage | Free Site Visit
+```
+
+Only keep claims in the thank-you text that the team can honour (call within 2 hours, RERA verified, zero brokerage, free site visit).
+The links use the site address from `SITE_URL` (default: the first `CLIENT_ORIGINS` entry without `www`).
 
 Admin → Settings → WhatsApp has **Send test messages to my number**: it sends both to your own login number and shows
 Meta's reason when one fails (template not approved yet, wrong name, expired token, recipient not allowed…). A message that
-cannot be sent never blocks the lead; the lead records `welcomeSentAt` / `adminNotifiedAt` when they went out. The admin can
+cannot be sent never blocks the lead; the lead records `otpSentAt`, `welcomeSentAt` and `adminNotifiedAt`. The admin can
 switch the visitor welcome off, or restrict it to OTP-verified numbers (the contact page does not ask for an OTP; the property form does).
 `accountUpdateTemplate` (optional, one variable) is used for agent-account / listing status messages; empty = e-mail only.
 
