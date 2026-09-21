@@ -36,6 +36,9 @@ export async function api(path, { method = 'GET', body, form, keepalive, signal 
   }
   const data = await res.json().catch(() => null)
   if (!res.ok) throw new ApiError(res.status, data?.error?.code ?? 'error', data?.error?.message ?? `Something went wrong (${res.status}).`, data?.error?.details)
+  // 200 but not JSON: the request never reached the API (e.g. nginx answered with the website's index.html because
+  // /api is not proxied yet). Treat it as an error so callers keep their built-in data instead of crashing on `null`.
+  if (data === null && res.status !== 204) throw new ApiError(res.status, 'bad_response', 'The server did not return data. Is the API running and proxied at /api?')
   return data
 }
 

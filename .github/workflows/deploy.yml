@@ -124,7 +124,7 @@ jobs:
                 HEALTH=$(curl -fsS "http://127.0.0.1:$PORT/api/health" 2>/dev/null || true)
 
                 if echo "$HEALTH" | grep -q '"status":"ok"' &&
-                   echo "$HEALTH" | grep -q '"db":"connected"'; then
+                   echo "$HEALTH" | grep -Eq '"(database|db)":"connected"'; then
                   ok=1
                   echo "==> API is healthy"
                   echo "$HEALTH"

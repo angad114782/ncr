@@ -26,7 +26,9 @@ cd backend
 npm install
 cp .env.example .env      # then fill in MONGODB_URI and JWT_SECRET (a .env is already here for local use)
 npm run check-db          # tests the MongoDB connection
-npm run seed              # loads sample listings / agents / blog / FAQs (adds only what's missing)
+npm run seed              # makes sure the admin account exists — nothing else is added
+npm run seed:samples      # (optional) also loads sample listings / agents / blog / FAQs — adds only what's missing
+npm run clean             # dry run of "delete everything except the admin";  npm run clean -- --yes  really does it
 npm run dev               # http://localhost:5010  (npm start in production)
 ```
 
@@ -133,9 +135,9 @@ Every push to `main` runs the tests, then on the server: `git reset`, `npm ci --
 2. Create `/var/www/propertyinncr.com/backend/.env` from `.env.example` (MongoDB URL, `JWT_SECRET`, `CLIENT_ORIGINS`, `OTP_DEV_MODE=false`, `REBUILD_COMMAND`). It stays on the server, never in git.
 3. Atlas → *Network Access*: allow the VPS IP.
 4. nginx: inside the `server { … }` block of the site add `include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;` then `nginx -t && systemctl reload nginx` (the file is in the repo, so later changes deploy automatically).
-5. Actions → *Deploy PropertyInNCR* → **Run workflow** with **seed** ticked (first deploy only) to load the sample listings, agents and blog. Then in **Admin → Settings** add the WhatsApp Cloud API details — without them OTP codes cannot be sent in production (`503 otp_unavailable`).
+5. The first start creates the admin account for `ADMIN_PHONE`; the database otherwise starts **empty** — add your own listings, agents and posts in the admin panel (sample data is optional: Actions → *Run workflow* with **seed** ticked, or `npm run seed:samples` on the server). Then in **Admin → Settings** add the WhatsApp Cloud API details — without them OTP codes cannot be sent in production (`503 otp_unavailable`).
 
-Manual re-run options (Actions → Run workflow): `seed` (load samples), `rebuild_only` (skip the backend, just rebuild the site), `skip_tests`.
+Manual re-run options (Actions → Run workflow): `seed` (also load the sample data), `rebuild_only` (skip the backend, just rebuild the site), `skip_tests`.
 
 Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uploads to S3 / Cloudinary later — only `routes/uploads.js` changes). The admin panel also offers a JSON backup download.
 

@@ -187,6 +187,7 @@ Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-bl
 - The session is an HttpOnly cookie — a test can no longer "become admin" by writing `re-user` to localStorage (that only worked in local mode); use the real OTP flow (the dev backend shows the code).
 - Windows can refuse renaming a freshly built folder (`EPERM`, antivirus / indexer) — `release.mjs` retries, then falls back to copying; on the Linux VPS the rename is atomic.
 - `deploy.yml` deliberately **stops before touching the site** when `backend/.env` is missing or the API is unhealthy; the `.env` (MongoDB URL, JWT secret) lives only on the server.
+- **The database holds only the admin until the owner says otherwise.** `npm run seed` now only ensures the admin; samples are `seed:samples`; `npm run clean -- --yes` deletes everything but admin (dry run without `--yes`). The site copes with a completely empty database (empty lists, 12 pre-rendered pages).
 - A shell one-liner that `Stop-Process`es by command-line text can kill its own shell — kill by port instead.
 
 ## 4. Working preferences (user)

@@ -149,7 +149,7 @@ _Last updated: 2026-09-21_
 - [x] Publishing content in the admin rebuilds the pre-rendered site by itself (`REBUILD_COMMAND`)
 - [ ] 🔴 **MongoDB Atlas login failed** (`bad auth`): check the user / password in Atlas → Database Access, then `cd backend && npm run check-db && npm run seed`
 - [ ] Configure WhatsApp Cloud API (OTP + lead alerts) and SMTP in Admin → Settings; without WhatsApp, OTPs cannot be sent in production
-- [ ] 🔴 **One-time server setup before the first deploy** (backend/README §6): `backend/.env` on the VPS, nginx `include …/deploy/nginx-api.snippet.conf;`, Atlas Network Access for the VPS IP, then run the workflow once with **seed** ticked. Until `backend/.env` exists the deploy stops early and the live site stays on its previous build.
+- [ ] 🔴 **One-time server setup before the first deploy** (backend/README §6): `backend/.env` on the VPS, nginx `include …/deploy/nginx-api.snippet.conf;`, Atlas Network Access for the VPS IP, then deploy. The database starts **empty** with only the admin account (`ADMIN_PHONE`) — sample data is optional (`npm run seed:samples`, or the workflow's **seed** option); `npm run clean -- --yes` wipes everything except the admin. Until `backend/.env` exists the deploy stops early and the live site stays on its previous build.
 - [ ] Add the WhatsApp Cloud API details in Admin → Settings (OTP delivery); admin phone `8619930583` is the first admin
 - [ ] **Rotate the Atlas password** — it was shared in a chat message; set the new one only in `backend/.env`
 

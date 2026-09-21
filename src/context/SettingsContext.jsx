@@ -75,7 +75,7 @@ function useLocalSettings() {
   }
 }
 
-const fromServer = (d, prev) => ({
+const fromServer = (d = {}, prev) => ({
   whatsapp: d.whatsapp ? { ...DEFAULT_WHATSAPP_CONFIG, ...d.whatsapp } : prev.whatsapp,
   mail: d.mail ? { ...DEFAULT_MAIL_CONFIG, ...d.mail } : prev.mail,
   marketing: d.marketing ? deepMerge(DEFAULT_MARKETING_CONFIG, d.marketing) : prev.marketing,
@@ -114,7 +114,7 @@ function useApiSettings() {
     try {
       const d = await api(isAdmin ? '/admin/settings' : '/public/settings')
       setState((prev) => {
-        latest.current = fromServer(d, prev)
+        latest.current = fromServer(d ?? {}, prev)
         return latest.current
       })
     } catch {
