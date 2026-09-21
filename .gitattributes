@@ -1,0 +1,4 @@
+# Server-side files must keep Unix line endings (a CRLF shell script fails on Linux)
+*.sh text eol=lf
+deploy/* text eol=lf
+*.conf text eol=lf
