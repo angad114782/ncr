@@ -54,7 +54,7 @@ async function fromApi(base) {
 
 let snapshot
 const wantSamples = process.env.SNAPSHOT_SOURCE === 'samples'
-// the API's port is whatever backend/.env says (PORT=…), 5010 if it doesn't
+// the API's port is whatever backend/.env says (PORT=…), 5120 if it doesn't
 function apiPort() {
   try {
     const m = readFileSync(resolve(root, 'backend/.env'), 'utf8').match(/^\s*PORT\s*=\s*(\d+)/m)
@@ -62,7 +62,7 @@ function apiPort() {
   } catch {
     /* no backend/.env here */
   }
-  return '5010'
+  return '5120'
 }
 const base = process.env.SNAPSHOT_API_URL ?? `http://127.0.0.1:${apiPort()}/api`
 

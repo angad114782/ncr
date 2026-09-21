@@ -1,15 +1,16 @@
-# Add ONCE inside the `server { … }` block of propertyinncr.com (next to `location / { … }`):
+# TEMPLATE — the real file (deploy/nginx-api.snippet.conf, git-ignored) is generated from this by
+# deploy/render-nginx-snippet.sh, with __PORT__ replaced by PORT from backend/.env. Nginx therefore always
+# follows the port the API really uses (the deploy and deploy/setup-nginx.sh both run it).
+#
+# Included ONCE inside the `server { … }` block of propertyinncr.com (deploy/setup-nginx.sh does it):
 #
 #     include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;
 #
-# then `nginx -t && systemctl reload nginx`. This file is part of the repository, so later changes to it
-# are deployed automatically with every push.
-#
-# It sends /api and /uploads to the backend (Node, port 5010, run by pm2). The website and the API are
+# It sends /api and /uploads to the backend (Node on 127.0.0.1:__PORT__, run by pm2). The website and the API are
 # then on the SAME origin, so the login cookie needs no CORS and cannot be sent to another site.
 
 location /api/ {
-    proxy_pass http://127.0.0.1:5010;
+    proxy_pass http://127.0.0.1:__PORT__;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -21,7 +22,7 @@ location /api/ {
 }
 
 location /uploads/ {
-    proxy_pass http://127.0.0.1:5010;
+    proxy_pass http://127.0.0.1:__PORT__;
     proxy_set_header Host $host;
     expires 30d;
     add_header Cache-Control "public, max-age=2592000, immutable";

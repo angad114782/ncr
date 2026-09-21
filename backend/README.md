@@ -29,7 +29,7 @@ npm run check-db          # tests the MongoDB connection
 npm run seed              # makes sure the admin account exists — nothing else is added
 npm run seed:samples      # (optional) also loads sample listings / agents / blog / FAQs — adds only what's missing
 npm run clean             # dry run of "delete everything except the admin";  npm run clean -- --yes  really does it
-npm run dev               # http://localhost:5010  (npm start in production)
+npm run dev               # http://localhost:5120  (npm start in production)
 ```
 
 **MongoDB Atlas checklist** — if `check-db` fails:
@@ -120,7 +120,7 @@ The website talks to this API when it is built with `VITE_USE_API=true` (the pro
 `.env.production`). Without that flag it keeps working on browser storage, so the front end can still be developed
 without the backend.
 
-- **Development**: run the API (`cd backend && npm run dev`), then in the project root `VITE_USE_API=true npm run dev` — Vite proxies `/api` and `/uploads` to `localhost:5010` (or the PORT in `backend/.env`).
+- **Development**: run the API (`cd backend && npm run dev`), then in the project root `VITE_USE_API=true npm run dev` — Vite proxies `/api` and `/uploads` to `localhost:5120` (or the PORT in `backend/.env`).
 - **Data**: the site is built from a *snapshot* of the public content (`src/data/snapshot.json`, written by `scripts/fetch-snapshot.mjs` from `GET /api/public/bootstrap`). Pre-rendered pages, hydration and the first paint all use it; the page then refreshes itself from the live API.
 - **Login**: OTP screens call `/api/auth/*`; the session is an HttpOnly cookie. Admin / agent panels load and save through `/api/admin/*` and `/api/agent/*` (changes appear instantly, and a change the server refuses is rolled back with a message).
 - **Images** chosen in any picker are uploaded to `/api/uploads` and stored as `/uploads/…` links.
@@ -134,7 +134,7 @@ Every push to `main` runs the tests, then on the server: `git reset`, `npm ci --
 1. Node 20+ on the server. (`pm2` is installed by the first deploy if missing; run `pm2 startup` once so it starts after a reboot.)
 2. Create `/var/www/propertyinncr.com/backend/.env` from `.env.example` (MongoDB URL, `JWT_SECRET`, `CLIENT_ORIGINS`, `OTP_DEV_MODE=false`, `REBUILD_COMMAND`). It stays on the server, never in git.
 3. Atlas → *Network Access*: allow the VPS IP.
-4. nginx: inside the `server { … }` block of the site add `include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;` then `nginx -t && systemctl reload nginx` (the file is in the repo, so later changes deploy automatically).
+4. nginx: run once `bash /var/www/propertyinncr.com/deploy/setup-nginx.sh` — it checks that **this** API (`"service":"ncr-api"`) answers on `PORT`, generates `deploy/nginx-api.snippet.conf` from `deploy/nginx-api.snippet.conf.template` (port = `PORT` in `backend/.env`), adds the `include` line to the HTTPS server block, tests and reloads nginx. Every deploy regenerates the snippet, so a port change is picked up automatically. **`PORT` must be free on the server** (`ss -ltnp | grep :PORT`); if it is taken the API now exits with a clear message instead of pretending to run.
 5. The first start creates the admin account for `ADMIN_PHONE`; the database otherwise starts **empty** — add your own listings, agents and posts in the admin panel (sample data is optional: Actions → *Run workflow* with **seed** ticked, or `npm run seed:samples` on the server). Then in **Admin → Settings** add the WhatsApp Cloud API details — without them OTP codes cannot be sent in production (`503 otp_unavailable`).
 
 Manual re-run options (Actions → Run workflow): `seed` (also load the sample data), `rebuild_only` (skip the backend, just rebuild the site), `skip_tests`.

@@ -11,6 +11,7 @@ describe('smoke', () => {
     const res = await t.request.get('/api/health')
     assert.equal(res.status, 200)
     assert.equal(res.body.database, 'connected')
+    assert.equal(res.body.service, 'ncr-api', 'lets a deploy tell this API apart from another app on the same port')
   })
 
   it('bootstrap returns the seeded site', async () => {

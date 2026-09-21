@@ -13,7 +13,8 @@ export const config = {
   env,
   isProd,
   isTest: env === 'test',
-  port: Number(process.env.PORT) || 5010,
+  port: Number(process.env.PORT) || 5120,
+  host: process.env.HOST || '127.0.0.1', // behind nginx only: the API is not reachable from outside the server on its own port
   mongoUri: process.env.MONGODB_URI ?? '',
   jwtSecret: process.env.JWT_SECRET ?? '',
   jwtDays: Number(process.env.JWT_EXPIRES_DAYS) || 7,

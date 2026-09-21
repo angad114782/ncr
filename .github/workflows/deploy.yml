@@ -1,12 +1,12 @@
 name: Deploy PropertyInNCR
 
 # Deploys BOTH parts to the VPS on every push to main:
-#   • backend/  the API (Node + MongoDB), run by pm2 as "ncr-api" (port = PORT in backend/.env, 5010)
+#   • backend/  the API (Node + MongoDB), run by pm2 as "ncr-api" (port = PORT in backend/.env — must be free on the server)
 #   • website   built on the server (so the pre-rendered pages use the live database) into dist/, served by nginx
 #
 # One-time server setup (see backend/README.md → Deploy):
 #   1. Create /var/www/propertyinncr.com/backend/.env on the server (MongoDB URL, JWT secret …). It never goes in git.
-#   2. Add to the nginx server block:  include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;
+#   2. Run once:  bash /var/www/propertyinncr.com/deploy/setup-nginx.sh   (adds the /api proxy to nginx)
 # After that, every push deploys itself.
 
 on:
@@ -112,34 +112,33 @@ jobs:
               pm2 save
 
               echo "==> Backend: waiting for it to answer"
-
               PORT=$(grep -E '^[[:space:]]*PORT=' backend/.env | head -1 | sed -E 's/^[^=]*=[[:space:]]*([0-9]+).*/\1/')
-              PORT=${PORT:-5010}
-
+              PORT=${PORT:-5120}
               echo "==> API port: $PORT"
 
+              # The answer must come from THIS API ("service":"ncr-api") — another app on the same port must not pass.
               ok=0
-
               for i in $(seq 1 40); do
                 HEALTH=$(curl -fsS "http://127.0.0.1:$PORT/api/health" 2>/dev/null || true)
-
-                if echo "$HEALTH" | grep -q '"status":"ok"' &&
-                   echo "$HEALTH" | grep -Eq '"(database|db)":"connected"'; then
+                if echo "$HEALTH" | grep -q '"service":"ncr-api"' && echo "$HEALTH" | grep -q '"database":"connected"'; then
                   ok=1
-                  echo "==> API is healthy"
-                  echo "$HEALTH"
+                  echo "==> API is healthy: $HEALTH"
                   break
                 fi
-
                 echo "Waiting for API... attempt $i/40"
                 sleep 1
               done
 
               if [ "$ok" != "1" ]; then
-                echo "::error::The API did not become healthy. Last log lines:"
+                echo "::error::The NCR API did not become healthy on port $PORT. What answered: ${HEALTH:-nothing}"
+                echo "Who listens on port $PORT:"; ss -ltnp 2>/dev/null | grep ":$PORT " || echo "  nobody"
+                echo "If another app owns this port, set a free PORT in backend/.env on the server and re-run. Last API log lines:"
                 pm2 logs ncr-api --lines 40 --nostream || true
                 exit 1
               fi
+
+              echo "==> nginx: generating the /api proxy snippet for port $PORT"
+              bash deploy/render-nginx-snippet.sh
 
               if [ "${SEED_SAMPLES:-false}" = "true" ]; then
                 echo "==> Loading the sample data (adds only what is missing)"
@@ -158,14 +157,11 @@ jobs:
             systemctl reload nginx
 
             echo "==> Checking the site through nginx"
-            code=$(curl -s -o /dev/null -w '%{http_code}' \
-              -H 'Host: propertyinncr.com' \
-              http://127.0.0.1/api/health || true)
-
-            if [ "$code" = "200" ]; then
+            answer=$(curl -sk --max-time 15 -H 'Host: propertyinncr.com' https://127.0.0.1/api/health || true)
+            if echo "$answer" | grep -q '"service":"ncr-api"'; then
               echo "API is reachable through nginx."
             else
-              echo "::warning::/api is not reachable through nginx (HTTP $code). Add this line inside the server block of propertyinncr.com and reload nginx: include $APP/deploy/nginx-api.snippet.conf;"
+              echo "::warning::/api is not reaching the backend through nginx yet. Run once on the server:  bash $APP/deploy/setup-nginx.sh"
             fi
 
             echo "==> Deployment completed successfully"

@@ -16,20 +16,28 @@ SUDO=""
 say() { printf '\n==> %s\n' "$*"; }
 die() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 
-[ -f "$SNIPPET" ] || die "$SNIPPET not found. Deploy first (git pull) so the file exists on the server."
+[ -f "$APP/deploy/nginx-api.snippet.conf.template" ] || die "$APP/deploy/nginx-api.snippet.conf.template not found. Deploy first (git pull) so the files exist on the server."
 command -v python3 >/dev/null 2>&1 || die "python3 is needed for this script (apt install python3), or add the include line by hand."
 
 PORT=$(grep -E '^[[:space:]]*PORT=' "$APP/backend/.env" 2>/dev/null | head -1 | sed -E 's/^[^=]*=[[:space:]]*([0-9]+).*/\1/' || true)
-PORT="${PORT:-5010}"
+PORT="${PORT:-5120}"
 say "Backend port from backend/.env: $PORT"
-if ! grep -q "127.0.0.1:$PORT" "$SNIPPET"; then
-  echo "WARNING: $SNIPPET proxies to a different port than $PORT. Edit the two proxy_pass lines to http://127.0.0.1:$PORT and run this again."
+
+say "Is it OUR backend that answers on 127.0.0.1:$PORT ?"
+HEALTH=$(curl -fsS --max-time 5 "http://127.0.0.1:$PORT/api/health" 2>/dev/null || true)
+if echo "$HEALTH" | grep -q '"service":"ncr-api"'; then
+  echo "Yes: $HEALTH"
+else
+  echo "NO. Answer on that port: ${HEALTH:-(nothing)}"
+  echo "Who listens on port $PORT:"; $SUDO ss -ltnp 2>/dev/null | grep ":$PORT " || echo "  (nobody)"
+  echo
+  echo "Either another program uses port $PORT (pick a free port: set PORT=… in backend/.env, then  pm2 restart ncr-api --update-env),"
+  echo "or ncr-api is not running (pm2 status;  pm2 logs ncr-api --lines 40).  Fix that first, then run this script again."
+  exit 1
 fi
 
-say "Is the backend answering on 127.0.0.1:$PORT ?"
-if curl -fsS "http://127.0.0.1:$PORT/api/health"; then echo; else
-  echo "The API is NOT answering. Check:  pm2 status   and   pm2 logs ncr-api --lines 40"
-fi
+say "Generating the nginx snippet for port $PORT"
+APP="$APP" bash "$APP/deploy/render-nginx-snippet.sh"
 
 say "Looking for the nginx config of propertyinncr.com"
 FILES=$(grep -RlE "server_name[^;]*propertyinncr\.com" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | sort -u || true)

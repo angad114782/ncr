@@ -41,7 +41,7 @@ export function createApp() {
 
   app.use('/uploads', express.static(config.uploadDir, { maxAge: '30d', immutable: true, index: false, setHeaders: (res) => res.set('X-Content-Type-Options', 'nosniff') }))
 
-  app.get('/api/health', (_req, res) => res.json({ status: 'ok', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', uptime: Math.round(process.uptime()) }))
+  app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'ncr-api', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', uptime: Math.round(process.uptime()) }))
   app.use('/api', authenticate, routes)
 
   app.use(notFoundHandler)

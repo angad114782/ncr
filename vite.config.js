@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { readFileSync } from 'node:fs'
 
-// Where the backend listens while developing: API_PROXY, else PORT from backend/.env, else 5010.
+// Where the backend listens while developing: API_PROXY, else PORT from backend/.env, else 5120.
 function apiTarget() {
   if (process.env.API_PROXY) return process.env.API_PROXY
   try {
@@ -12,7 +12,7 @@ function apiTarget() {
   } catch {
     /* no backend/.env */
   }
-  return 'http://localhost:5010'
+  return 'http://localhost:5120'
 }
 const target = apiTarget()
 
