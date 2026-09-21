@@ -33,13 +33,14 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('') // friendly info above the form (e.g. "no account yet — create one")
-  const { loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp } = useAuth()
+  const { user, logout, loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp } = useAuth()
   const { fireLeadEvent, siteContent, fill, cities } = useSettings()
   const { addInquiry, agentCrud } = useData()
   const { summary, profile } = useInterest()
   const nudge = siteContent.nudge
   const program = siteContent.agentProgram
   const isAgentSignup = mode === 'signup' && role === 'agent' && program.enabled !== false
+  const listFlow = source === 'list' // opened from "List My Property": agents only (log in or register), no buyer accounts
   const navigate = useNavigate()
   const inputRefs = useRef([])
 
@@ -193,6 +194,15 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       else setError(result.error)
       return
     }
+    if (listFlow && mode === 'login' && result.user.role === 'user') {
+      // This door is for agents. A buyer / tenant number is signed straight out again and told what to do.
+      logout()
+      setStep('phone')
+      setOtpDigits(Array(otpLen).fill(''))
+      setSentOtp('')
+      setError('This number has a buyer account, not an agent account. To list a property, register as an agent with a different mobile number.')
+      return
+    }
     if (USE_API && mode === 'signup') {
       if (isAgentSignup) fireLeadEvent('agent_signup', { city: agentCity })
       else fireLeadEvent('signup', { ...(summary.city ? { city: summary.city } : {}), ...(summary.type ? { property_type: summary.type } : {}), intent: summary.intent })
@@ -252,7 +262,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     <GlassSheet
       open={open}
       onClose={onClose}
-      title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? 'Welcome Back' : isAgentSignup ? program.title || 'Join as an agent' : 'Create Your Free Account'}
+      title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? (listFlow ? 'Agent login' : 'Welcome Back') : isAgentSignup ? program.title || 'Join as an agent' : 'Create Your Free Account'}
     >
       {step === 'phone' && (
         <>
@@ -265,12 +275,17 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
                   mode === m ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'
                 }`}
               >
-                {m}
+                {listFlow ? (m === 'login' ? 'Agent login' : 'Register as agent') : m}
               </button>
             ))}
           </div>
 
           <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+            {listFlow && user && user.role !== 'agent' && (
+              <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">
+                You are signed in as {user.role === 'admin' ? 'the admin' : 'a buyer / tenant'} ({user.name || user.phone}). Continuing with an agent number signs you out of that account.
+              </p>
+            )}
             {notice && <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{notice}</p>}
             {isAgentSignup && source === 'list' && program.listIntro && (
               <p className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{fill(program.listIntro)}</p>

@@ -9,8 +9,9 @@ import { useSettings } from '../../context/SettingsContext'
  * "List My Property". With the agent program on (Admin → Site Content → Home → Banner), a visitor who is not
  * signed in lands directly on the agent registration form and, once registered, on their "My listings" page
  * where the property is posted (our team reviews it before it goes live). An agent goes straight to
- * "My listings". Everyone else (a client account, or the option switched off) follows the button link.
- * The href stays a real link, so it still works without JavaScript and for crawlers.
+ * "My listings". A signed-in buyer or the admin gets the same agent form (with a note that continuing signs them out).
+ * Only when the option is switched off does the button follow `cta.link`. The href stays a real link, so it still
+ * works without JavaScript and for crawlers.
  */
 export default function ListPropertyCta() {
   const { siteContent, fill } = useSettings()
@@ -26,7 +27,7 @@ export default function ListPropertyCta() {
 
   if (agentsOn && user?.role === 'agent') {
     linkProps = { as: Link, to: '/agent/listings' }
-  } else if (agentsOn && !user && outlet?.openAuth) {
+  } else if (agentsOn && outlet?.openAuth) {
     linkProps = {
       as: Link,
       to: link || '/contact',
