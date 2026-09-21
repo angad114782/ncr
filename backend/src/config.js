@@ -13,7 +13,7 @@ export const config = {
   env,
   isProd,
   isTest: env === 'test',
-  port: Number(process.env.PORT) || 5000,
+  port: Number(process.env.PORT) || 5010,
   mongoUri: process.env.MONGODB_URI ?? '',
   jwtSecret: process.env.JWT_SECRET ?? '',
   jwtDays: Number(process.env.JWT_EXPIRES_DAYS) || 7,
@@ -26,6 +26,7 @@ export const config = {
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES) || 5,
   rebuildWebhookUrl: process.env.REBUILD_WEBHOOK_URL ?? '',
   rebuildWebhookToken: process.env.REBUILD_WEBHOOK_TOKEN ?? '',
+  rebuildCommand: process.env.REBUILD_COMMAND ?? '', // e.g. cd /var/www/propertyinncr.com && npm run build
   adminPhone: process.env.ADMIN_PHONE ?? '8619930583',
   adminName: process.env.ADMIN_NAME ?? 'Admin User',
   uploadDir: process.env.UPLOAD_DIR ? path.resolve(process.env.UPLOAD_DIR) : path.join(root, 'uploads'),

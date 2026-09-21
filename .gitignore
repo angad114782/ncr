@@ -28,3 +28,8 @@ backend/.env
 backend/node_modules
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Generated at build time from the API (or the sample data) — see scripts/fetch-snapshot.mjs
+src/data/snapshot.json
+dist-next
+dist-old

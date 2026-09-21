@@ -1,5 +1,8 @@
-import { createContext, useContext } from 'react'
-import usePersistedState from '../hooks/usePersistedState'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import usePersistedState, { deepMerge } from '../hooks/usePersistedState'
+import { USE_API, api, reportApiError } from '../api/client'
+import { useAuth } from './AuthContext'
+import snapshot from '../data/snapshot.json'
 import { fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
 import { COMPANY_DEFAULTS } from '../data/company'
 import { SITE_DEFAULTS, fillTokens } from '../data/siteDefaults'
@@ -57,16 +60,113 @@ const DEFAULT_TICKER = {
   ],
 }
 
+/** Local mode: every setting lives in browser storage. */
+function useLocalSettings() {
+  return {
+    whatsapp: usePersistedState('re-whatsapp-config', DEFAULT_WHATSAPP_CONFIG, { merge: true }),
+    mail: usePersistedState('re-mail-config', DEFAULT_MAIL_CONFIG, { merge: true }),
+    marketing: usePersistedState('re-marketing-config', DEFAULT_MARKETING_CONFIG, { merge: true }),
+    cities: usePersistedState('re-cities', DEFAULT_CITIES),
+    propertyTypes: usePersistedState('re-property-types', DEFAULT_PROPERTY_TYPES),
+    topBanner: usePersistedState('re-top-banner', DEFAULT_TOP_BANNER, { merge: true }),
+    ticker: usePersistedState('re-ticker', DEFAULT_TICKER, { merge: true }),
+    company: usePersistedState('re-company', COMPANY_DEFAULTS, { merge: true }),
+    siteContent: usePersistedState('re-site-content', SITE_DEFAULTS, { merge: true }),
+  }
+}
+
+const fromServer = (d, prev) => ({
+  whatsapp: d.whatsapp ? { ...DEFAULT_WHATSAPP_CONFIG, ...d.whatsapp } : prev.whatsapp,
+  mail: d.mail ? { ...DEFAULT_MAIL_CONFIG, ...d.mail } : prev.mail,
+  marketing: d.marketing ? deepMerge(DEFAULT_MARKETING_CONFIG, d.marketing) : prev.marketing,
+  cities: d.cities ?? prev.cities,
+  propertyTypes: d.propertyTypes ?? prev.propertyTypes,
+  topBanner: d.topBanner ? deepMerge(DEFAULT_TOP_BANNER, d.topBanner) : prev.topBanner,
+  ticker: d.ticker ? deepMerge(DEFAULT_TICKER, d.ticker) : prev.ticker,
+  company: d.company ? deepMerge(COMPANY_DEFAULTS, d.company) : prev.company,
+  siteContent: d.siteContent ? deepMerge(SITE_DEFAULTS, d.siteContent) : prev.siteContent,
+})
+
+/**
+ * API mode: settings come from the server (first the snapshot the site was built with — so the first render
+ * matches the pre-rendered HTML — then the live values). Only an admin's edits are saved back
+ * (PUT /admin/settings/:key, one second after the last keystroke). Same `[value, setValue]` shape as local mode.
+ */
+function useApiSettings() {
+  const { user, ready: authReady } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const [state, setState] = useState(() => fromServer(snapshot.settings ?? {}, {
+    whatsapp: DEFAULT_WHATSAPP_CONFIG,
+    mail: DEFAULT_MAIL_CONFIG,
+    marketing: DEFAULT_MARKETING_CONFIG,
+    cities: DEFAULT_CITIES,
+    propertyTypes: DEFAULT_PROPERTY_TYPES,
+    topBanner: DEFAULT_TOP_BANNER,
+    ticker: DEFAULT_TICKER,
+    company: COMPANY_DEFAULTS,
+    siteContent: SITE_DEFAULTS,
+  }))
+  const latest = useRef(state)
+  const timers = useRef({})
+  const [loaded, setLoaded] = useState(false)
+
+  const load = useCallback(async () => {
+    try {
+      const d = await api(isAdmin ? '/admin/settings' : '/public/settings')
+      setState((prev) => {
+        latest.current = fromServer(d, prev)
+        return latest.current
+      })
+    } catch {
+      /* API down: keep the built-in snapshot */
+    }
+    setLoaded(true)
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (authReady) load()
+  }, [authReady, load])
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), [])
+
+  const save = useCallback((key) => {
+    clearTimeout(timers.current[key])
+    timers.current[key] = setTimeout(() => {
+      api(`/admin/settings/${key}`, { method: 'PUT', body: { value: latest.current[key] } })
+        .then((d) => {
+          // secrets are never sent back — keep the "saved" flags the server reports
+          if (key === 'whatsapp' || key === 'mail') setState((prev) => ({ ...prev, [key]: { ...prev[key], ...d.value } }))
+        })
+        .catch((err) => { reportApiError(err); load() })
+    }, 1000)
+  }, [load])
+
+  const pair = (key) => [
+    state[key],
+    (updater) => {
+      const next = typeof updater === 'function' ? updater(latest.current[key]) : updater
+      latest.current = { ...latest.current, [key]: next }
+      setState(latest.current)
+      if (isAdmin) save(key)
+    },
+    authReady,
+  ]
+
+  return { loaded, whatsapp: pair('whatsapp'), mail: pair('mail'), marketing: pair('marketing'), cities: pair('cities'), propertyTypes: pair('propertyTypes'), topBanner: pair('topBanner'), ticker: pair('ticker'), company: pair('company'), siteContent: pair('siteContent') }
+}
+
+const useSettingsStore = USE_API ? useApiSettings : useLocalSettings
+
 export function SettingsProvider({ children }) {
-  const [whatsappConfig, setWhatsappConfig] = usePersistedState('re-whatsapp-config', DEFAULT_WHATSAPP_CONFIG, { merge: true })
-  const [mailConfig, setMailConfig] = usePersistedState('re-mail-config', DEFAULT_MAIL_CONFIG, { merge: true })
-  const [marketingConfig, setMarketingConfig] = usePersistedState('re-marketing-config', DEFAULT_MARKETING_CONFIG, { merge: true })
-  const [cities, setCities] = usePersistedState('re-cities', DEFAULT_CITIES)
-  const [propertyTypes, setPropertyTypes] = usePersistedState('re-property-types', DEFAULT_PROPERTY_TYPES)
-  const [topBanner, setTopBanner] = usePersistedState('re-top-banner', DEFAULT_TOP_BANNER, { merge: true })
-  const [ticker, setTicker] = usePersistedState('re-ticker', DEFAULT_TICKER, { merge: true })
-  const [company, setCompany] = usePersistedState('re-company', COMPANY_DEFAULTS, { merge: true })
-  const [siteContent, setSiteContent] = usePersistedState('re-site-content', SITE_DEFAULTS, { merge: true })
+  const store = useSettingsStore()
+  const [whatsappConfig, setWhatsappConfig] = store.whatsapp
+  const [mailConfig, setMailConfig] = store.mail
+  const [marketingConfig, setMarketingConfig] = store.marketing
+  const [cities, setCities] = store.cities
+  const [propertyTypes, setPropertyTypes] = store.propertyTypes
+  const [topBanner, setTopBanner] = store.topBanner
+  const [ticker, setTicker] = store.ticker
+  const [company, setCompany] = store.company
+  const [siteContent, setSiteContent] = store.siteContent
 
   const updateWhatsappConfig = (patch) => setWhatsappConfig((prev) => ({ ...prev, ...patch }))
   const updateMailConfig = (patch) => setMailConfig((prev) => ({ ...prev, ...patch }))
@@ -117,6 +217,7 @@ export function SettingsProvider({ children }) {
         resetCompany: () => setCompany(COMPANY_DEFAULTS),
         siteContent,
         setSiteContent,
+        settingsLoaded: store.loaded ?? true,
         resetSiteContent: () => setSiteContent(SITE_DEFAULTS),
         fill,
         fireLeadEvent,

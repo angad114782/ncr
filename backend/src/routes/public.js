@@ -140,7 +140,8 @@ router.post('/leads', leadLimiter, async (req, res) => {
     if (!exists) throw badRequest('That property does not exist.')
   }
   const verifiedPhone = readPhoneToken(d.phoneToken)
-  const lead = await createLead(req, d, { user: req.user, verified: verifiedPhone === d.phone, source: d.source })
+  const ownNumber = Boolean(req.user && req.user.phone === d.phone) // a signed-in person's own (already OTP-verified) number
+  const lead = await createLead(req, d, { user: req.user, verified: verifiedPhone === d.phone || ownNumber, source: d.source })
   res.status(201).json({ ok: true, id: lead.id, status: lead.status })
 })
 

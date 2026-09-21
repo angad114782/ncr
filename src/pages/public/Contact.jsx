@@ -9,13 +9,16 @@ import Seo from '../../components/layout/Seo'
 import { useAuth } from '../../context/AuthContext'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
+import { useInterest } from '../../context/InterestContext'
+import { USE_API } from '../../api/client'
 import { formatAddress, hasAddress } from '../../data/company'
 import { SITE_URL, breadcrumbLd, organizationLd } from '../../utils/seo'
 
 export default function Contact() {
   const { whatsappConfig, mailConfig, cities, fireLeadEvent, company, siteContent, fill } = useSettings()
-  const { addInquiry } = useData()
+  const { addInquiry, submitLead } = useData()
   const { user } = useAuth()
+  const { profile } = useInterest()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const c = siteContent.contact
@@ -36,17 +39,39 @@ export default function Contact() {
     setForm((f) => ({ ...f, name: f.name || user.name || '', phone: f.phone || user.phone || '', email: f.email || user.email || '' }))
   }, [user])
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const digits = whatsappConfig.displayPhone.replace(/\D/g, '')
   const address = formatAddress(company.address)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (form.name.trim().length < 2) return setError('Please enter your name.')
     if (!/^\d{10}$/.test(form.phone)) return setError('Enter a valid 10-digit mobile number.')
 
     const intentLabel = fill(intents.find((i) => i.value === form.intent)?.label ?? 'Enquiry')
+    if (USE_API) {
+      setBusy(true)
+      try {
+        await submitLead({
+          name: form.name.trim(),
+          phone: form.phone,
+          email: form.email.trim() || undefined,
+          city: form.city || undefined,
+          contactIntent: form.intent,
+          source: 'contact_page',
+          message: `[${intentLabel}${form.city ? ` · ${form.city}` : ''}] ${form.message.trim() || 'No additional message.'}`,
+          profile,
+        })
+      } catch (err) {
+        setBusy(false)
+        return setError(err.message)
+      }
+      fireLeadEvent('contact_form')
+      navigate('/thank-you', { state: { leadName: form.name.trim() } })
+      return
+    }
     addInquiry({
       propertyId: null,
       userId: user?.id ?? null,
@@ -154,7 +179,7 @@ export default function Contact() {
 
             {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-            <GlassButton type="submit" className="w-full justify-center"><Send size={16} /> {c.buttonLabel}</GlassButton>
+            <GlassButton type="submit" disabled={busy} className="w-full justify-center"><Send size={16} /> {c.buttonLabel}</GlassButton>
             {c.buttonNote && <p className="text-tertiary text-xs text-center">{c.buttonNote}</p>}
           </form>
         </GlassCard>

@@ -12,7 +12,9 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node src/seed/seed.js",
+    "seed:samples": "node src/seed/seed.js --samples",
     "seed:reset": "node src/seed/seed.js --reset",
+    "clean": "node src/seed/seed.js --clean",
     "test": "node --test --test-timeout=120000 --test-concurrency=1 \"tests/**/*.test.js\"",
     "check-db": "node src/scripts/check-db.js"
   },

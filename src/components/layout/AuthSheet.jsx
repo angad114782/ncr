@@ -9,8 +9,9 @@ import { useSettings } from '../../context/SettingsContext'
 import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
 import { leadInterest } from '../../utils/interest'
+import { USE_API } from '../../api/client'
 
-const OTP_LENGTH = 4
+const LOCAL_OTP_LENGTH = 4 // the mock code; with the server the length comes from its answer
 
 function generateOtp() {
   return String(Math.floor(1000 + Math.random() * 9000))
@@ -26,13 +27,15 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   const [step, setStep] = useState('phone')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(''))
-  const [sentOtp, setSentOtp] = useState('')
+  const [otpLen, setOtpLen] = useState(LOCAL_OTP_LENGTH)
+  const [otpDigits, setOtpDigits] = useState(Array(LOCAL_OTP_LENGTH).fill(''))
+  const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const { loginWithPhone, signupWithPhone } = useAuth()
+  const { loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp } = useAuth()
   const { fireLeadEvent, siteContent, fill, cities } = useSettings()
   const { addInquiry, agentCrud } = useData()
-  const { summary } = useInterest()
+  const { summary, profile } = useInterest()
   const nudge = siteContent.nudge
   const program = siteContent.agentProgram
   const isAgentSignup = mode === 'signup' && role === 'agent' && program.enabled !== false
@@ -55,20 +58,22 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setStep('phone')
       setName('')
       setPhone('')
-      setOtpDigits(Array(OTP_LENGTH).fill(''))
+      setOtpLen(LOCAL_OTP_LENGTH)
+      setOtpDigits(Array(LOCAL_OTP_LENGTH).fill(''))
       setSentOtp('')
+      setBusy(false)
       setError('')
     }
   }, [open])
 
   const resetOtpStep = () => {
     setStep('phone')
-    setOtpDigits(Array(OTP_LENGTH).fill(''))
+    setOtpDigits(Array(otpLen).fill(''))
     setSentOtp('')
     setError('')
   }
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault()
     setError('')
     if (!/^\d{10}$/.test(phone)) {
@@ -87,11 +92,29 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setError(isAgentSignup ? 'Please tick the box to agree to the terms' : 'Please tick the box to agree, so we can send you matches')
       return
     }
-    // Mock SMS gateway — in production this would trigger a real OTP send.
+    if (USE_API) {
+      // The server sends the code on WhatsApp (and, on a development server, returns it so it can be typed in).
+      setBusy(true)
+      try {
+        const d = await sendOtp(phone, mode === 'login' ? 'login' : 'register')
+        const len = d.length ?? 6
+        setOtpLen(len)
+        setSentOtp(d.devOtp ?? '')
+        setOtpDigits(Array(len).fill(''))
+        setStep('otp')
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+    // Local mode: mock SMS gateway.
     const otp = generateOtp()
     setSentOtp(otp)
     setStep('otp')
-    setOtpDigits(Array(OTP_LENGTH).fill(''))
+    setOtpDigits(Array(otpLen).fill(''))
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
 
@@ -100,7 +123,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     const next = [...otpDigits]
     next[index] = digit
     setOtpDigits(next)
-    if (digit && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus()
+    if (digit && index < otpLen - 1) inputRefs.current[index + 1]?.focus()
   }
 
   const handleDigitKeyDown = (index, e) => {
@@ -110,32 +133,56 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   }
 
   const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH)
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, otpLen)
     if (!pasted) return
     e.preventDefault()
-    setOtpDigits(Array.from({ length: OTP_LENGTH }, (_, i) => pasted[i] || ''))
-    inputRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus()
+    setOtpDigits(Array.from({ length: otpLen }, (_, i) => pasted[i] || ''))
+    inputRefs.current[Math.min(pasted.length, otpLen - 1)]?.focus()
   }
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault()
     setError('')
     const entered = otpDigits.join('')
-    if (entered.length < OTP_LENGTH) {
+    if (entered.length < otpLen) {
       setError('Enter the complete OTP')
       return
     }
-    if (entered !== sentOtp) {
+    if (!USE_API && entered !== sentOtp) {
       setError('Incorrect OTP. Please try again.')
       return
     }
 
-    const result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone, { role: isAgentSignup ? 'agent' : 'user', city: agentCity })
+    let result
+    if (USE_API) {
+      // The server checks the code, creates the account (a client also becomes a lead with the visitor's interest,
+      // an agent gets a pending agent record) and stores the consent — nothing else to save here.
+      setBusy(true)
+      result =
+        mode === 'login'
+          ? await loginWithOtp(phone, entered)
+          : await registerWithOtp({
+              phone,
+              otp: entered,
+              name: name.trim(),
+              role: isAgentSignup ? 'agent' : 'user',
+              ...(isAgentSignup ? { city: agentCity, agency: agency.trim(), reraId: reraId.trim() } : {}),
+              consent: { accepted: true },
+              ...(source ? { source: source === 'picked' ? 'picked' : 'nudge' } : {}),
+              ...(isAgentSignup ? {} : { profile }),
+            })
+      setBusy(false)
+    } else {
+      result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone, { role: isAgentSignup ? 'agent' : 'user', city: agentCity })
+    }
     if (!result.ok) {
       setError(result.error)
       return
     }
-    if (isAgentSignup) {
+    if (USE_API && mode === 'signup') {
+      if (isAgentSignup) fireLeadEvent('agent_signup', { city: agentCity })
+      else fireLeadEvent('signup', { ...(summary.city ? { city: summary.city } : {}), ...(summary.type ? { property_type: summary.type } : {}), intent: summary.intent })
+    } else if (isAgentSignup) {
       // A new agent = a login (role "agent") plus an agent record that waits for the admin's approval.
       agentCrud.upsert({
         id: result.user.agentId,
@@ -157,7 +204,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       })
       fireLeadEvent('agent_signup', { city: agentCity })
     } else if (mode === 'signup') {
-      // A new, OTP-verified number that agreed to be contacted = a lead. The sales team gets the
+      // Local mode: a new, OTP-verified number that agreed to be contacted = a lead. The sales team gets the
       // visitor's interest (what they searched / viewed) so the first call is relevant.
       addInquiry({
         propertyId: summary.lastViewedId,
@@ -259,7 +306,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
 
             {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-            {mode === 'login' && (
+            {mode === 'login' && !USE_API && (
               <p className="text-tertiary text-xs px-1">
                 Demo numbers: 8619930583 (admin) or 9820011122 (user)
               </p>
@@ -291,10 +338,10 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
               </>
             )}
 
-            <GlassButton type="submit" className="mt-2 w-full justify-center">
+            <GlassButton type="submit" disabled={busy} className="mt-2 w-full justify-center">
               {mode === 'login' ? 'Send Me a Secure Code' : isAgentSignup ? 'Register as an agent' : 'Create My Free Account'}
             </GlassButton>
-            <p className="text-tertiary text-xs text-center">We’ll text a 4-digit code to confirm it’s you — no password to remember.</p>
+            <p className="text-tertiary text-xs text-center">We’ll send a code to confirm it’s you — no password to remember.</p>
           </form>
         </>
       )}
@@ -313,16 +360,20 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
               <ShieldCheck size={24} />
             </span>
             <p className="text-secondary text-sm">
-              You’re one step away — enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {phone}</span>
+              You’re one step away — enter the {otpLen}-digit code sent to <span className="font-semibold text-primary">+91 {phone}</span>
             </p>
           </div>
 
-          <div className="glass-weak rounded-[14px] px-4 py-2.5 text-center text-sm">
-            Demo mode — your OTP is <span className="font-bold text-[var(--color-accent)]">{sentOtp}</span>
-          </div>
+          {sentOtp ? (
+            <div className="glass-weak rounded-[14px] px-4 py-2.5 text-center text-sm">
+              Demo mode — your OTP is <span className="font-bold text-[var(--color-accent)]">{sentOtp}</span>
+            </div>
+          ) : (
+            <p className="text-tertiary text-xs text-center">The code was sent to your WhatsApp. It stays valid for a few minutes.</p>
+          )}
 
           <form onSubmit={handleVerify} className="flex flex-col gap-4">
-            <div className="flex items-center justify-center gap-3" onPaste={handlePaste}>
+            <div className="flex items-center justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
               {otpDigits.map((digit, i) => (
                 <input
                   key={i}
@@ -333,14 +384,14 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
                   value={digit}
                   onChange={(e) => handleDigitChange(i, e.target.value)}
                   onKeyDown={(e) => handleDigitKeyDown(i, e)}
-                  className="glass-weak w-12 h-14 rounded-[14px] text-center text-xl font-semibold outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
+                  className="glass-weak w-10 sm:w-12 h-14 rounded-[14px] text-center text-xl font-semibold outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
                 />
               ))}
             </div>
 
             {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
-            <GlassButton type="submit" className="w-full justify-center">
+            <GlassButton type="submit" disabled={busy} className="w-full justify-center">
               {mode === 'login' ? 'Confirm & Take Me In' : isAgentSignup ? 'Confirm & Open My Panel' : 'Confirm & Start Exploring'}
             </GlassButton>
 

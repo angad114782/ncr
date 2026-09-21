@@ -6,61 +6,6 @@
     <atom:link href="https://propertyinncr.com/feed.xml" rel="self" type="application/rss+xml" />
     <description>Buying guides on RERA, home loans, stamp duty and documents from NCR Estates.</description>
     <language>en-IN</language>
-    <item>
-      <title>First-Time Home Buyer Guide India: Step-by-Step Process (2026)</title>
-      <link>https://propertyinncr.com/blog/first-time-home-buyer-guide-india</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/first-time-home-buyer-guide-india</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Buying Guides</category>
-      <description>A practical step-by-step guide for first-time home buyers in India — budget, home loan, property search, due diligence, registration and possession.</description>
-    </item>
-    <item>
-      <title>Ready-to-Move vs Under-Construction Flats: Which Should You Buy?</title>
-      <link>https://propertyinncr.com/blog/ready-to-move-vs-under-construction</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/ready-to-move-vs-under-construction</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Buying Guides</category>
-      <description>Ready-to-move or under-construction? Compare price, GST, risk, possession and loan implications to pick the right flat for your situation.</description>
-    </item>
-    <item>
-      <title>How to Check RERA Registration of a Project or Agent (Step-by-Step)</title>
-      <link>https://propertyinncr.com/blog/how-to-check-rera-registration</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/how-to-check-rera-registration</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Legal &amp; RERA</category>
-      <description>Learn how to verify a RERA-registered project, builder and real estate agent on your state RERA portal before you pay a token amount.</description>
-    </item>
-    <item>
-      <title>Home Loan Eligibility &amp; EMI Explained: How Much Can You Borrow?</title>
-      <link>https://propertyinncr.com/blog/home-loan-eligibility-emi-explained</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/home-loan-eligibility-emi-explained</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Home Loans</category>
-      <description>Understand home loan eligibility, EMI, loan-to-value, FOIR and credit score — and how to estimate your property budget before you apply.</description>
-    </item>
-    <item>
-      <title>Stamp Duty &amp; Registration Charges When Buying Property in India</title>
-      <link>https://propertyinncr.com/blog/stamp-duty-registration-charges-explained</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/stamp-duty-registration-charges-explained</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Legal &amp; RERA</category>
-      <description>What stamp duty and registration charges are, how they are calculated, why they differ by state, and how to budget for them.</description>
-    </item>
-    <item>
-      <title>Property Documents Checklist: What to Verify Before You Pay</title>
-      <link>https://propertyinncr.com/blog/property-documents-checklist-before-buying</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/property-documents-checklist-before-buying</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Legal &amp; RERA</category>
-      <description>A practical checklist of documents to verify before buying a flat or house in India — title, encumbrance certificate, approvals, RERA and society records.</description>
-    </item>
-    <item>
-      <title>How to Choose a Trusted Property Dealer in Delhi NCR</title>
-      <link>https://propertyinncr.com/blog/how-to-choose-property-dealer-delhi-ncr</link>
-      <guid isPermaLink="true">https://propertyinncr.com/blog/how-to-choose-property-dealer-delhi-ncr</guid>
-      <pubDate>Mon, 21 Sep 2026 00:00:00 GMT</pubDate>
-      <category>Buying Guides</category>
-      <description>How to pick a reliable property dealer or real estate consultant in Delhi NCR — RERA registration, transparency, references and red flags to avoid.</description>
-    </item>
+
   </channel>
 </rss>

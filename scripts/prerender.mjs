@@ -9,7 +9,7 @@ import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { getRedirects, getRoutes, root, SITE } from './site-data.mjs'
 
-const dist = resolve(root, 'dist')
+const dist = resolve(root, process.env.DIST_DIR ?? 'dist') // scripts/release.mjs builds into dist-next first
 const template = readFileSync(resolve(dist, 'index.html'), 'utf8')
 const { render } = await import(pathToFileURL(resolve(root, 'dist-ssr/entry-server.js')).href)
 

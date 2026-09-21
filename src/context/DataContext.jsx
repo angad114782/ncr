@@ -1,7 +1,10 @@
-import { createContext, useContext, useEffect, useRef } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import usePersistedState from '../hooks/usePersistedState'
 import { newId } from '../utils/ids'
 import { ensureSlugs, resolveSlug } from '../utils/propertySlug'
+import { USE_API, api, fetchAll, reportApiError } from '../api/client'
+import { useAuth } from './AuthContext'
+import snapshot from '../data/snapshot.json'
 import propertiesSeed from '../data/properties.json'
 import inquiriesSeed from '../data/inquiries.json'
 import agentsSeed from '../data/agents.json'
@@ -10,6 +13,22 @@ import faqsSeed from '../data/faqs.json'
 import testimonialsSeed from '../data/testimonials.json'
 
 const DataContext = createContext(null)
+
+// Where the lists start. Local mode: the bundled sample data (then browser storage). API mode: the snapshot
+// the site was built from (identical to the pre-rendered HTML, so hydration matches), refreshed from the API
+// as soon as the page is interactive.
+const SEED = USE_API
+  ? { properties: snapshot.properties, agents: snapshot.agents, blog: snapshot.posts, faqs: snapshot.faqs, testimonials: snapshot.testimonials, inquiries: [] }
+  : { properties: propertiesSeed, agents: agentsSeed, blog: blogSeed, faqs: faqsSeed, testimonials: testimonialsSeed, inquiries: inquiriesSeed }
+
+// API mode keeps the lists in memory (the server is the database); local mode persists them in the browser.
+const useMemoryStore = (_key, initial) => {
+  const [value, setValue] = useState(initial)
+  return [value, setValue, true]
+}
+const useStore = USE_API ? useMemoryStore : usePersistedState
+
+const mergeById = (base, extra) => [...new Map([...base, ...extra.filter(Boolean)].map((x) => [x.id, x])).values()]
 
 /**
  * Same admin operations for every managed collection: add / edit (upsert),
@@ -53,16 +72,85 @@ function makeCrud(list, setList) {
   }
 }
 
+/**
+ * The same admin operations as makeCrud, but saved on the server. Every change shows up at once in the list
+ * (optimistic); the server's answer then replaces it (it assigns ids, slugs and review status). If the server
+ * refuses — validation, permission, network — the reason is shown in a toast and the list is re-read, so the
+ * screen never keeps something that was not saved.
+ */
+function makeApiCrud(list, setList, { base, reload, reorderable = false, itemKey = 'item', bulkDelete = true }) {
+  const local = makeCrud(list, setList)
+  const run = (promise) => promise.catch((err) => { reportApiError(err); reload() })
+  const swap = (oldId, saved) => setList((prev) => prev.map((x) => (x.id === oldId ? { ...x, ...saved } : x)))
+
+  const setActive = (ids, active) => {
+    local.setActive(ids, active)
+    if (bulkDelete) {
+      run(api(`${base}/bulk/action`, { method: 'POST', body: { ids, action: active ? 'activate' : 'deactivate' } }).then((d) => {
+        if (d.failed?.length) { reportApiError(d.failed.map((f) => f.reason).join(' ')); reload() }
+      }))
+    } else {
+      // an agent switches their own approved listings one by one
+      ids.forEach((id) => run(api(`${base}/${id}/active`, { method: 'PATCH', body: { active } }).then((d) => swap(id, d.property))))
+    }
+  }
+
+  return {
+    ...local,
+    upsert(item) {
+      const exists = list.some((x) => x.id === item.id)
+      local.upsert(item)
+      run(api(exists ? `${base}/${item.id}` : base, { method: exists ? 'PATCH' : 'POST', body: item }).then((d) => swap(item.id, d[itemKey] ?? d.item)))
+      return item
+    },
+    upsertMany(items) {
+      const known = new Set(list.map((x) => x.id))
+      const added = items.filter((x) => !known.has(x.id)).length
+      local.upsertMany(items)
+      if (bulkDelete) run(api(`${base}/import/rows`, { method: 'POST', body: { items } }).then(reload))
+      else run(api(`${base}/import`, { method: 'POST', body: { items: items.map(({ id, ...rest }) => rest) } }).then(reload)) // eslint-disable-line no-unused-vars
+      return { added, updated: items.length - added }
+    },
+    patch(id, patch) {
+      local.patch(id, patch)
+      run(api(`${base}/${id}`, { method: 'PATCH', body: patch }).then((d) => swap(id, d[itemKey] ?? d.item)))
+    },
+    remove(id) {
+      local.remove(id)
+      run(api(`${base}/${id}`, { method: 'DELETE' }))
+    },
+    removeMany(ids) {
+      local.removeMany(ids)
+      if (bulkDelete) run(api(`${base}/bulk/action`, { method: 'POST', body: { ids, action: 'delete' } }))
+      else ids.forEach((id) => run(api(`${base}/${id}`, { method: 'DELETE' })))
+    },
+    setActive,
+    toggleActive(id) {
+      setActive([id], list.find((x) => x.id === id)?.active === false)
+    },
+    move(id, dir) {
+      const i = list.findIndex((x) => x.id === id)
+      const j = i + dir
+      if (i < 0 || j < 0 || j >= list.length) return
+      const next = [...list]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      local.move(id, dir)
+      if (reorderable) run(api(`${base}/reorder`, { method: 'POST', body: { ids: next.map((x) => x.id) } }))
+    },
+  }
+}
+
 export function DataProvider({ children }) {
-  const [properties, setProperties, propertiesReady] = usePersistedState('re-properties', propertiesSeed)
-  const [inquiries, setInquiries] = usePersistedState('re-inquiries', inquiriesSeed)
+  const { user, ready: authReady } = useAuth()
+  const [properties, setProperties, propertiesReady] = useStore('re-properties', SEED.properties)
+  const [inquiries, setInquiries] = useStore('re-inquiries', SEED.inquiries)
   const [savedIds, setSavedIds] = usePersistedState('re-saved', [])
   const [compareIds, setCompareIds] = usePersistedState('re-compare', [])
   const [recentlyViewedIds, setRecentlyViewedIds] = usePersistedState('re-recent', [])
-  const [agents, setAgents] = usePersistedState('re-agents', agentsSeed)
-  const [blogPosts, setBlogPosts] = usePersistedState('re-blog', blogSeed)
-  const [faqs, setFaqs] = usePersistedState('re-faqs', faqsSeed)
-  const [testimonials, setTestimonials] = usePersistedState('re-testimonials', testimonialsSeed)
+  const [agents, setAgents] = useStore('re-agents', SEED.agents)
+  const [blogPosts, setBlogPosts] = useStore('re-blog', SEED.blog)
+  const [faqs, setFaqs] = useStore('re-faqs', SEED.faqs)
+  const [testimonials, setTestimonials] = useStore('re-testimonials', SEED.testimonials)
 
   const isActive = (x) => x.active !== false
 
@@ -76,7 +164,7 @@ export function DataProvider({ children }) {
 
   // Listings saved before slugs existed get one (from their title) as soon as the saved data is loaded.
   useEffect(() => {
-    if (propertiesReady && properties.some((p) => !p.slug)) setProperties(ensureSlugs(properties))
+    if (!USE_API && propertiesReady && properties.some((p) => !p.slug)) setProperties(ensureSlugs(properties))
   }, [propertiesReady, properties, setProperties])
 
   // Every save gives the listing a readable, unique URL slug (see utils/propertySlug.js). The latest list
@@ -94,7 +182,7 @@ export function DataProvider({ children }) {
     return { ...item, slug, ...(previousSlugs.length ? { previousSlugs } : {}) }
   }
   const putProperty = (list, item) => (list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? { ...x, ...item } : x)) : [item, ...list])
-  const propertyCrud = {
+  const localPropertyCrud = {
     ...baseCrud,
     upsert(item) {
       const stamped = stampSlug(item, latest.current)
@@ -113,11 +201,73 @@ export function DataProvider({ children }) {
       return { added, updated: items.length - added }
     },
   }
-  const agentCrud = makeCrud(agents, setAgents)
-  const blogCrud = makeCrud(blogPosts, setBlogPosts)
-  const faqCrud = makeCrud(faqs, setFaqs)
-  const testimonialCrud = makeCrud(testimonials, setTestimonials)
-  const inquiryCrud = makeCrud(inquiries, setInquiries)
+
+  // ---- API mode: load from the server, and save every change there ----
+  const role = user?.role
+  const load = useCallback(async () => {
+    try {
+      const pub = await api('/public/bootstrap')
+      let next = { properties: pub.properties, agents: pub.agents, blog: pub.posts, faqs: pub.faqs, testimonials: pub.testimonials, inquiries: [] }
+      if (role === 'admin') {
+        const [p, a, b, f, t, l] = await Promise.all(['properties', 'agents', 'blog', 'faqs', 'testimonials', 'leads'].map((k) => fetchAll(`/admin/${k}`)))
+        next = { properties: p, agents: a, blog: b, faqs: f, testimonials: t, inquiries: l }
+      } else if (role === 'agent') {
+        const [own, profile, leads] = await Promise.all([api('/agent/properties'), api('/agent/profile'), fetchAll('/agent/leads')])
+        next = { ...next, properties: mergeById(pub.properties, own.items), agents: mergeById(pub.agents, [profile.agent]), inquiries: leads }
+      } else if (role) {
+        next.inquiries = (await api('/me/inquiries')).items
+      }
+      setProperties(next.properties)
+      setAgents(next.agents)
+      setBlogPosts(next.blog)
+      setFaqs(next.faqs)
+      setTestimonials(next.testimonials)
+      setInquiries(next.inquiries)
+    } catch {
+      /* offline or the API is down: keep showing the snapshot the site was built with */
+    }
+  }, [role, setProperties, setAgents, setBlogPosts, setFaqs, setTestimonials, setInquiries])
+
+  useEffect(() => {
+    if (USE_API && authReady) load()
+  }, [authReady, load])
+
+  // Saved homes follow the account: merged in at sign-in, then kept on the server.
+  const wasSignedIn = useRef(false)
+  useEffect(() => {
+    if (!USE_API || !authReady) return
+    if (!user) {
+      if (wasSignedIn.current) setSavedIds([])
+      wasSignedIn.current = false
+      return
+    }
+    wasSignedIn.current = true
+    ;(async () => {
+      try {
+        if (savedIds.length) await api('/me/saved', { method: 'PUT', body: { ids: savedIds } })
+        setSavedIds((await api('/me/saved')).ids)
+      } catch { /* keep the local list */ }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, user?.id])
+
+  const isAgentUser = role === 'agent'
+  const crudFor = (list, setList, base, options) => (USE_API && base ? makeApiCrud(list, setList, { base, reload: load, ...options }) : makeCrud(list, setList))
+  const propertyCrud = USE_API ? crudFor(properties, setProperties, isAgentUser ? '/agent/properties' : '/admin/properties', { itemKey: 'property', bulkDelete: !isAgentUser }) : localPropertyCrud
+  const agentCrud = (() => {
+    if (!(USE_API && isAgentUser)) return crudFor(agents, setAgents, '/admin/agents', {})
+    // an agent edits only their own public profile
+    const local = makeCrud(agents, setAgents)
+    const save = (id, patch) => {
+      local.patch(id, patch)
+      api('/agent/profile', { method: 'PATCH', body: patch }).catch((err) => { reportApiError(err); load() })
+    }
+    return { ...local, patch: save, upsert: ({ id, ...rest }) => save(id, rest) }
+  })()
+  const blogCrud = crudFor(blogPosts, setBlogPosts, '/admin/blog', {})
+  const faqCrud = crudFor(faqs, setFaqs, '/admin/faqs', { reorderable: true })
+  const testimonialCrud = crudFor(testimonials, setTestimonials, '/admin/testimonials', { reorderable: true })
+  const inquiryCrud = crudFor(inquiries, setInquiries, isAgentUser ? '/agent/leads' : '/admin/leads', {})
 
   const toggleCompare = (propertyId) => {
     setCompareIds((prev) => {
@@ -134,9 +284,9 @@ export function DataProvider({ children }) {
   }
 
   const toggleSaved = (propertyId) => {
-    setSavedIds((prev) =>
-      prev.includes(propertyId) ? prev.filter((id) => id !== propertyId) : [...prev, propertyId]
-    )
+    const has = savedIds.includes(propertyId)
+    setSavedIds((prev) => (prev.includes(propertyId) ? prev.filter((id) => id !== propertyId) : [...prev, propertyId]))
+    if (USE_API && user) api(`/me/saved/${propertyId}`, { method: has ? 'DELETE' : 'POST' }).catch(reportApiError)
   }
 
   const addInquiry = (inquiry) => {
@@ -149,6 +299,9 @@ export function DataProvider({ children }) {
     setInquiries((prev) => [newInquiry, ...prev])
     return newInquiry
   }
+
+  /** API mode: sends an enquiry to the server (the server records consent, scores it and notifies the team). */
+  const submitLead = (payload) => api('/leads', { method: 'POST', body: payload })
 
   const updateInquiryStatus = (id, status) => inquiryCrud.patch(id, { status })
   const deleteInquiry = (id) => inquiryCrud.remove(id)
@@ -213,6 +366,8 @@ export function DataProvider({ children }) {
         clearCompare,
         trackRecentlyViewed,
         addInquiry,
+        submitLead,
+        reloadData: load,
         updateInquiryStatus,
         deleteInquiry,
         addProperty,

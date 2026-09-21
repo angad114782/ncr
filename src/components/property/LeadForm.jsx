@@ -6,16 +6,19 @@ import GlassButton from '../glass/GlassButton'
 import { useData } from '../../context/DataContext'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
+import { useInterest } from '../../context/InterestContext'
+import { USE_API, api } from '../../api/client'
 
-const OTP_LENGTH = 4
+const LOCAL_OTP_LENGTH = 4 // the mock code; with the server the length comes from its answer
 
 function generateOtp() {
   return String(Math.floor(1000 + Math.random() * 9000))
 }
 
 export default function LeadForm({ property }) {
-  const { addInquiry } = useData()
-  const { user } = useAuth()
+  const { addInquiry, submitLead } = useData()
+  const { user, sendOtp } = useAuth()
+  const { profile } = useInterest()
   const { fireLeadEvent, siteContent } = useSettings()
   const navigate = useNavigate()
 
@@ -36,12 +39,31 @@ export default function LeadForm({ property }) {
     setForm((f) => ({ ...f, name: f.name || user.name || '', phone: f.phone || user.phone || '', email: f.email || user.email || '' }))
   }, [user])
 
-  const [otpDigits, setOtpDigits] = useState(Array(OTP_LENGTH).fill(''))
-  const [sentOtp, setSentOtp] = useState('')
+  const [otpLen, setOtpLen] = useState(LOCAL_OTP_LENGTH)
+  const [otpDigits, setOtpDigits] = useState(Array(LOCAL_OTP_LENGTH).fill(''))
+  const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const inputRefs = useRef([])
 
-  const handleSendOtp = (e) => {
+  /** API mode: sends the enquiry to the server. `phoneToken` proves the number was checked (or the person is signed in with it). */
+  const sendLead = async (phoneToken) => {
+    await submitLead({
+      name: form.name.trim(),
+      phone: form.phone,
+      email: form.email.trim() || undefined,
+      budget: form.budget,
+      message: form.message.trim() || `Interested in ${property?.title ?? 'this property'}. Budget: ${form.budget}.`,
+      propertyId: property?.id,
+      source: property ? 'property_lead_form' : 'contact_page',
+      phoneToken,
+      profile,
+    })
+    fireLeadEvent(property ? 'property_lead_form' : 'lead_form')
+    navigate('/thank-you', { state: { leadName: form.name } })
+  }
+
+  const handleSendOtp = async (e) => {
     e.preventDefault()
     setError('')
     if (form.name.trim().length < 2) {
@@ -52,9 +74,30 @@ export default function LeadForm({ property }) {
       setError('Enter a valid 10-digit mobile number')
       return
     }
+    if (USE_API) {
+      setBusy(true)
+      try {
+        if (user?.phone === form.phone) {
+          await sendLead() // their own, already verified number — no second code
+          return
+        }
+        const d = await sendOtp(form.phone, 'verify')
+        const len = d.length ?? 6
+        setOtpLen(len)
+        setSentOtp(d.devOtp ?? '')
+        setOtpDigits(Array(len).fill(''))
+        setStep('otp')
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
     const otp = generateOtp()
     setSentOtp(otp)
-    setOtpDigits(Array(OTP_LENGTH).fill(''))
+    setOtpDigits(Array(otpLen).fill(''))
     setStep('otp')
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
@@ -64,7 +107,7 @@ export default function LeadForm({ property }) {
     const next = [...otpDigits]
     next[index] = digit
     setOtpDigits(next)
-    if (digit && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus()
+    if (digit && index < otpLen - 1) inputRefs.current[index + 1]?.focus()
   }
 
   const handleDigitKeyDown = (index, e) => {
@@ -73,12 +116,23 @@ export default function LeadForm({ property }) {
     }
   }
 
-  const handleVerifyAndSubmit = (e) => {
+  const handleVerifyAndSubmit = async (e) => {
     e.preventDefault()
     setError('')
     const entered = otpDigits.join('')
-    if (entered.length < OTP_LENGTH) {
+    if (entered.length < otpLen) {
       setError('Enter the complete OTP')
+      return
+    }
+    if (USE_API) {
+      setBusy(true)
+      try {
+        const { phoneToken } = await api('/auth/verify-phone', { method: 'POST', body: { phone: form.phone, otp: entered } })
+        await sendLead(phoneToken)
+      } catch (err) {
+        setError(err.message)
+        setBusy(false)
+      }
       return
     }
     if (entered !== sentOtp) {
@@ -117,16 +171,18 @@ export default function LeadForm({ property }) {
             <ShieldCheck size={20} />
           </span>
           <p className="text-secondary text-sm">
-            Almost done — enter the 4-digit code sent to <span className="font-semibold text-primary">+91 {form.phone}</span>
+            Almost done — enter the {otpLen}-digit code sent to <span className="font-semibold text-primary">+91 {form.phone}</span>
           </p>
         </div>
 
-        <div className="glass-weak rounded-[14px] px-4 py-2.5 text-center text-sm">
-          Demo mode — your OTP is <span className="font-bold text-[var(--color-accent)]">{sentOtp}</span>
-        </div>
+        {sentOtp && (
+          <div className="glass-weak rounded-[14px] px-4 py-2.5 text-center text-sm">
+            Demo mode — your OTP is <span className="font-bold text-[var(--color-accent)]">{sentOtp}</span>
+          </div>
+        )}
 
         <form onSubmit={handleVerifyAndSubmit} className="flex flex-col gap-3">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2 sm:gap-3">
             {otpDigits.map((digit, i) => (
               <input
                 key={i}
@@ -137,14 +193,14 @@ export default function LeadForm({ property }) {
                 value={digit}
                 onChange={(e) => handleDigitChange(i, e.target.value)}
                 onKeyDown={(e) => handleDigitKeyDown(i, e)}
-                className="glass-weak w-12 h-14 rounded-[14px] text-center text-xl font-semibold outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
+                className="glass-weak w-10 sm:w-12 h-14 rounded-[14px] text-center text-xl font-semibold outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
               />
             ))}
           </div>
 
           {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
-          <GlassButton type="submit" className="w-full justify-center">
+          <GlassButton type="submit" disabled={busy} className="w-full justify-center">
             <Check size={16} /> Confirm &amp; Book My Callback
           </GlassButton>
           <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">
@@ -194,11 +250,11 @@ export default function LeadForm({ property }) {
 
       {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-      <GlassButton type="submit" className="w-full justify-center">
+      <GlassButton type="submit" disabled={busy} className="w-full justify-center">
         Get My Free Callback
       </GlassButton>
       <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">
-        <Lock size={11} /> Quick 4-digit code to verify your number — no spam, no obligation.
+        <Lock size={11} /> Quick code to verify your number — no spam, no obligation.
       </p>
     </form>
   )

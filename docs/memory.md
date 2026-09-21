@@ -180,6 +180,15 @@ Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-bl
 - The test helper must pass the memory-server URI to `connectDb(uri)` explicitly — several suites run in one process and the config is cached.
 - `errorHandler` must not mask `AppError`s with status ≥ 500 (the 503 "OTP unavailable" was being turned into a generic 500).
 
+### 3.24 Connecting the website to the backend
+- **One code base, two modes** (`USE_API`): production builds use the API, plain `npm run dev` keeps the old browser-storage mode — so front-end work and the old browser tests keep working. Every context has both implementations behind the same shape; new features must work in both (or be hidden in API mode, like "Restore samples").
+- **Hydration parity with server data**: the pre-render and the client's first render both start from `src/data/snapshot.json` (from `/public/bootstrap` at build time); the live refresh happens after hydration. Never let the first render depend on a fetch.
+- **Optimistic writes** (`makeApiCrud`): the list updates immediately, the server's answer replaces the item (it assigns ids / slugs / review status), and a refusal shows a toast and re-reads the list. Admin screens copy their form state on open, so `WaitForSettings` holds Settings / Site Content until the live values arrive.
+- The session is an HttpOnly cookie — a test can no longer "become admin" by writing `re-user` to localStorage (that only worked in local mode); use the real OTP flow (the dev backend shows the code).
+- Windows can refuse renaming a freshly built folder (`EPERM`, antivirus / indexer) — `release.mjs` retries, then falls back to copying; on the Linux VPS the rename is atomic.
+- `deploy.yml` deliberately **stops before touching the site** when `backend/.env` is missing or the API is unhealthy; the `.env` (MongoDB URL, JWT secret) lives only on the server.
+- A shell one-liner that `Stop-Process`es by command-line text can kill its own shell — kill by port instead.
+
 ## 4. Working preferences (user)
 
 - Writes in Hinglish; comfortable with technical English. Answer in the same register.
@@ -217,6 +226,7 @@ Launch with `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-bl
 19. **Home redesign + SEO + TopBanner + admin-managed cities/types** *(uncommitted — see [tasks.md](tasks.md))*
 20. **Site-wide review** — found the GlassCard remount bug, double conversions, canonical bug, contact form that saved nothing (§3.11–3.13).
 22. **Fully admin-controlled CMS** — generic admin engine, Blog/FAQ/Reviews/Agents/Users/Listings/Site-Content admin, image upload-or-link, CSV everywhere, backup/restore (§3.16–3.18).
+28. **Website connected to the backend + deploy workflow updated (backend, website, pm2, nginx)** (§3.24).
 27. **Backend built** (`backend/`, 88 tests; Atlas login to be fixed) (§3.23).
 26. **Readable property slugs** (`/property/<title-slug>`, duplicates disambiguated, old links redirect) (§3.22).
 25. **Legal pages (admin-editable) + agent registration + Agent Panel + listing moderation** (§3.21).

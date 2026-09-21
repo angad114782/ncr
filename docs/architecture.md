@@ -239,7 +239,21 @@ Property CSV column order is `PROPERTY_CSV_COLUMNS` in `src/utils/csv.js`. Array
 
 ## 8. Backend (built — `backend/`)
 
-The API described in §8a now exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 88 tests). Start with [`backend/README.md`](../backend/README.md): setup, environment, full endpoint list, security notes, how to connect the website and how to deploy. The website itself still reads `localStorage` until the switch described in README §5 is made.
+The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 88 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
+
+**Two modes, one code base.** `VITE_USE_API=true` (set for production builds in `.env.production`) makes the site use the API; without it the site runs on browser storage as before (handy for front-end work without the backend). The switch lives in `src/api/client.js` (`USE_API`, `api()`, `fetchAll()`, error toast bus) and the contexts:
+
+| Context | API mode |
+|---|---|
+| `AuthContext` | `ApiAuthProvider`: session from `GET /auth/me` (HttpOnly cookie), OTP send / login / register, admin user management (optimistic, server decides) |
+| `DataContext` | starts from the build snapshot, then loads `/public/bootstrap` (+ `/admin/*` for admins, `/agent/*` + `/me/*` for agents / clients); `makeApiCrud` gives every admin screen the same `upsert / patch / remove / setActive / move / upsertMany` that now save on the server (optimistic, rolled back with a toast on refusal) |
+| `SettingsContext` | `useApiSettings`: snapshot → `/public/settings` or `/admin/settings`; an admin's edit is saved with `PUT /admin/settings/:key` after 1 s |
+| `InterestContext` | still on-device; for a signed-in client also batches events to `/me/events` |
+| forms | `AuthSheet`, `LeadForm`, `Contact` use the OTP + lead endpoints; images upload to `/uploads` (`utils/images.js`) |
+
+**Build data = snapshot.** `scripts/fetch-snapshot.mjs` writes `src/data/snapshot.json` from `GET /api/public/bootstrap` (falls back to the previous snapshot, then to the sample data). The sitemap / llms files, the pre-render and the client bundle all read it, so the pre-rendered HTML and the first client render are identical (hydration), and the page then refreshes itself from the live API. `npm run release` (`scripts/release.mjs`) builds into `dist-next/` and swaps it in (no downtime); the backend runs it (`REBUILD_COMMAND`) when the admin publishes content.
+
+**Deploy**: `.github/workflows/deploy.yml` — tests, then on the VPS: backend (`npm ci`, pm2 `ncr-api`, health check), website (`npm run release`), nginx reload. nginx proxies `/api` and `/uploads` (`deploy/nginx-api.snippet.conf`), so the site and API share one origin.
 
 Where §8a's requirements live in the code: OTP + sessions → `services/auth.js`; leads / consent / intent → `services/leads.js`, `models` (Lead, Consent); agent rules → `routes/agent.js`; approval workflow → `routes/admin-properties.js`; slugs → `services/property.js` + `lib/propertySlug.js`; legal history + secrets masking → `services/settings.js`; rebuild hook → `lib/misc.js`; uploads → `routes/uploads.js`.
 

@@ -19,13 +19,14 @@ const isActive = (x) => x.active !== false
 const today = () => new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
 
 export function loadData() {
-  const properties = ensureSlugs(read('src/data/properties.json')).filter((p) => isActive(p) && (p.reviewStatus ?? 'approved') === 'approved')
-  const agents = read('src/data/agents.json').filter((a) => isActive(a) && a.status !== 'pending' && a.status !== 'rejected')
-  const posts = read('src/data/blog.json').filter(isActive).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
-  const faqs = read('src/data/faqs.json').filter(isActive)
-  const cities = DEFAULT_CITIES
-  const types = DEFAULT_PROPERTY_TYPES
-  return { properties, agents, posts, faqs, cities, types, company: COMPANY_DEFAULTS, content: SITE_DEFAULTS }
+  // src/data/snapshot.json is written by scripts/fetch-snapshot.mjs (from the API, or the sample data)
+  const snap = read('src/data/snapshot.json')
+  const properties = ensureSlugs(snap.properties).filter((p) => isActive(p) && (p.reviewStatus ?? 'approved') === 'approved')
+  const agents = snap.agents.filter((a) => isActive(a) && a.status !== 'pending' && a.status !== 'rejected')
+  const posts = snap.posts.filter(isActive).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+  const faqs = snap.faqs.filter(isActive)
+  const { company = COMPANY_DEFAULTS, siteContent = SITE_DEFAULTS, cities = DEFAULT_CITIES, propertyTypes = DEFAULT_PROPERTY_TYPES } = snap.settings ?? {}
+  return { properties, agents, posts, faqs, cities, types: propertyTypes, company, content: siteContent }
 }
 
 /**

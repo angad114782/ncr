@@ -37,7 +37,8 @@ const upload = multer({
   fileFilter: (_req, file, cb) => (TYPES[file.mimetype] ? cb(null, true) : cb(badRequest('Only JPG, PNG, WebP, GIF or AVIF images are allowed.'))),
 })
 
-const urlFor = (req, file) => `${config.publicApiUrl || `${req.protocol}://${req.get('host')}`}/uploads/${file}`
+// Site-relative (/uploads/x.jpg) unless PUBLIC_API_URL is set: the website and nginx serve it from the same origin.
+const urlFor = (_req, file) => `${config.publicApiUrl}/uploads/${file}`
 
 router.post('/', requireRole('agent', 'admin'), uploadLimiter, upload.array('files', 10), async (req, res) => {
   const files = req.files ?? []

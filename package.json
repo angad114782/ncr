@@ -4,13 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/fetch-snapshot.mjs --quiet",
     "dev": "vite",
-    "seo": "node scripts/generate-seo-files.mjs",
+    "snapshot": "node scripts/fetch-snapshot.mjs",
+    "seo": "node scripts/fetch-snapshot.mjs && node scripts/generate-seo-files.mjs",
     "sitemap": "node scripts/generate-seo-files.mjs",
     "build:client": "vite build",
     "build:ssr": "vite build --ssr src/entry-server.jsx --outDir dist-ssr",
     "prerender": "node scripts/prerender.mjs",
     "build": "npm run seo && npm run build:client && npm run build:ssr && npm run prerender",
+    "release": "node scripts/release.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

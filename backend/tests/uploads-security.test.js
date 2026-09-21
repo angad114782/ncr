@@ -22,8 +22,8 @@ describe('uploads', () => {
     const res = await agent.post('/api/uploads').attach('files', PNG, { filename: 'front.png', contentType: 'image/png' })
     assert.equal(res.status, 201)
     const { url } = res.body.items[0]
-    assert.match(url, /\/uploads\/[a-z0-9-]+\.png$/)
-    const served = await request(t.app).get(new URL(url).pathname)
+    assert.match(url, /^\/uploads\/[a-z0-9-]+\.png$/, 'a site-relative link')
+    const served = await request(t.app).get(url)
     assert.equal(served.status, 200)
     assert.equal(served.headers['x-content-type-options'], 'nosniff')
   })

@@ -6,6 +6,7 @@ import GlassSheet from '../glass/GlassSheet'
 import SchemaForm, { getPath } from './SchemaForm'
 import CsvToolbar from './CsvToolbar'
 import Toggle from './Toggle'
+import { USE_API } from '../../api/client'
 
 const isEmpty = (v) => v === undefined || v === null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && v.length === 0)
 
@@ -127,7 +128,7 @@ export default function CollectionAdmin({
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {headerExtras}
-            {restore && (
+            {restore && !USE_API && (
               <GlassButton variant="glass" size="sm" icon={RotateCcw} onClick={() => setConfirm({ message: `Replace all ${title.toLowerCase()} with the bundled sample content? Your changes will be lost.`, run: () => { restore(); flash('Sample content restored.') } })}>
                 Restore samples
               </GlassButton>

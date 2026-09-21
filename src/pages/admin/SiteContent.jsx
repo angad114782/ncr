@@ -10,6 +10,7 @@ import { useSettings } from '../../context/SettingsContext'
 import { HOME_SECTION_LABELS, normalizeSections } from '../../data/siteDefaults'
 import { downloadBackup, restoreBackup } from '../../utils/backup'
 import { storageUsageKb } from '../../utils/storageStatus'
+import { USE_API } from '../../api/client'
 
 const T = 'Supports tokens: {brand} {ceoName} {ceoTitle} {years}'
 const iconRow = [
@@ -296,7 +297,23 @@ const TABS = [
   },
 ]
 
-function BackupTab() {
+/** With the server, content lives in MongoDB: the panel offers a download of it (no browser storage to reset). */
+function ServerBackupTab() {
+  return (
+    <GlassCard hover={false} className="p-6">
+      <h3 className="font-semibold text-lg mb-1 flex items-center gap-2"><HardDrive size={18} className="text-[var(--color-accent)]" /> Backup</h3>
+      <p className="text-secondary text-sm mb-4">
+        Everything you edit is saved on the server (MongoDB) and is the same for every visitor and device. Download a JSON copy of your listings, agents,
+        blog, FAQs, reviews, enquiries and settings whenever you like. Secrets (WhatsApp token, SMTP password) are never included.
+      </p>
+      <a href="/api/admin/backup" download className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-medium text-white bg-[var(--color-accent)]">
+        <Download size={16} /> Download backup (JSON)
+      </a>
+    </GlassCard>
+  )
+}
+
+function LocalBackupTab() {
   const { restoreSeeds } = useData()
   const { resetCompany, resetSiteContent } = useSettings()
   const fileRef = useRef(null)
@@ -365,6 +382,10 @@ function BackupTab() {
       </GlassSheet>
     </div>
   )
+}
+
+function BackupTab() {
+  return USE_API ? <ServerBackupTab /> : <LocalBackupTab />
 }
 
 export default function SiteContent() {

@@ -4,18 +4,20 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { config } from '../config.js'
 import { connectDb, disconnectDb } from '../db.js'
-import { Agent, Faq, Lead, Post, Property, Testimonial, User } from '../models/index.js'
+import { Agent, Audit, Consent, Event, Faq, Lead, LegalVersion, Otp, Post, Property, Saved, Testimonial, Upload, User } from '../models/index.js'
 import { ensureSlugs } from '../lib/propertySlug.js'
 import { newId } from '../lib/ids.js'
 
 /**
- * Loads the website's sample content (src/data/*.json next to this folder) into MongoDB:
- * users, agents, properties, blog posts, FAQs, testimonials, sample enquiries.
+ * Database setup helpers.
  *
- *   npm run seed          adds whatever is missing (never overwrites anything already in the database)
- *   npm run seed:reset    empties those collections first, then loads the samples
+ *   npm run seed            only makes sure the ADMIN account exists (ADMIN_PHONE / ADMIN_NAME) — nothing else is added
+ *   npm run seed:samples    also loads the website's sample content (src/data/*.json): users, agents, listings,
+ *                           blog posts, FAQs, reviews, enquiries. Adds only what is missing, never overwrites.
+ *   npm run seed:reset      empties those collections, then loads the samples
+ *   npm run clean           DELETES everything except the admin account(s) (asks for --yes: `npm run clean -- --yes`)
  *
- * Site settings are NOT copied: they fall back to the website's built-in defaults until the admin saves them.
+ * Site settings are NOT seeded: they fall back to the website's built-in defaults until the admin saves them.
  */
 const dataDir = path.resolve(config.root, '..', 'src', 'data')
 
@@ -74,6 +76,22 @@ export async function seedDatabase({ reset = false, log = () => {} } = {}) {
   return report
 }
 
+/** Removes everything except the admin account(s): listings, agents, posts, FAQs, reviews, leads, consents, users… */
+export async function cleanDatabase({ dryRun = false, log = () => {} } = {}) {
+  const collections = [Agent, Property, Post, Faq, Testimonial, Lead, Consent, Saved, Event, Otp, Audit, Upload, LegalVersion]
+  const report = {}
+  for (const M of collections) report[M.modelName] = await M.countDocuments({})
+  report.User = await User.countDocuments({ role: { $ne: 'admin' } })
+  const kept = await User.countDocuments({ role: 'admin' })
+  Object.entries(report).forEach(([name, n]) => log(`  ${dryRun ? 'would delete' : 'deleting'} ${name}: ${n}`))
+  log(`  keeping ${kept} admin account${kept === 1 ? '' : 's'}`)
+  if (!dryRun) {
+    await Promise.all(collections.map((M) => M.deleteMany({})))
+    await User.deleteMany({ role: { $ne: 'admin' } })
+  }
+  return { ...report, admins: kept }
+}
+
 /** Makes sure there is at least one admin so the panel can be opened (log in with an OTP to ADMIN_PHONE). */
 export async function ensureAdmin() {
   const existing = await User.findOne({ role: 'admin' })
@@ -86,18 +104,28 @@ export async function ensureAdmin() {
   return { created: true, user }
 }
 
-// `node src/seed/seed.js [--reset]`
+// `node src/seed/seed.js [--samples] [--reset] [--clean [--yes]]`
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const reset = process.argv.includes('--reset')
+  const has = (f) => process.argv.includes(f)
+  const reset = has('--reset')
+  const samples = has('--samples') || reset
   try {
     await connectDb()
-    console.log(`${reset ? 'Resetting and seeding' : 'Seeding'} database “${(await import('mongoose')).default.connection.name}”…`)
-    await seedDatabase({ reset, log: console.log })
+    const dbName = (await import('mongoose')).default.connection.name
+    if (has('--clean')) {
+      console.log(`${has('--yes') ? 'Cleaning' : 'DRY RUN — nothing is deleted. Cleaning would remove'} database “${dbName}”:`)
+      await cleanDatabase({ dryRun: !has('--yes'), log: console.log })
+      if (!has('--yes')) console.log('\nRun again with --yes to really delete:  npm run clean -- --yes')
+    } else if (samples) {
+      console.log(`${reset ? 'Resetting and loading sample data into' : 'Loading sample data into'} database “${dbName}”…`)
+      await seedDatabase({ reset, log: console.log })
+    }
     const admin = await ensureAdmin()
-    console.log(admin.created ? `Admin account created for ${admin.user.phone}.` : 'Admin account already exists.')
+    console.log(admin.created ? `Admin account created for ${admin.user.phone}.` : `Admin account ready (${admin.user.phone}).`)
+    if (!samples && !has('--clean')) console.log('No sample data added. (npm run seed:samples loads the sample listings, agents and blog.)')
     console.log('Done.')
   } catch (err) {
-    console.error('Seed failed:', err.message)
+    console.error('Failed:', err.message)
     process.exitCode = 1
   } finally {
     await disconnectDb()

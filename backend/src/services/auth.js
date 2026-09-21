@@ -38,7 +38,7 @@ export async function issueOtp(phone, purpose, ip = '') {
     throw new AppError(503, 'otp_unavailable', 'We could not send the code right now. Please try again shortly or contact us.')
   }
   await Otp.create({ phone, purpose, codeHash: hashOtp(phone, purpose, code), expiresAt: new Date(now + config.otpTtlMinutes * 60_000), ip })
-  return { delivered, expiresInSeconds: config.otpTtlMinutes * 60, ...(config.otpDevMode ? { devOtp: code } : {}) }
+  return { delivered, length: config.otpLength, expiresInSeconds: config.otpTtlMinutes * 60, ...(config.otpDevMode ? { devOtp: code } : {}) }
 }
 
 /** Throws unless `code` is the live code for this phone + purpose. A code can be used once. */

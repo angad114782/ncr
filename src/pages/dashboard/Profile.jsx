@@ -5,6 +5,7 @@ import GlassInput from '../../components/glass/GlassInput'
 import GlassButton from '../../components/glass/GlassButton'
 import { useAuth } from '../../context/AuthContext'
 import Avatar from '../../components/common/Avatar'
+import { USE_API } from '../../api/client'
 
 export default function Profile() {
   const { user, updateProfile } = useAuth()
@@ -58,6 +59,8 @@ export default function Profile() {
             type="tel"
             inputMode="numeric"
             maxLength={10}
+            disabled={USE_API}
+            hint={USE_API ? 'Your number is your login. To change it, please contact us.' : undefined}
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
           />

@@ -153,6 +153,15 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 7. Build-script modules that the app also imports (`listingsUrl.js`, `format.js`, `taxonomy.js`) must have **no extensionless local imports** — Node ESM can't resolve them.
 8. **Deploy requirement**: nginx must serve `try_files $uri $uri/ /index.html;` (see `deploy/nginx.example.conf`) or crawlers get the empty shell. Verify: `curl -A Googlebot https://propertyinncr.com/about | grep "<h1"`.
 
+## 18. API mode & deployment
+
+1. Everything that reads or writes data goes through the contexts, which work in **both** modes (`USE_API`). Don't call `localStorage` or `fetch` from a page — add it to the context (or `src/api/client.js`) so both modes stay in step.
+2. The first render never depends on a fetch (hydration): start from the snapshot / defaults, load in an effect.
+3. Errors from a background save are shown with `reportApiError` (toast) and the list is re-read — never swallow them.
+4. A server rule and its screen message should agree; the server is the authority (the page's own check is only a courtesy). Roles, ownership, review status, slugs and intent are decided on the server.
+5. Images are uploaded (`/api/uploads`) and stored as `/uploads/…` links — never data URLs.
+6. Deploy = push to `main` (tests → backend → website → nginx). Secrets live in `backend/.env` on the server, never in git or workflow logs. Don't add a step that touches `dist/` before the release has succeeded.
+
 ## 14. Performance & smooth scrolling
 
 1. Images go through `<Img>` (`components/common/Img.jsx`): responsive `srcset` for Unsplash links (`utils/imageUrl.js`), `loading="lazy"` + `decoding="async"`, and `width`/`height` to stop layout shift. Give the one above-the-fold (LCP) image `priority`.

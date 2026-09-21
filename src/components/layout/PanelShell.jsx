@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Building2, LogOut } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import ContactRail from './ContactRail'
+import ApiToast from './ApiToast'
 import Seo from './Seo'
 import { useStorageErrors } from '../../utils/storageStatus'
 import { useSettings } from '../../context/SettingsContext'
@@ -90,6 +91,7 @@ export default function PanelShell({ title, navItems }) {
       </div>
 
       <ContactRail showMobileBar={false} />
+      <ApiToast />
     </div>
   )
 }

@@ -27,7 +27,7 @@ npm install
 cp .env.example .env      # then fill in MONGODB_URI and JWT_SECRET (a .env is already here for local use)
 npm run check-db          # tests the MongoDB connection
 npm run seed              # loads sample listings / agents / blog / FAQs (adds only what's missing)
-npm run dev               # http://localhost:5000  (npm start in production)
+npm run dev               # http://localhost:5010  (npm start in production)
 ```
 
 **MongoDB Atlas checklist** — if `check-db` fails:
@@ -48,7 +48,8 @@ The first admin is created automatically for `ADMIN_PHONE` (default `8619930583`
 | `OTP_LENGTH` | digits in the code, default 6 |
 | `PUBLIC_API_URL` | public URL of this API, used for upload links (e.g. `https://api.propertyinncr.com`) |
 | `COOKIE_SAMESITE` | `lax` (default). Use `none` only if the site and API are on different domains |
-| `REBUILD_WEBHOOK_URL` / `_TOKEN` | called (debounced 30 s) when public content changes, so the website is rebuilt |
+| `REBUILD_COMMAND` | shell command run on this server (debounced 30 s) when public content changes, e.g. `cd /var/www/propertyinncr.com && npm run release` — rebuilds the pre-rendered site with no downtime |
+| `REBUILD_WEBHOOK_URL` / `_TOKEN` | alternative to the command: a URL that is POSTed instead (e.g. a deploy hook) |
 | `ADMIN_PHONE`, `ADMIN_NAME` | first admin account |
 | `UPLOAD_DIR`, `PORT`, `TRUST_PROXY` | optional |
 
@@ -111,17 +112,32 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 ### Uploads
 `POST /uploads` (multipart field `files`, ≤ 10 images, 8 MB each; JPG/PNG/WebP/GIF/AVIF, bytes verified) → `{ items: [{ url }] }`. `DELETE /uploads/:file`. Files are served from `/uploads/…`.
 
-## 5. Connecting the website
+## 5. The website is connected
 
-The website still reads `localStorage` today. To switch: (1) add an API client that calls the endpoints above with `credentials: 'include'` and a `VITE_API_URL`; (2) replace `usePersistedState` in the Data / Settings / Auth providers with those calls (the response shapes match the JSON the pages already use; `GET /public/bootstrap` gives everything for the first render); (3) replace the mock OTP in `AuthSheet` / `LeadForm` with `/auth/otp/send` + `/auth/login|register|verify-phone` (the code is now 6 digits — set `OTP_LENGTH=4` if you want to keep the 4-box input); (4) upload images with `POST /uploads` and store the returned links instead of data URLs; (5) point `scripts/site-data.mjs` at `GET /public/bootstrap` for pre-rendering. Details: `../docs/architecture.md` §8a.
+The website talks to this API when it is built with `VITE_USE_API=true` (the production build does this through
+`.env.production`). Without that flag it keeps working on browser storage, so the front end can still be developed
+without the backend.
 
-## 6. Deploy (VPS)
+- **Development**: run the API (`cd backend && npm run dev`), then in the project root `VITE_USE_API=true npm run dev` — Vite proxies `/api` and `/uploads` to `localhost:5010` (or the PORT in `backend/.env`).
+- **Data**: the site is built from a *snapshot* of the public content (`src/data/snapshot.json`, written by `scripts/fetch-snapshot.mjs` from `GET /api/public/bootstrap`). Pre-rendered pages, hydration and the first paint all use it; the page then refreshes itself from the live API.
+- **Login**: OTP screens call `/api/auth/*`; the session is an HttpOnly cookie. Admin / agent panels load and save through `/api/admin/*` and `/api/agent/*` (changes appear instantly, and a change the server refuses is rolled back with a message).
+- **Images** chosen in any picker are uploaded to `/api/uploads` and stored as `/uploads/…` links.
+- **Content published in the admin** triggers `REBUILD_COMMAND` (`npm run release`), which rebuilds the pre-rendered site into `dist-next/` and swaps it in — so Google always sees the latest listings and posts.
 
-```bash
-npm ci --omit=dev
-NODE_ENV=production pm2 start src/server.js --name ncr-api
-```
-nginx: proxy `/api/` and `/uploads/` to `http://127.0.0.1:5000`, set `TRUST_PROXY=1`, use HTTPS (cookies are `Secure` in production). Set `NODE_ENV=production`, a strong `JWT_SECRET`, `OTP_DEV_MODE=false`, real `CLIENT_ORIGINS`, and configure WhatsApp in the admin so OTPs can be sent. Back up MongoDB (Atlas does daily snapshots on paid tiers) and the `uploads/` folder (or move uploads to S3 / Cloudinary later — only `routes/uploads.js` changes).
+## 6. Deploy (VPS) — done by `.github/workflows/deploy.yml`
+
+Every push to `main` runs the tests, then on the server: `git reset`, `npm ci --omit=dev` (backend), `pm2 startOrReload backend/ecosystem.config.cjs --env production`, waits for `/api/health`, `npm ci` + `npm run release` (website, built from the live database), `nginx -t && systemctl reload nginx`. If the API is unhealthy or `backend/.env` is missing the deploy stops **before** the website is touched.
+
+**One-time server setup**
+1. Node 20+ on the server. (`pm2` is installed by the first deploy if missing; run `pm2 startup` once so it starts after a reboot.)
+2. Create `/var/www/propertyinncr.com/backend/.env` from `.env.example` (MongoDB URL, `JWT_SECRET`, `CLIENT_ORIGINS`, `OTP_DEV_MODE=false`, `REBUILD_COMMAND`). It stays on the server, never in git.
+3. Atlas → *Network Access*: allow the VPS IP.
+4. nginx: inside the `server { … }` block of the site add `include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;` then `nginx -t && systemctl reload nginx` (the file is in the repo, so later changes deploy automatically).
+5. Actions → *Deploy PropertyInNCR* → **Run workflow** with **seed** ticked (first deploy only) to load the sample listings, agents and blog. Then in **Admin → Settings** add the WhatsApp Cloud API details — without them OTP codes cannot be sent in production (`503 otp_unavailable`).
+
+Manual re-run options (Actions → Run workflow): `seed` (load samples), `rebuild_only` (skip the backend, just rebuild the site), `skip_tests`.
+
+Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uploads to S3 / Cloudinary later — only `routes/uploads.js` changes). The admin panel also offers a JSON backup download.
 
 ## 7. Tests
 

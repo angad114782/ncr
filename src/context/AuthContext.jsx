@@ -1,13 +1,17 @@
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import usePersistedState from '../hooks/usePersistedState'
 import usersData from '../data/users.json'
+import { USE_API, api, fetchAll, reportApiError } from '../api/client'
 
 const AuthContext = createContext(null)
 
 /** Where each kind of account lands after signing in. */
 export const panelPath = (user) => (user?.role === 'admin' ? '/admin' : user?.role === 'agent' ? '/agent' : '/dashboard')
 
-export function AuthProvider({ children }) {
+/* ------------------------------------------------------------------------------------------
+ * Local mode — accounts live in browser storage (no backend). Used when VITE_USE_API is off.
+ * ---------------------------------------------------------------------------------------- */
+function LocalAuthProvider({ children }) {
   // The very first render uses the defaults (no user) so pre-rendered HTML and the first
   // client render match; the saved session is loaded before the browser paints.
   // `ready` tells route guards to wait for that instead of bouncing a signed-in user away.
@@ -154,6 +158,164 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   )
 }
+
+/* ------------------------------------------------------------------------------------------
+ * API mode — the session is an HttpOnly cookie set by the backend after a phone-OTP login.
+ * Same context shape as local mode, so the rest of the site doesn't care which one is running.
+ * ---------------------------------------------------------------------------------------- */
+const messageOf = (err) => (err instanceof Error ? err.message : 'Something went wrong.')
+const uniqueBy = (list) => [...new Map(list.map((x) => [x.id, x])).values()]
+
+function ApiAuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [ready, setReady] = useState(false)
+  const [allUsers, setAllUsers] = useState([]) // admin only
+
+  // Who is signed in? (the cookie is read by the server)
+  useEffect(() => {
+    let off = false
+    api('/auth/me')
+      .then((d) => { if (!off) setUser(d.user) })
+      .catch(() => {})
+      .finally(() => { if (!off) setReady(true) })
+    return () => { off = true }
+  }, [])
+
+  const loadUsers = useCallback(async () => {
+    try {
+      setAllUsers(await fetchAll('/admin/users'))
+    } catch (err) {
+      reportApiError(err)
+    }
+  }, [])
+  useEffect(() => {
+    if (user?.role === 'admin') loadUsers()
+    else setAllUsers([])
+  }, [user?.id, user?.role, loadUsers])
+
+  /* ---- sign-in / sign-up (OTP) ---- */
+  const sendOtp = (phone, purpose) => api('/auth/otp/send', { method: 'POST', body: { phone, purpose } })
+
+  const loginWithOtp = async (phone, otp) => {
+    try {
+      const d = await api('/auth/login', { method: 'POST', body: { phone, otp } })
+      setUser(d.user)
+      return { ok: true, user: d.user, agent: d.agent }
+    } catch (err) {
+      return { ok: false, error: messageOf(err), code: err.code }
+    }
+  }
+
+  const registerWithOtp = async (payload) => {
+    try {
+      const d = await api('/auth/register', { method: 'POST', body: payload })
+      setUser(d.user)
+      return { ok: true, user: d.user, agent: d.agent }
+    } catch (err) {
+      return { ok: false, error: messageOf(err), code: err.code }
+    }
+  }
+
+  const logout = () => {
+    setUser(null)
+    api('/auth/logout', { method: 'POST' }).catch(() => {})
+  }
+
+  /* ---- own profile ---- */
+  const updateProfile = (patch) => {
+    if (!user) return { ok: false, error: 'Not signed in.' }
+    if (patch.phone && patch.phone !== user.phone) {
+      return { ok: false, error: 'Your mobile number is your login — to change it, please contact us.' }
+    }
+    const { phone, ...rest } = patch // eslint-disable-line no-unused-vars
+    const before = user
+    setUser((u) => ({ ...u, ...rest }))
+    api('/me', { method: 'PATCH', body: rest })
+      .then((d) => setUser(d.user))
+      .catch((err) => { setUser(before); reportApiError(err) })
+    return { ok: true }
+  }
+
+  /* ---- admin: manage users (optimistic; the server has the final say and a failure rolls back) ---- */
+  const fail = (err) => { reportApiError(err); loadUsers() }
+
+  const validatePhone = (phone, ignoreId) => {
+    if (!/^\d{10}$/.test(phone)) return 'Enter a valid 10-digit mobile number.'
+    if (allUsers.some((u) => u.phone === phone && u.id !== ignoreId)) return 'This number is already linked to another account.'
+    return ''
+  }
+
+  const addUser = ({ name, phone, city = '', role = 'user' }) => {
+    if (String(name ?? '').trim().length < 2) return { ok: false, error: 'Please enter a name.' }
+    const error = validatePhone(phone)
+    if (error) return { ok: false, error }
+    const temp = { id: `tmp${Date.now()}`, name: name.trim(), phone, city, role, active: true, avatar: '' }
+    setAllUsers((prev) => [temp, ...prev])
+    api('/admin/users', { method: 'POST', body: { name: temp.name, phone, city, role } })
+      .then((d) => setAllUsers((prev) => prev.map((u) => (u.id === temp.id ? d.item : u))))
+      .catch(fail)
+    return { ok: true, user: temp }
+  }
+
+  const updateUserById = (id, patch) => {
+    if (patch.phone !== undefined) {
+      const error = validatePhone(patch.phone, id)
+      if (error) return { ok: false, error }
+    }
+    if (patch.name !== undefined && String(patch.name).trim().length < 2) return { ok: false, error: 'Please enter a name.' }
+    const target = allUsers.find((u) => u.id === id)
+    const wouldLoseAdmin = target?.role === 'admin' && ((patch.role !== undefined && patch.role !== 'admin') || patch.active === false)
+    if (wouldLoseAdmin && allUsers.filter((u) => u.role === 'admin' && u.active !== false).length <= 1) {
+      return { ok: false, error: 'At least one active admin is required.' }
+    }
+    setAllUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)))
+    if (user?.id === id) setUser((u) => ({ ...u, ...patch }))
+    api(`/admin/users/${id}`, { method: 'PATCH', body: patch })
+      .then((d) => setAllUsers((prev) => prev.map((u) => (u.id === id ? d.item : u))))
+      .catch(fail)
+    return { ok: true }
+  }
+
+  const setUserActive = (id, active) => updateUserById(id, { active })
+
+  const deleteUser = (id) => {
+    if (id === user?.id) return { ok: false, error: 'You cannot delete the account you are signed in with.' }
+    const target = allUsers.find((u) => u.id === id)
+    if (target?.role === 'admin' && allUsers.filter((u) => u.role === 'admin' && u.active !== false).length <= 1) {
+      return { ok: false, error: 'At least one active admin is required.' }
+    }
+    setAllUsers((prev) => prev.filter((u) => u.id !== id))
+    api(`/admin/users/${id}`, { method: 'DELETE' }).catch(fail)
+    return { ok: true }
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        ready,
+        allUsers: uniqueBy(allUsers),
+        sendOtp,
+        loginWithOtp,
+        registerWithOtp,
+        updateProfile,
+        addUser,
+        updateUserById,
+        setUserActive,
+        deleteUser,
+        findByPhone: (phone) => allUsers.find((u) => u.phone === phone),
+        logout,
+        isAdmin: user?.role === 'admin',
+        isAgent: user?.role === 'agent',
+        apiMode: true,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const AuthProvider = USE_API ? ApiAuthProvider : LocalAuthProvider
 
 export function useAuth() {
   const ctx = useContext(AuthContext)

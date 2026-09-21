@@ -13,6 +13,7 @@ import ManageFaqs from '../pages/admin/ManageFaqs'
 import ManageTestimonials from '../pages/admin/ManageTestimonials'
 import ManageAgents from '../pages/admin/ManageAgents'
 import SiteContent from '../pages/admin/SiteContent'
+import { useSettings } from '../context/SettingsContext'
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -27,6 +28,12 @@ const adminNav = [
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/profile', label: 'Profile', icon: UserIcon },
 ]
+
+/** These forms copy the settings when they open, so they wait until the live values have arrived. */
+function WaitForSettings({ children }) {
+  const { settingsLoaded } = useSettings()
+  return settingsLoaded ? children : <p className="text-secondary p-6" aria-busy="true">Loading settings…</p>
+}
 
 /**
  * The whole admin panel is one lazily-loaded chunk (mounted at /admin/*), so ordinary visitors
@@ -48,10 +55,10 @@ export default function AdminArea() {
         <Route path="faqs" element={<ManageFaqs />} />
         <Route path="testimonials" element={<ManageTestimonials />} />
         <Route path="agents" element={<ManageAgents />} />
-        <Route path="site" element={<SiteContent />} />
+        <Route path="site" element={<WaitForSettings><SiteContent /></WaitForSettings>} />
         <Route path="users" element={<ManageUsers />} />
         <Route path="inquiries" element={<ManageInquiries />} />
-        <Route path="settings" element={<AdminSettings />} />
+        <Route path="settings" element={<WaitForSettings><AdminSettings /></WaitForSettings>} />
         <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>

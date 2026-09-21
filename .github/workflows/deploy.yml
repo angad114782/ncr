@@ -1,44 +1,154 @@
 name: Deploy PropertyInNCR
 
+# Deploys BOTH parts to the VPS on every push to main:
+#   • backend/  the API (Node + MongoDB), run by pm2 as "ncr-api" (port = PORT in backend/.env, 5010)
+#   • website   built on the server (so the pre-rendered pages use the live database) into dist/, served by nginx
+#
+# One-time server setup (see backend/README.md → Deploy):
+#   1. Create /var/www/propertyinncr.com/backend/.env on the server (MongoDB URL, JWT secret …). It never goes in git.
+#   2. Add to the nginx server block:  include /var/www/propertyinncr.com/deploy/nginx-api.snippet.conf;
+# After that, every push deploys itself.
+
 on:
   push:
     branches:
       - main
 
   workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Load the sample data into MongoDB (first deploy only — it only adds what is missing)'
+        type: boolean
+        default: false
+      rebuild_only:
+        description: 'Only rebuild the website from the current database (skip backend install / restart)'
+        type: boolean
+        default: false
+      skip_tests:
+        description: 'Deploy without running the tests first'
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-propertyinncr
+  cancel-in-progress: false
 
 jobs:
+  verify:
+    name: Test before deploying
+    if: ${{ !inputs.skip_tests && !inputs.rebuild_only }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Cache the temporary MongoDB used by the tests
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-memory-server-${{ runner.os }}
+
+      - name: Backend tests
+        working-directory: backend
+        run: |
+          npm ci
+          npm test
+
+      - name: Website lint + build
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
   deploy:
+    name: Deploy to the VPS
+    needs: verify
+    # run when the tests passed, or were skipped on purpose
+    if: ${{ always() && (needs.verify.result == 'success' || needs.verify.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to PropertyInNCR VPS
+      - name: Deploy backend + website
         uses: appleboy/ssh-action@v1
+        env:
+          SEED_SAMPLES: ${{ inputs.seed }}
+          REBUILD_ONLY: ${{ inputs.rebuild_only }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SEED_SAMPLES,REBUILD_ONLY
           script_stop: true
+          command_timeout: 30m
 
           script: |
-            set -e
+            set -euo pipefail
+            APP=/var/www/propertyinncr.com
+            cd "$APP"
 
-            echo "==> Updating repository"
-            cd /var/www/propertyinncr.com
+            if [ "${REBUILD_ONLY:-false}" != "true" ]; then
+              echo "==> Updating repository"
+              git fetch origin main
+              git reset --hard origin/main
 
-            git fetch origin main
-            git reset --hard origin/main
+              echo "==> Backend: checking configuration"
+              if [ ! -f backend/.env ]; then
+                echo "::error::backend/.env is missing on the server. Create it once (see backend/.env.example): MONGODB_URI, JWT_SECRET, CLIENT_ORIGINS, OTP_DEV_MODE=false, REBUILD_COMMAND."
+                exit 1
+              fi
 
-            echo "==> Installing dependencies"
-            npm ci
+              echo "==> Backend: installing dependencies"
+              (cd backend && npm ci --omit=dev)
 
-            echo "==> Building frontend"
-            npm run build
+              echo "==> Backend: (re)starting the API with pm2"
+              command -v pm2 >/dev/null 2>&1 || npm install -g pm2
+              pm2 startOrReload backend/ecosystem.config.cjs --env production --update-env
+              pm2 save
 
-            echo "==> Testing Nginx"
+              echo "==> Backend: waiting for it to answer"
+              PORT=$(grep -E '^[[:space:]]*PORT=' backend/.env | head -1 | sed -E 's/^[^=]*=[[:space:]]*([0-9]+).*/\1/')
+              PORT=${PORT:-5010}
+              ok=0
+              for i in $(seq 1 40); do
+                if curl -fsS "http://127.0.0.1:$PORT/api/health" | grep -q '"database":"connected"'; then ok=1; break; fi
+                sleep 1
+              done
+              if [ "$ok" != "1" ]; then
+                echo "::error::The API did not become healthy. Last log lines:"
+                pm2 logs ncr-api --lines 40 --nostream || true
+                exit 1
+              fi
+              curl -fsS "http://127.0.0.1:$PORT/api/health"; echo
+
+              if [ "${SEED_SAMPLES:-false}" = "true" ]; then
+                echo "==> Loading the sample data (adds only what is missing)"
+                (cd backend && npm run seed)
+              fi
+
+              echo "==> Website: installing dependencies"
+              npm ci
+            fi
+
+            echo "==> Website: building from the live database and swapping it in (no downtime)"
+            npm run release
+
+            echo "==> Testing and reloading nginx"
             nginx -t
-
-            echo "==> Reloading Nginx"
             systemctl reload nginx
+
+            echo "==> Checking the site through nginx"
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: propertyinncr.com' http://127.0.0.1/api/health || true)
+            if [ "$code" = "200" ]; then
+              echo "API is reachable through nginx."
+            else
+              echo "::warning::/api is not reachable through nginx (HTTP $code). Add this line inside the server block of propertyinncr.com and reload nginx:  include $APP/deploy/nginx-api.snippet.conf;"
+            fi
 
             echo "==> Deployment completed successfully"

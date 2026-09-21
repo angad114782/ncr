@@ -144,10 +144,13 @@ _Last updated: 2026-09-21_
 
 ### ✅ Backend built (this batch) — see `backend/README.md`
 - [x] `backend/` — Express + MongoDB API: public data, phone-OTP auth (JWT cookie), roles user / agent / admin, leads with consent records and server-side intent, agent panel API with moderation, admin API (listings, agents, users, blog, FAQs, reviews, leads, settings incl. legal pages with version history, stats, audit, backup), image uploads, slugs, rebuild webhook, seed script — **88 tests pass**
+- [x] **Website connected to the API** (API mode: auth, data, admin / agent panels, settings, legal pages, forms with OTP, image uploads, saved homes, interest events) — 44-step browser test on the real backend + all earlier local-mode tests still pass
+- [x] **Deploy workflow** builds & starts both: tests → backend (pm2) → website (`npm run release`, no downtime) → nginx; `backend/ecosystem.config.cjs`, `deploy/nginx-api.snippet.conf`
+- [x] Publishing content in the admin rebuilds the pre-rendered site by itself (`REBUILD_COMMAND`)
 - [ ] 🔴 **MongoDB Atlas login failed** (`bad auth`): check the user / password in Atlas → Database Access, then `cd backend && npm run check-db && npm run seed`
-- [ ] Connect the website to the API (README §5): API client, replace `usePersistedState` providers, real OTP in `AuthSheet` / `LeadForm`, upload images via the API, point `scripts/site-data.mjs` at `/public/bootstrap`
 - [ ] Configure WhatsApp Cloud API (OTP + lead alerts) and SMTP in Admin → Settings; without WhatsApp, OTPs cannot be sent in production
-- [ ] Deploy: pm2 + nginx `/api` and `/uploads` proxy, `NODE_ENV=production`, strong `JWT_SECRET`, `OTP_DEV_MODE=false`, `REBUILD_WEBHOOK_URL`
+- [ ] 🔴 **One-time server setup before the first deploy** (backend/README §6): `backend/.env` on the VPS, nginx `include …/deploy/nginx-api.snippet.conf;`, Atlas Network Access for the VPS IP, then run the workflow once with **seed** ticked. Until `backend/.env` exists the deploy stops early and the live site stays on its previous build.
+- [ ] Add the WhatsApp Cloud API details in Admin → Settings (OTP delivery); admin phone `8619930583` is the first admin
 - [ ] **Rotate the Atlas password** — it was shared in a chat message; set the new one only in `backend/.env`
 
 ### 🔴 Backend (original checklist — mostly done above) — this is what makes admin edits reach every visitor

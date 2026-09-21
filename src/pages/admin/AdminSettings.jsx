@@ -460,8 +460,8 @@ export default function AdminSettings() {
               label="Access Token"
               icon={showToken ? EyeOff : Eye}
               type={showToken ? 'text' : 'password'}
-              placeholder="EAAG..."
-              value={waForm.accessToken}
+              placeholder={waForm.hasAccessToken ? '•••••••• saved on the server — leave blank to keep it' : 'EAAG...'}
+              value={waForm.accessToken ?? ''}
               onChange={(e) => setWaForm({ ...waForm, accessToken: e.target.value })}
               onIconClick={() => setShowToken((v) => !v)}
             />
@@ -551,7 +551,8 @@ export default function AdminSettings() {
               icon={showSmtpPassword ? EyeOff : Eye}
               type={showSmtpPassword ? 'text' : 'password'}
               placeholder="••••••••"
-              value={mailForm.smtpPassword}
+              placeholder={mailForm.hasSmtpPassword ? '•••••••• saved on the server — leave blank to keep it' : undefined}
+              value={mailForm.smtpPassword ?? ''}
               onChange={(e) => setMailForm({ ...mailForm, smtpPassword: e.target.value })}
               onIconClick={() => setShowSmtpPassword((v) => !v)}
             />

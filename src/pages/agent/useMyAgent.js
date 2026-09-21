@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { useData } from '../../context/DataContext'
 import { today } from '../../components/admin/listingForm'
+import { USE_API } from '../../api/client'
 
 /**
  * The signed-in agent's own data: their agent record (public profile + approval status), their
@@ -17,7 +18,7 @@ export function useMyAgent() {
   const agent = user ? agents.find((a) => a.id === user.agentId) ?? agents.find((a) => a.userId === user.id) : undefined
 
   useEffect(() => {
-    if (!user || agent) return
+    if (USE_API || !user || agent) return // (with the server, the agent record is created there)
     agentCrud.upsert({
       id: user.agentId ?? `a${user.id}`,
       userId: user.id,
