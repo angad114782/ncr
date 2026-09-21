@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       seed:
-        description: 'Load the sample data into MongoDB (first deploy only — it only adds what is missing)'
+        description: 'Also load the SAMPLE data (listings, agents, blog…) into MongoDB. Leave off: a normal deploy only ensures the admin account exists.'
         type: boolean
         default: false
       rebuild_only:
@@ -85,7 +85,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: SEED_SAMPLES,REBUILD_ONLY
-          script_stop: true
           command_timeout: 30m
 
           script: |
@@ -113,23 +112,38 @@ jobs:
               pm2 save
 
               echo "==> Backend: waiting for it to answer"
+
               PORT=$(grep -E '^[[:space:]]*PORT=' backend/.env | head -1 | sed -E 's/^[^=]*=[[:space:]]*([0-9]+).*/\1/')
               PORT=${PORT:-5010}
+
+              echo "==> API port: $PORT"
+
               ok=0
+
               for i in $(seq 1 40); do
-                if curl -fsS "http://127.0.0.1:$PORT/api/health" | grep -q '"database":"connected"'; then ok=1; break; fi
+                HEALTH=$(curl -fsS "http://127.0.0.1:$PORT/api/health" 2>/dev/null || true)
+
+                if echo "$HEALTH" | grep -q '"status":"ok"' &&
+                   echo "$HEALTH" | grep -q '"db":"connected"'; then
+                  ok=1
+                  echo "==> API is healthy"
+                  echo "$HEALTH"
+                  break
+                fi
+
+                echo "Waiting for API... attempt $i/40"
                 sleep 1
               done
+
               if [ "$ok" != "1" ]; then
                 echo "::error::The API did not become healthy. Last log lines:"
                 pm2 logs ncr-api --lines 40 --nostream || true
                 exit 1
               fi
-              curl -fsS "http://127.0.0.1:$PORT/api/health"; echo
 
               if [ "${SEED_SAMPLES:-false}" = "true" ]; then
                 echo "==> Loading the sample data (adds only what is missing)"
-                (cd backend && npm run seed)
+                (cd backend && npm run seed:samples)
               fi
 
               echo "==> Website: installing dependencies"
@@ -144,11 +158,14 @@ jobs:
             systemctl reload nginx
 
             echo "==> Checking the site through nginx"
-            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: propertyinncr.com' http://127.0.0.1/api/health || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' \
+              -H 'Host: propertyinncr.com' \
+              http://127.0.0.1/api/health || true)
+
             if [ "$code" = "200" ]; then
               echo "API is reachable through nginx."
             else
-              echo "::warning::/api is not reachable through nginx (HTTP $code). Add this line inside the server block of propertyinncr.com and reload nginx:  include $APP/deploy/nginx-api.snippet.conf;"
+              echo "::warning::/api is not reachable through nginx (HTTP $code). Add this line inside the server block of propertyinncr.com and reload nginx: include $APP/deploy/nginx-api.snippet.conf;"
             fi
 
             echo "==> Deployment completed successfully"
