@@ -19,7 +19,7 @@ const item = { hidden: { opacity: 0, x: 36 }, show: { opacity: 1, x: 0, transiti
  */
 export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFocusRef }) {
   const { user, isAdmin, isAgent, logout } = useAuth()
-  const { whatsappConfig, company } = useSettings()
+  const { whatsappConfig, company, siteContent, fill } = useSettings()
   const navigate = useNavigate()
   const [expanded, setExpanded] = useState(null)
   const closeRef = useRef(null)
@@ -185,7 +185,7 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFoc
                   <Phone size={16} className="text-[var(--color-accent)]" /> Call
                 </a>
                 <a
-                  href={`https://wa.me/91${digits}?text=${encodeURIComponent(`Hi! I'm interested in a property listed on ${company.name}.`)}`}
+                  href={`https://wa.me/91${digits}?text=${encodeURIComponent(fill(siteContent.contact.waGeneral))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-full py-3 font-medium flex items-center justify-center gap-2 text-white"

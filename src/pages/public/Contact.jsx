@@ -90,7 +90,7 @@ export default function Contact() {
 
   const cards = [
     { icon: Phone, title: 'Call us', value: `+91 ${whatsappConfig.displayPhone}`, href: `tel:+91${digits}` },
-    { icon: MessageCircle, title: 'WhatsApp', value: 'Chat with our team', href: `https://wa.me/91${digits}?text=${encodeURIComponent(`Hi! I’d like help with a property enquiry on ${company.name}.`)}`, external: true },
+    { icon: MessageCircle, title: 'WhatsApp', value: 'Chat with our team', href: `https://wa.me/91${digits}?text=${encodeURIComponent(fill(c.waEnquiry))}`, external: true },
     { icon: Mail, title: 'Email us', value: mailConfig.fromEmail, href: `mailto:${mailConfig.fromEmail}` },
     ...(hasAddress(company.address)
       ? [{ icon: MapPin, title: 'Visit us', value: address, href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, external: true }]

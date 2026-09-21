@@ -180,6 +180,12 @@ export const SITE_DEFAULTS = {
     formSubtitle: 'We’ll call you on the number you share. Your details are only used to respond to your enquiry.',
     buttonLabel: 'Get My Free Callback',
     buttonNote: 'Free · no obligation · we aim to call you back within 24 hours.',
+    // The message a WhatsApp button pre-fills for the visitor. {brand} = the company name (Admin → Company & CEO),
+    // {property} = the listing's title.
+    waGeneral: "Hi! I'm interested in a property listed on {brand}.", // floating WhatsApp / call bar and the mobile menu
+    waEnquiry: "Hi! I'd like help with a property enquiry on {brand}.", // "WhatsApp" card on the Contact page
+    waThankYou: 'Hi! I just submitted an inquiry on {brand}.', // thank-you page
+    waProperty: "Hi, I'm interested in {property}", // WhatsApp button to the agent on a property page
     stepsTitle: 'What happens next',
     steps: [
       { title: 'Send your requirement', desc: 'Share what you’re looking for — city, budget and property type help us the most.' },

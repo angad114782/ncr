@@ -7,7 +7,7 @@ import { useSettings } from '../../context/SettingsContext'
 
 export default function ThankYou() {
   const location = useLocation()
-  const { whatsappConfig } = useSettings()
+  const { whatsappConfig, siteContent, fill } = useSettings()
   const leadName = location.state?.leadName
 
   // The conversion event fires once, at form submit (LeadForm / Contact).
@@ -28,7 +28,7 @@ export default function ThankYou() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
-            href={`https://wa.me/91${whatsappConfig.displayPhone}?text=${encodeURIComponent("Hi! I just submitted an inquiry on NCR Estates.")}`}
+            href={`https://wa.me/91${whatsappConfig.displayPhone}?text=${encodeURIComponent(fill(siteContent.contact.waThankYou))}`}
             target="_blank"
             rel="noopener noreferrer"
           >

@@ -1,9 +1,11 @@
 import { Building2, IndianRupee, MessageSquare, Users } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
 
 export default function AdminHome() {
   const { properties, inquiries, agents, blogPosts, faqs } = useData()
+  const { company } = useSettings()
 
   const totalValue = properties.reduce((sum, p) => sum + (p.active !== false && p.purpose === 'Buy' ? p.price : 0), 0)
   const pendingInquiries = inquiries.filter((i) => i.status === 'Pending').length
@@ -24,7 +26,7 @@ export default function AdminHome() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Admin Overview</h1>
-        <p className="text-secondary">Snapshot of the NCR Estates platform.</p>
+        <p className="text-secondary">Snapshot of the {company.name} platform.</p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -3,13 +3,11 @@ import { MessageCircle, Phone } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
 
 export default function ContactRail({ showMobileBar = true }) {
-  const { whatsappConfig } = useSettings()
+  const { whatsappConfig, siteContent, fill } = useSettings()
   const digits = whatsappConfig.displayPhone.replace(/\D/g, '')
   const PHONE = `+91 ${whatsappConfig.displayPhone}`
   const PHONE_HREF = `tel:+91${digits}`
-  const WHATSAPP_HREF = `https://wa.me/91${digits}?text=${encodeURIComponent(
-    "Hi! I'm interested in a property listed on NCR Estates."
-  )}`
+  const WHATSAPP_HREF = `https://wa.me/91${digits}?text=${encodeURIComponent(fill(siteContent.contact.waGeneral))}`
 
   return (
     <>

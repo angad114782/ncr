@@ -124,6 +124,10 @@ _Last updated: 2026-09-21_
 - [ ] Connect Semrush + Search Console (Supermetrics) to get the real competitor gap and the filtered list
 - [ ] To rank for them the site needs Noida / Ghaziabad / Faridabad as cities, a "Gurgaon" alias for "Gurugram", sector / budget landing pages and real listings (today: 7 metro cities, 14 sample listings)
 
+### Brand in WhatsApp greetings (this batch)
+- [x] The text a WhatsApp button pre-fills (floating button, mobile menu, Contact page, thank-you page, agent button on a property page) is now **admin-editable** (Site Content → Contact: `contact.waGeneral / waEnquiry / waThankYou / waProperty`) and uses `{brand}` = the company name from Admin → Company & CEO (was a hard-coded "NCR Estates" in two places). Also dynamic now: agent page description + JSON-LD, admin overview line
+- [ ] Sample content (FAQs, blog, reviews, agent bios) still says "NCR Estates" as plain text — it is stored content, edit it in the admin
+
 ### WhatsApp lead messages (this batch)
 - [x] A filled lead form now WhatsApps **the team** (`lead_notification`: display number + admin number + assigned agent) **and welcomes the visitor** (`lead_thank_you`, once per number per 24 h; contact + property forms). Admin switches: welcome on/off, OTP-verified numbers only. See `backend/README.md` (template texts to create in Meta)
 - [x] **Lead saved when the OTP is sent** (property form: `stage: "otp_sent"`) — shows in Inquiries as *OTP sent · not verified*, team notified at once; confirming the number later updates the same lead and sends the welcome

@@ -5,6 +5,7 @@ import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
 import { DetailSkeleton } from '../../components/common/Skeleton'
@@ -12,6 +13,7 @@ import { DetailSkeleton } from '../../components/common/Skeleton'
 export default function AgentProfile() {
   const { id } = useParams()
   const { approvedAgents, activeProperties: properties, dataReady } = useData()
+  const { company } = useSettings()
   const navigate = useNavigate()
 
   // Only approved agents get a public profile — pending / rejected ones 404.
@@ -33,7 +35,7 @@ export default function AgentProfile() {
     <div className="pb-16">
       <Seo
         title={`${agent.name} — ${agent.role} in ${agent.city}`}
-        description={`${agent.name} is a ${agent.role.toLowerCase()} in ${agent.city} on NCR Estates. ${agent.dealsClosed > 0 ? `${agent.dealsClosed} deals closed` : 'Approved by our team'}${agent.rating > 0 ? `, rated ${agent.rating}/5` : ''}. View active listings and contact directly.`}
+        description={`${agent.name} is a ${agent.role.toLowerCase()} in ${agent.city} on ${company.name}. ${agent.dealsClosed > 0 ? `${agent.dealsClosed} deals closed` : 'Approved by our team'}${agent.rating > 0 ? `, rated ${agent.rating}/5` : ''}. View active listings and contact directly.`}
         path={`/agents/${agent.id}`}
         image={agent.avatar}
         jsonLd={[
@@ -47,7 +49,7 @@ export default function AgentProfile() {
             image: agent.avatar,
             description: agent.bio,
             workLocation: { '@type': 'City', name: agent.city },
-            worksFor: { '@type': 'Organization', name: 'NCR Estates', url: SITE_URL },
+            worksFor: { '@type': 'Organization', name: company.name, url: SITE_URL },
           },
         ]}
       />

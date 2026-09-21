@@ -42,7 +42,7 @@ export function restoreBackup(text) {
   } catch {
     throw new Error('That file is not valid JSON.')
   }
-  if (parsed?.app !== 'ncr-estates' || typeof parsed.data !== 'object') throw new Error('This does not look like an NCR Estates backup file.')
+  if (parsed?.app !== 'ncr-estates' || typeof parsed.data !== 'object') throw new Error('This does not look like a backup file from this website.')
   let count = 0
   KEYS.forEach((key) => {
     if (!(key in parsed.data)) return

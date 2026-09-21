@@ -26,6 +26,7 @@ import DistanceToHubs from '../../components/property/DistanceToHubs'
 import LeadForm from '../../components/property/LeadForm'
 import Seo from '../../components/layout/Seo'
 import { useData } from '../../context/DataContext'
+import { useSettings } from '../../context/SettingsContext'
 import Img from '../../components/common/Img'
 import { findByParam } from '../../utils/propertySlug'
 import { useInterest } from '../../context/InterestContext'
@@ -83,6 +84,7 @@ export default function PropertyDetail() {
 
 function PropertyDetailInner({ id }) {
   const { properties, activeProperties, agents, savedIds, toggleSaved, trackRecentlyViewed, dataReady } = useData()
+  const { siteContent, fill } = useSettings()
   const navigate = useNavigate()
   const { track } = useInterest()
   const [activeImg, setActiveImg] = useState(0)
@@ -381,7 +383,7 @@ function PropertyDetailInner({ id }) {
                   <Mail size={14} /> {agent.email}
                 </a>
                 <a
-                  href={`https://wa.me/91${agent.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hi, I'm interested in ${property.title}`)}`}
+                  href={`https://wa.me/91${agent.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(fill(siteContent.contact.waProperty).replace(/\{property\}/g, property.title))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm text-[#25D366] font-medium"
