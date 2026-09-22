@@ -101,8 +101,13 @@ Surface tokens: `--glass-surface`, `--glass-surface-strong`, `--glass-surface-we
 - **3D showcase:** two-column on desktop (copy left, rounded 32 px canvas right), stacked on mobile. Day gradient sky ↔ night gradient; warm window glow, fireflies at night; glass chip "Drag to look around", pill button "Day / Night". Hotspots are glowing accent-amber dots with pulse rings and a glass label card.
 - **Cursor:** hero spotlight (radial accent glow at the pointer), card tilt ≤ 7° with a soft-light glare, and a 26 px accent ring that swells to 46 px over interactive elements.
 
-### Agent sign-up & panel
-Sign-up sheet: a two-option pill switch ("I'm a buyer / tenant" | "I'm a property agent / dealer"), agent fields appear inline only for Agent. Agent Panel uses the same `PanelShell` (sidebar / bottom tab bar) as Dashboard and Admin; status banner is a `glass-strong` card with a warning / danger border; review state on listings is text-coloured (warning = waiting, danger = needs changes, success = approved). Legal pages are a stack of `GlassCard`s with numbered headings.
+### Sign-in sheet & agent panel
+One screen, no login/sign-up tabs: Mobile Number → Send Code. The OTP step grows a Name field (+ City for the
+agent door) and the consent checkbox only when the number turns out to be new — an existing number's OTP step is
+just the code. Agent Panel uses the same `PanelShell` (sidebar / bottom tab bar) as Dashboard and Admin; status
+banner is a `glass-strong` card with a warning / danger border; review state on listings is text-coloured (warning
+= waiting, danger = needs changes, success = approved). Legal pages are a stack of `GlassCard`s with numbered
+headings.
 
 ### Login prompt
 Bottom-left glass-strong card (full-width above the call bar on phones), sparkles label "Free · takes 20 seconds", personalised headline, ≤ 3 check-mark benefits, primary pill button + quiet "Not now". Spring in/out, always dismissible, never over forms.

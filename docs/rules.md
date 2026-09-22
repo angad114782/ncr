@@ -66,6 +66,7 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
    - **Agent**: sign-up/login only from `source="list"` (the Home "List My Property" banner, the navbar/mobile-menu "Add Listing" button, `AgentRegisterCta` — all three call `openAuth('signup', 'list', 'agent')`). There is no buyer/agent switch anywhere else; a buyer number that logs in from this door is signed out again with a message.
    - **User**: every other door (navbar Sign In, `LoginNudge`, `WelcomeModal`, `RecommendedForYou`) is buyer-only — no way to pick "agent" there. An **agent** number that logs in from one of these doors is signed out again with a message pointing to the agent door.
    - Adding a new "become an agent" entry point means giving it `source: 'list'`, not a new switch.
+5. **One phone-number flow, no login/sign-up choice.** `AuthSheet` has a single "Mobile Number" screen — never a login/sign-up tab or toggle. Sending the code tries `sendOtp(phone, 'login')` first; a 404 ("no account") silently falls back to `sendOtp(phone, 'register')` — the person never sees an error for this, the code is just sent either way. The OTP step then resolves itself: an existing number asks only for the code; a new number's OTP step *also* shows Name (+ City for the agent door) and the consent checkbox, so registration completes in the same step instead of a separate one. Never reintroduce a mode picker — if a new field is ever needed for sign-up, add it to the OTP step's `mode === 'signup'` block, not the phone step.
 
 ## 6. SEO
 

@@ -119,6 +119,16 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### One phone-number flow, no login/sign-up choice (this batch)
+- [x] `AuthSheet` no longer has login/sign-up tabs. One screen: Mobile Number → Send Code. The code is sent either
+  way (tries `login` purpose, silently falls back to `register` on a 404 — the visitor never sees that error);
+  the OTP step then asks for Name (+ City for the agent door) and consent **only when the number turns out to be
+  new** — an existing number's OTP step is just the code
+- [x] All the existing role-door rules (agent-only door, wrong-door rejection both ways, admin unreachable) are
+  unaffected — verified with 14 local-mode + 9 API-mode Playwright checks (existing login, new sign-up, agent
+  door new + repeat + wrong-door)
+- [x] Backend unchanged (same `/auth/otp/send`, `/auth/login`, `/auth/register`); 110/110 tests still pass
+
 ### Role-separated login doors + abuse protection (this batch)
 - [x] **Agent sign-up/login has exactly one door**: the Home "List My Property" banner, the navbar/mobile-menu **Add Listing** button (new), and `AgentRegisterCta` — all three open the same agent-only flow (`source: 'list'`, no buyer option). Every other entry point (navbar Sign In, login prompt, welcome/exit card, "picked for you") is buyer-only, with no way to choose "agent"
 - [x] **A number that logs in from the wrong door is signed out again**, both directions: a buyer number at the agent door, or an agent number at the buyer door — each with a message pointing to the right one. Admin was already unreachable via any public form (`register`'s role is `z.enum(['user','agent'])` at the schema level)

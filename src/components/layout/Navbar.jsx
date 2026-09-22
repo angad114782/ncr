@@ -111,7 +111,8 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          {!isAdmin && (
+          {/* Not shown while signed in as a buyer or admin — only to a guest (the door in) or an already-signed-in agent (straight to My listings). */}
+          {(!user || isAgent) && (
             <GlassButton variant="glass" size="sm" icon={Plus} onClick={goToAddListing}>
               Add Listing
             </GlassButton>
@@ -155,7 +156,7 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
         </button>
       </div>
 
-      <MobileMenu open={mobileOpen} onClose={closeMobile} links={links} onAuthOpen={onAuthOpen} onAddListing={!isAdmin ? goToAddListing : null} returnFocusRef={hamburgerRef} />
+      <MobileMenu open={mobileOpen} onClose={closeMobile} links={links} onAuthOpen={onAuthOpen} onAddListing={!user || isAgent ? goToAddListing : null} returnFocusRef={hamburgerRef} />
     </motion.header>
   )
 }

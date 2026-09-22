@@ -32,8 +32,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('') // friendly info above the form (e.g. "no account yet — create one")
-  const { user, logout, loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp } = useAuth()
+  const { user, logout, loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp, findByPhone } = useAuth()
   const { fireLeadEvent, siteContent, fill, cities } = useSettings()
   const { addInquiry, agentCrud } = useData()
   const { summary, profile } = useInterest()
@@ -65,7 +64,6 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setSentOtp('')
       setBusy(false)
       setError('')
-      setNotice('')
     }
   }, [open])
 
@@ -76,16 +74,23 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     setError('')
   }
 
-  /** Login with a number that has no account: carry on as sign-up, with the number already filled in. */
-  const switchToSignup = () => {
-    setStep('phone')
-    setOtpDigits(Array(otpLen).fill(''))
-    setSentOtp('')
-    setMode('signup')
-    setError('')
-    setNotice(`There is no account for +91 ${phone} yet — add your name below and we will create one. Your number is already filled in.`)
+  /** Puts the OTP step for the phone number in front of the person, having just resolved whether it is a login or a sign-up. */
+  const goToOtpStep = (resolvedMode, d) => {
+    setMode(resolvedMode)
+    const len = d?.length ?? LOCAL_OTP_LENGTH
+    setOtpLen(len)
+    setSentOtp(d?.devOtp ?? '')
+    setOtpDigits(Array(len).fill(''))
+    setStep('otp')
+    setTimeout(() => inputRefs.current[0]?.focus(), 100)
   }
 
+  /**
+   * One number, one flow: always sends a code, whether or not the number already has an account — there is no
+   * separate login/sign-up step to pick. If a code for an existing account can't be sent (no account yet), the
+   * same click quietly continues as a sign-up instead, and the OTP step then also asks for the extra details
+   * (name, and for the agent door, city) a new account needs.
+   */
   const handleSendOtp = async (e) => {
     e.preventDefault()
     setError('')
@@ -93,43 +98,30 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setError('Enter a valid 10-digit mobile number')
       return
     }
-    if (mode === 'signup' && name.trim().length < 2) {
-      setError('Please enter your full name')
-      return
-    }
-    if (isAgentSignup && !agentCity) {
-      setError('Please choose the city you work in')
-      return
-    }
-    if (mode === 'signup' && !agree) {
-      setError(isAgentSignup ? 'Please tick the box to agree to the terms' : 'Please tick the box to agree, so we can send you matches')
-      return
-    }
     if (USE_API) {
       // The server sends the code on WhatsApp (and, on a development server, returns it so it can be typed in).
       setBusy(true)
       try {
-        const d = await sendOtp(phone, mode === 'login' ? 'login' : 'register')
-        const len = d.length ?? 6
-        setOtpLen(len)
-        setSentOtp(d.devOtp ?? '')
-        setOtpDigits(Array(len).fill(''))
-        setStep('otp')
-        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+        const d = await sendOtp(phone, 'login')
+        goToOtpStep('login', d)
       } catch (err) {
-        if (mode === 'login' && err.status === 404) switchToSignup()
-        else setError(err.message)
+        if (err.status === 404) {
+          try {
+            const d = await sendOtp(phone, 'register')
+            goToOtpStep('signup', d)
+          } catch (err2) {
+            setError(err2.message)
+          }
+        } else {
+          setError(err.message)
+        }
       } finally {
         setBusy(false)
       }
       return
     }
-    // Local mode: mock SMS gateway.
-    const otp = generateOtp()
-    setSentOtp(otp)
-    setStep('otp')
-    setOtpDigits(Array(otpLen).fill(''))
-    setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    // Local mode: no server round-trip needed to know which one this is — a mock code either way.
+    goToOtpStep(findByPhone(phone) ? 'login' : 'signup', { devOtp: generateOtp() })
   }
 
   const handleDigitChange = (index, value) => {
@@ -162,6 +154,20 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setError('Enter the complete OTP')
       return
     }
+    if (mode === 'signup') {
+      if (name.trim().length < 2) {
+        setError('Please enter your full name')
+        return
+      }
+      if (isAgentSignup && !agentCity) {
+        setError('Please choose the city you work in')
+        return
+      }
+      if (!agree) {
+        setError(isAgentSignup ? 'Please tick the box to agree to the terms' : 'Please tick the box to agree, so we can send you matches')
+        return
+      }
+    }
     if (!USE_API && entered !== sentOtp) {
       setError('Incorrect OTP. Please try again.')
       return
@@ -190,8 +196,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       result = mode === 'login' ? loginWithPhone(phone) : signupWithPhone(name.trim(), phone, { role: isAgentSignup ? 'agent' : 'user', city: agentCity })
     }
     if (!result.ok) {
-      if (mode === 'login' && /no account found/i.test(result.error ?? '')) switchToSignup()
-      else setError(result.error)
+      setError(result.error)
       return
     }
     if (listFlow && mode === 'login' && result.user.role === 'user') {
@@ -274,104 +279,43 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       title={step === 'otp' ? 'Confirm It’s You' : mode === 'login' ? (listFlow ? 'Agent login' : 'Welcome Back') : isAgentSignup ? program.title || 'Join as an agent' : 'Create Your Free Account'}
     >
       {step === 'phone' && (
-        <>
-          <div className="glass-weak p-1 rounded-full flex mb-6">
-            {['login', 'signup'].map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(''); setNotice('') }}
-                className={`flex-1 py-2 rounded-full text-sm font-medium capitalize spring ${
-                  mode === m ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'
-                }`}
-              >
-                {listFlow ? (m === 'login' ? 'Agent login' : 'Register as agent') : m}
-              </button>
-            ))}
-          </div>
+        <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+          {listFlow && user && user.role !== 'agent' && (
+            <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">
+              You are signed in as {user.role === 'admin' ? 'the admin' : 'a buyer / tenant'} ({user.name || user.phone}). Continuing with an agent number signs you out of that account.
+            </p>
+          )}
+          {listFlow && program.listIntro && (
+            <p className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{fill(program.listIntro)}</p>
+          )}
+          <GlassInput
+            label="Mobile Number"
+            icon={Phone}
+            type="tel"
+            inputMode="numeric"
+            placeholder="98XXXXXXXX"
+            maxLength={10}
+            required
+            autoFocus
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          />
 
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-            {listFlow && user && user.role !== 'agent' && (
-              <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">
-                You are signed in as {user.role === 'admin' ? 'the admin' : 'a buyer / tenant'} ({user.name || user.phone}). Continuing with an agent number signs you out of that account.
-              </p>
-            )}
-            {notice && <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{notice}</p>}
-            {isAgentSignup && source === 'list' && program.listIntro && (
-              <p className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{fill(program.listIntro)}</p>
-            )}
-            {mode === 'signup' && (
-              <GlassInput
-                label="Full Name"
-                icon={User}
-                placeholder="Kabir Singh"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            )}
-            <GlassInput
-              label="Mobile Number"
-              icon={Phone}
-              type="tel"
-              inputMode="numeric"
-              placeholder="98XXXXXXXX"
-              maxLength={10}
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            />
+          {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-            {isAgentSignup && (
-              <>
-                <GlassInput as="select" label="City you work in" value={agentCity} onChange={(e) => setAgentCity(e.target.value)} required>
-                  <option value="">Select city…</option>
-                  {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-                </GlassInput>
-                <GlassInput label="Agency / company (optional)" value={agency} onChange={(e) => setAgency(e.target.value)} />
-                <GlassInput label="RERA agent registration no. (optional)" value={reraId} onChange={(e) => setReraId(e.target.value)} />
-              </>
-            )}
+          {!USE_API && (
+            <p className="text-tertiary text-xs px-1">
+              Demo numbers: 8619930583 (admin) or 9820011122 (user) — any other number continues as a new account.
+            </p>
+          )}
 
-            {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
-
-            {mode === 'login' && !USE_API && (
-              <p className="text-tertiary text-xs px-1">
-                Demo numbers: 8619930583 (admin) or 9820011122 (user)
-              </p>
-            )}
-
-            {mode === 'signup' && (
-              <>
-                <ul className="glass-weak rounded-[16px] p-4 flex flex-col gap-2">
-                  {!isAgentSignup && summary.focus && (
-                    <li className="text-xs text-secondary pb-1">
-                      Matching you with <strong className="text-primary">{summary.focus}</strong>
-                    </li>
-                  )}
-                  {((isAgentSignup ? program.benefits : nudge.benefits) ?? []).map((b) => (
-                    <li key={b} className="flex items-start gap-2 text-sm">
-                      <Check size={15} className="text-[var(--color-success)] mt-0.5 shrink-0" />
-                      <span>{fill(b)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <label className="flex items-start gap-2.5 text-xs text-secondary leading-relaxed cursor-pointer">
-                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[var(--color-accent)] shrink-0" />
-                  <span>
-                    {fill(isAgentSignup ? program.consentText : nudge.consentText)}{' '}
-                    <Link to="/terms" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Terms</Link>{' · '}
-                    <Link to="/privacy" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Privacy Policy</Link>
-                  </span>
-                </label>
-              </>
-            )}
-
-            <GlassButton type="submit" disabled={busy} className="mt-2 w-full justify-center">
-              {mode === 'login' ? 'Send Me a Secure Code' : isAgentSignup ? 'Register as an agent' : 'Create My Free Account'}
-            </GlassButton>
-            <p className="text-tertiary text-xs text-center">We’ll send a code to confirm it’s you — no password to remember.</p>
-          </form>
-        </>
+          <GlassButton type="submit" disabled={busy} className="mt-2 w-full justify-center">
+            Send Me a Secure Code
+          </GlassButton>
+          <p className="text-tertiary text-xs text-center">
+            No password to remember. New here? The same code {listFlow ? 'sets up your agent account' : 'creates your free account'} — no separate sign-up step.
+          </p>
+        </form>
       )}
 
       {step === 'otp' && (
@@ -416,6 +360,53 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
                 />
               ))}
             </div>
+
+            {mode === 'signup' && (
+              <>
+                <p className="text-sm text-secondary -mt-1">
+                  {listFlow ? "There's no account for this number yet — a few details to set up your agent account:" : "There's no account for this number yet — a few details to create your free account:"}
+                </p>
+                <GlassInput
+                  label="Full Name"
+                  icon={User}
+                  placeholder="Kabir Singh"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                {isAgentSignup && (
+                  <>
+                    <GlassInput as="select" label="City you work in" value={agentCity} onChange={(e) => setAgentCity(e.target.value)} required>
+                      <option value="">Select city…</option>
+                      {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </GlassInput>
+                    <GlassInput label="Agency / company (optional)" value={agency} onChange={(e) => setAgency(e.target.value)} />
+                    <GlassInput label="RERA agent registration no. (optional)" value={reraId} onChange={(e) => setReraId(e.target.value)} />
+                  </>
+                )}
+                <ul className="glass-weak rounded-[16px] p-4 flex flex-col gap-2">
+                  {!isAgentSignup && summary.focus && (
+                    <li className="text-xs text-secondary pb-1">
+                      Matching you with <strong className="text-primary">{summary.focus}</strong>
+                    </li>
+                  )}
+                  {((isAgentSignup ? program.benefits : nudge.benefits) ?? []).map((b) => (
+                    <li key={b} className="flex items-start gap-2 text-sm">
+                      <Check size={15} className="text-[var(--color-success)] mt-0.5 shrink-0" />
+                      <span>{fill(b)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <label className="flex items-start gap-2.5 text-xs text-secondary leading-relaxed cursor-pointer">
+                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[var(--color-accent)] shrink-0" />
+                  <span>
+                    {fill(isAgentSignup ? program.consentText : nudge.consentText)}{' '}
+                    <Link to="/terms" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Terms</Link>{' · '}
+                    <Link to="/privacy" onClick={onClose} className="text-[var(--color-accent)] font-medium underline underline-offset-2">Privacy Policy</Link>
+                  </span>
+                </label>
+              </>
+            )}
 
             {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
