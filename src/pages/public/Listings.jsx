@@ -26,11 +26,12 @@ const sortOptions = [
 
 const BHK_OPTIONS = ['1', '2', '3', '4']
 
+const PAGE_LINK_BASE = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-medium spring shrink-0'
+
 /** Pagination is real links (`?page=N`) so crawlers can walk every page of results. */
 function PageLink({ to, children, current, disabled, rel, label }) {
-  const base = 'w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium spring'
   if (disabled) {
-    return <span aria-disabled="true" aria-label={label} className={`${base} glass opacity-30`}>{children}</span>
+    return <span aria-disabled="true" aria-label={label} className={`${PAGE_LINK_BASE} glass opacity-30`}>{children}</span>
   }
   return (
     <Link
@@ -40,11 +41,32 @@ function PageLink({ to, children, current, disabled, rel, label }) {
       aria-current={current ? 'page' : undefined}
       state={{ keepScroll: true }}
       onClick={() => scrollToY(0)}
-      className={`${base} ${current ? 'glass-strong text-[var(--color-accent)]' : 'glass text-secondary hover:scale-105'}`}
+      className={`${PAGE_LINK_BASE} ${current ? 'glass-strong text-[var(--color-accent)]' : 'glass text-secondary hover:scale-105'}`}
     >
       {children}
     </Link>
   )
+}
+
+/**
+ * Windowed page numbers with an ellipsis (1 … 5 6 7 … 17) instead of printing every page — with
+ * 17-18 pages a flat 1..N row wraps into a wall of buttons on both desktop and mobile. The `…`
+ * spots are never links: rel="next"/"prev" on the arrow buttons still lets crawlers walk every
+ * page in a chain even when a page number isn't directly visible.
+ */
+function paginationItems(current, total, siblings = 1) {
+  const range = (start, end) => Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  const totalVisible = siblings * 2 + 5 // first + last + current + siblings on each side + 2 dots
+  if (total <= totalVisible) return range(1, total)
+
+  const left = Math.max(current - siblings, 1)
+  const right = Math.min(current + siblings, total)
+  const showLeftDots = left > 2
+  const showRightDots = right < total - 1
+
+  if (!showLeftDots && showRightDots) return [...range(1, 3 + siblings * 2), '…', total]
+  if (showLeftDots && !showRightDots) return [1, '…', ...range(total - (2 + siblings * 2), total)]
+  return [1, '…', ...range(left, right), '…', total]
 }
 
 /**
@@ -408,15 +430,21 @@ function ListingsView({ filters }) {
               </div>
 
               {totalPages > 1 && (
-                <nav aria-label="Pagination" className="flex items-center justify-center gap-2 mt-8">
+                <nav aria-label="Pagination" className="flex items-center justify-center gap-1.5 sm:gap-2 mt-8">
                   <PageLink to={urlFor(filters, { page: page - 1 })} disabled={page === 1} rel="prev" label="Previous page">
                     <ChevronLeft size={16} />
                   </PageLink>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                    <PageLink key={n} to={urlFor(filters, { page: n })} current={page === n} label={`Page ${n}`}>
-                      {n}
-                    </PageLink>
-                  ))}
+                  {paginationItems(page, totalPages).map((item, i) =>
+                    item === '…' ? (
+                      <span key={`dots-${i}`} aria-hidden="true" className={`${PAGE_LINK_BASE} text-secondary`}>
+                        …
+                      </span>
+                    ) : (
+                      <PageLink key={item} to={urlFor(filters, { page: item })} current={page === item} label={`Page ${item}`}>
+                        {item}
+                      </PageLink>
+                    ),
+                  )}
                   <PageLink to={urlFor(filters, { page: page + 1 })} disabled={page === totalPages} rel="next" label="Next page">
                     <ChevronRight size={16} />
                   </PageLink>
