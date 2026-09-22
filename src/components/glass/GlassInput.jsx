@@ -25,9 +25,12 @@ export default function GlassInput({ label, icon: Icon, className = '', as = 'in
             <Icon size={18} className={`text-tertiary shrink-0 ${multiline ? 'mt-3.5' : ''}`} />
           )
         )}
+        {/* text-[16px], not text-sm/[15px]: below 16px, iOS Safari auto-zooms the page on focus
+            and the zoom doesn't reliably reset once the keyboard closes — the classic mobile-only
+            "form looks broken / zoomed in" glitch. 16px is the threshold that keeps it from firing. */}
         {as === 'select' || multiline ? (
           <Field
-            className={`bg-transparent outline-none w-full text-[15px] placeholder:text-tertiary py-3 ${
+            className={`bg-transparent outline-none w-full text-[16px] placeholder:text-tertiary py-3 ${
               multiline ? 'min-h-[5.5rem] resize-y' : 'h-full'
             }`}
             {...props}
@@ -36,7 +39,7 @@ export default function GlassInput({ label, icon: Icon, className = '', as = 'in
           </Field>
         ) : (
           <Field
-            className="bg-transparent outline-none w-full h-full text-[15px] placeholder:text-tertiary"
+            className="bg-transparent outline-none w-full h-full text-[16px] placeholder:text-tertiary"
             {...props}
           />
         )}
