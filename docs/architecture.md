@@ -137,7 +137,7 @@ Admin → Agents  ✓ approve agent          Admin → Listings  "Pending review
                                                                └▶ property { reviewStatus:'approved', active:true }  ─▶ public site
 Enquiries on an agent's property ─▶ Agent Panel → Enquiries (only their own listings)
 ```
-Shared pieces: `components/admin/listingForm.js` (fields / defaults / prepare, `mode: 'admin' | 'agent'`), `components/admin/propertyCsv.js`, `CollectionAdmin` props `extraFilters` and `rowExtras(item, { flash })`, `pages/agent/useMyAgent.js` (agent record + own listings + own leads; creates a pending agent record for an admin-made agent user).
+Shared pieces: `components/admin/listingForm.js` (fields / defaults / prepare, `mode: 'admin' | 'agent'`), `components/admin/propertyCsv.js`, `CollectionAdmin` props `extraFilters`, `rowExtras(item, { flash })` and `onRowClick(item)` (makes the whole row a click target for something that isn't the edit form — e.g. Admin → Users, where clicking a row opens that person's Activity sheet instead of the usual add/edit sheet; the checkbox, status toggle and action-button cells stop the click from bubbling to the row so they keep working normally), `pages/agent/useMyAgent.js` (agent record + own listings + own leads; creates a pending agent record for an admin-made agent user).
 
 ## 4d. Property slugs
 
@@ -241,7 +241,7 @@ Property CSV column order is `PROPERTY_CSV_COLUMNS` in `src/utils/csv.js`. Array
 
 ## 8. Backend (built — `backend/`)
 
-The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 140 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
+The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 147 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
 
 **Two modes, one code base.** `VITE_USE_API=true` (set for production builds in `.env.production`) makes the site use the API; without it the site runs on browser storage as before (handy for front-end work without the backend). The switch lives in `src/api/client.js` (`USE_API`, `api()`, `fetchAll()`, error toast bus) and the contexts:
 
@@ -343,6 +343,29 @@ the same idea as Testimonials but applied to visitor-submitted content instead o
   Admin → *Reviews*, which is still Testimonials).
 - **Tests**: `backend/tests/reviews.test.js` — 13 tests (validation, moderation queue, approve/reject/bulk,
   self-review blocks, resubmission, public visibility only once approved, account-erasure handling).
+
+## 8e. Search analytics (admin)
+
+What people search for, and how it's trending — built entirely from `Event` (`type: 'search'`, the same
+collection §8c's activity timeline reads), never a separate tracking system.
+
+- **Backend** — `GET /admin/analytics/searches?days=7|30|90` (`routes/admin-system.js`): total searches in the
+  window, top cities / property types / purpose (Buy vs. Rent) by count, top free-text queries (case-insensitively
+  de-duplicated), and a day-by-day trend with every day in the window present (zero-filled, not just the days
+  that had activity — a real gap must render as a gap, not a missing bar). `days` is clamped to 7-90.
+- **The one thing this is NOT**: a count of every search on the site. `Event` rows only exist for a signed-in
+  `role: 'user'` account (`InterestContext`'s `track()` only batches to the server when `roleRef.current ===
+  'user'` — see §4b / rules §15.2a); an anonymous visitor's searches stay on their device by design and never
+  reach this aggregation. The response carries `signedInOnly: true` and the admin screen must show that caveat
+  next to the numbers, not present them as total traffic. Extending this to anonymous visitors would need an
+  explicit decision (new data collection, privacy-policy implications) — not something to do silently later.
+- **Frontend** — Admin → **Search Analytics** (`pages/admin/SearchAnalytics.jsx`, `/admin/search-analytics`):
+  a period switch (7/30/90 days), `components/charts/PieChart.jsx` (dependency-free SVG donut — no charting
+  library pulled in for one shape) for cities/types/purpose, `components/charts/TrendChart.jsx` (daily bars +
+  a 7-day moving-average line — the "forecasting" the person asked for is this trend view, not a predictive
+  model; confirmed with them as the intended meaning), and a plain top-queries list.
+- **Tests**: `backend/tests/search-analytics.test.js` — 7 tests (role gate, window filtering, grouping by
+  city/type/purpose, query de-duplication, zero-filled trend, the 7-90 day clamp).
 
 ## 8-old. Original backend plan (kept for reference)
 

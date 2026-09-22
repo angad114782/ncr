@@ -15,16 +15,16 @@ export default function Agents() {
   return (
     <div className="pb-16">
       <Seo
-        title="Property Agents & Consultants Across India"
-        description="Meet approved property consultants and real estate agents who help you buy, rent and sell across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram."
+        title="Property Agents & Consultants in Delhi NCR"
+        description="Meet approved property consultants and real estate agents who help you buy, rent and sell in Gurugram, Noida, Delhi NCR and other major Indian cities."
         path="/agents"
         jsonLd={breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'Agents', path: '/agents' }])}
       />
       <div className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Meet Our Agents</h1>
         <p className="text-secondary max-w-2xl mx-auto">
-          Property consultants approved by the {company.name} team — local experts who help you buy, rent and sell across
-          India's top cities. Every consultant on this page has been reviewed by our admin team before being listed.
+          Property consultants approved by the {company.name} team — local experts who help you buy, rent and sell in
+          Delhi NCR and other major Indian cities. Every consultant on this page has been reviewed by our admin team before being listed.
         </p>
       </div>
 

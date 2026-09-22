@@ -15,7 +15,7 @@ backend/
     services/            settings, auth (OTP, sessions, consent), property (slugs), leads
     lib/                 validation schemas (zod), security helpers, notifications, the IP/phone block ladder, slug + interest rules (copies of the website's)
     seed/seed.js         loads the website's sample data into MongoDB
-  tests/                 140 tests (run on a throw-away in-memory MongoDB — never on your real database)
+  tests/                 147 tests (run on a throw-away in-memory MongoDB — never on your real database)
   uploads/               uploaded images (git-ignored)
 ```
 
@@ -156,6 +156,7 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 | `agents`, `blog`, `faqs`, `testimonials` | list, get, create, update, delete, `bulk/action`, `import/rows`; `faqs` / `testimonials` also `reorder` |
 | `users` | list, create, update, delete (the last active admin can never be removed or demoted); `GET users/:id/activity` — one account's full on-site history (view/search/save/compare), newest first, paginated, each event stamped with the IP + best-effort city/region/pincode it happened from (`lib/geo.js`) |
 | `reviews` | list (`status targetType q`, target resolved to a readable label), `POST :id/approve`, `POST :id/reject {note}`, delete, `POST bulk/action` (`approve`/`reject`/`delete`) — user-submitted agent/property reviews; nothing here is created by the admin, only moderated |
+| `GET analytics/searches?days=7\|30\|90` | top searched cities/types/purpose, top free-text queries, a zero-filled daily trend — built from signed-in accounts' search events only (`signedInOnly: true`); §8e in `docs/architecture.md` |
 | `leads` | list (`q status intent source`), get, update (`status assignedAgentId note`), delete, `export.csv` |
 | `settings`, `PUT settings/:key` | keys: `company siteContent ticker topBanner cities propertyTypes marketing whatsapp mail` (secrets are write-only) |
 | `POST settings/whatsapp/test` | sends the two lead messages to the signed-in admin's own number and returns each result (with Meta's error) |
@@ -242,4 +243,4 @@ Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uplo
 
 ## 7. Tests
 
-`npm test` — 140 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages, live updates, per-user activity + IP geolocation). They start their own in-memory MongoDB and refuse to run against a remote database.
+`npm test` — 147 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages, live updates, per-user activity + IP geolocation). They start their own in-memory MongoDB and refuse to run against a remote database.

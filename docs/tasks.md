@@ -119,6 +119,48 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### NCR-first positioning (this batch)
+- [x] **Fixed a real brand/content mismatch an SEO review caught**: domain `propertyinncr.com` + brand "NCR
+  Estates" vs. a homepage pitching "Find Your Next Home Across India" — and the underlying inventory didn't
+  support either pitch well (14 listings spread over 7 cities, only 1 of them in Gurugram, 0 agents based in
+  NCR). This closes the loop on the earlier "Keyword research" batch's unfinished note that NCR keywords need
+  Noida/Ghaziabad/Faridabad as cities and a Gurgaon alias
+- [x] `src/data/taxonomy.js`: cities reordered NCR-first (Gurugram, Noida, Delhi, Ghaziabad, Faridabad, then
+  Mumbai, Bangalore, Pune, Hyderabad, Chennai) — drives the homepage city grid and future landing-page priority.
+  **Never creates an empty page**: `landingCombos()` already only builds a page once a city has a real listing,
+  so Noida/Ghaziabad/Faridabad are just selectable now, with an honest "0 properties" card until real listings
+  land there
+- [x] Homepage hero, meta titles/descriptions, Agents/About/Contact/Team copy and the "Which cities do you
+  cover?" FAQ rewritten to lead with "Delhi NCR" instead of "Across India" — real other-city listings are still
+  mentioned ("and other major Indian cities"), not hidden
+- [x] Playwright-verified: hero reads "Find Your Next Home / in Delhi NCR", city grid shows Gurugram → Noida →
+  Delhi → Ghaziabad → Faridabad → Mumbai... in that order with real (including zero) counts, Agents page title
+  updated
+- [ ] **This only fixes messaging — not the underlying gap.** The site still needs real Gurugram/Noida/Delhi-NCR
+  listings and at least one NCR-based agent for the new positioning to be true, not just aspirational; the admin
+  should prioritise adding those
+- [ ] The live site's `company.tagline`, `cities` and Home/About/Agents/Contact/Team text in Site Content are
+  stored in the database, not read from these defaults — the admin needs to either apply the new defaults
+  (Admin → Site Content → Backup & reset → "Page text", or "Company & CEO" for the tagline — **this overwrites
+  any custom edits to those sections**) or edit the specific fields by hand to match
+
+### Search analytics + a proper click-through to a user's full activity (this batch)
+- [x] **Admin → Users: click the row**, not a small icon, to open that person's complete activity — every view,
+  search, save and compare, in order, with the IP-based location (`CollectionAdmin` gained a generic
+  `onRowClick` prop; the checkbox, status toggle and action buttons stop the click from also firing so they
+  still work on their own)
+- [x] **Admin → Search Analytics** (new): total searches over 7/30/90 days, a daily-volume chart with a 7-day
+  trend line (the "forecasting" that was asked for — a trend view, not a predictive model, as confirmed), pie
+  charts for most-searched cities and property types, Buy-vs-Rent split, and a top-free-text-queries list — all
+  built from real search events (`Event`, `type: 'search'`), no dependency pulled in for the charts
+  (`components/charts/PieChart.jsx`, `TrendChart.jsx` — dependency-free SVG)
+- [x] **Said plainly where the data does and doesn't reach**: only a signed-in account's searches are recorded
+  server-side (same limitation the activity timeline already has) — an anonymous visitor's search never leaves
+  their device. The screen carries this as a visible note, not a footnote, so the numbers are never mistaken
+  for total site traffic
+- [x] 7 new backend tests (grouping, de-duplication, the zero-filled trend, the 7-90 day clamp) — 140 -> 147;
+  Playwright-checked (row click opens the sheet, the charts render from real data, switching the period re-fetches)
+
 ### Reviews — real, admin-approved ratings for agents and properties (this batch)
 - [x] A signed-in visitor can rate + review an agent or a property (`ReviewsSection` on the property page and the
   agent profile) — stars + optional text; writing one opens sign-in first if needed, without losing what was

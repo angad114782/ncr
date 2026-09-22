@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, ShieldCheck, User } from 'lucide-react'
+import { ShieldCheck, User } from 'lucide-react'
 import CollectionAdmin from '../../components/admin/CollectionAdmin'
 import UserActivitySheet from './UserActivitySheet'
 import { useAuth } from '../../context/AuthContext'
@@ -77,19 +77,12 @@ export default function ManageUsers() {
             ),
           },
         ]}
-        rowExtras={USE_API ? (u) => (
-          <button
-            type="button"
-            onClick={() => setViewingUserId(u.id)}
-            aria-label={`View ${u.name}'s activity`}
-            title="Activity — searches, saved & compared homes"
-            className="glass w-8 h-8 rounded-full flex items-center justify-center"
-          >
-            <Activity size={13} />
-          </button>
-        ) : undefined}
+        onRowClick={USE_API ? (u) => setViewingUserId(u.id) : undefined}
       />
-      <p className="text-tertiary text-xs">Built-in accounts can be deactivated but not deleted. Deactivated users are signed out and can’t log in.</p>
+      <p className="text-tertiary text-xs">
+        Built-in accounts can be deactivated but not deleted. Deactivated users are signed out and can’t log in.
+        {USE_API && ' Click a row to see that person’s complete activity — every view, search, save and compare, in order.'}
+      </p>
       {USE_API && <UserActivitySheet userId={viewingUserId} onClose={() => setViewingUserId(null)} />}
     </div>
   )

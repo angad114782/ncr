@@ -57,13 +57,13 @@ export const SITE_DEFAULTS = {
   home: {
     heroPrefix: 'Find Your Next',
     rotatingWords: ['Home', 'Villa', 'Office', 'Studio'],
-    heroSuffix: 'Across India',
+    heroSuffix: 'in Delhi NCR',
     // Search-result snippet of the home page. Keep the title ≈ 45 characters (the brand is added after it) and the
     // description ≤ 150 — Google cuts anything longer.
-    seoTitle: 'Buy & Rent Flats, Villas & Plots in India',
-    seoDescription: 'Search verified flats, villas, plots and commercial property to buy or rent in Mumbai, Delhi, Bangalore, Pune & more. Free expert guidance.',
+    seoTitle: 'Buy & Rent Flats, Villas & Plots in Delhi NCR',
+    seoDescription: 'Search verified flats, villas, plots and commercial property to buy or rent in Gurugram, Noida, Delhi NCR and other major Indian cities. Free expert guidance.',
     heroSubtitle:
-      'Buy or rent 1, 2 & 3 BHK flats, villas and commercial spaces in Mumbai, Delhi, Bangalore, Gurugram & more — verified listings and free expert guidance.',
+      'Buy or rent 1, 2 & 3 BHK flats, villas and commercial spaces in Gurugram, Noida, Delhi NCR & other major Indian cities — verified listings and free expert guidance.',
     sections: Object.keys(HOME_SECTION_LABELS).map((id) => ({ id, enabled: true })),
   },
 
@@ -106,7 +106,7 @@ export const SITE_DEFAULTS = {
 
   cta: {
     title: 'Have a Property to Sell or Rent?',
-    text: 'List it on {brand} and reach thousands of verified buyers and tenants across India.',
+    text: 'List it on {brand} and reach thousands of verified buyers and tenants across Delhi NCR and beyond.',
     buttonLabel: 'List My Property',
     link: '/contact?intent=sell',
     // true = the button opens agent registration (then the agent posts the property from their panel);
@@ -116,14 +116,14 @@ export const SITE_DEFAULTS = {
 
   about: {
     heroText:
-      'We help people buy, rent and sell property across India with clear information, verified listings and honest guidance — led by {ceoName}, who brings {years}+ years of real estate experience.',
+      'We help people buy, rent and sell property in Delhi NCR — and other major Indian cities — with clear information, verified listings and honest guidance — led by {ceoName}, who brings {years}+ years of real estate experience.',
     storyTitle: 'Why we exist',
     storyParagraphs: [
       'Searching for a home is stressful when prices are unclear, listings are outdated and every call ends in a sales pitch. {brand} was built to make the process calmer: one place to search, compare, calculate and talk to a real person.',
-      'Whether you are a first-time buyer in Gurugram, a tenant in Bangalore or an owner in Mumbai looking for the right buyer, our goal is the same — help you make a confident decision with the facts in front of you.',
+      'Whether you are a first-time buyer in Gurugram, a tenant in Noida or an owner in Delhi NCR looking for the right buyer, our goal is the same — help you make a confident decision with the facts in front of you.',
     ],
     missionTitle: 'Our mission',
-    missionText: 'To make property search in India transparent, verified and free of pressure.',
+    missionText: 'To make property search in Delhi NCR — and beyond — transparent, verified and free of pressure.',
     missionValues: [
       { icon: 'ShieldCheck', text: 'Transparency — real prices and the full cost picture.' },
       { icon: 'HeartHandshake', text: 'Client first — advice that fits your budget, not ours.' },
@@ -170,7 +170,7 @@ export const SITE_DEFAULTS = {
       { title: 'No pressure', desc: 'Site visits, comparisons and questions are free. You decide when — and whether — to move forward.' },
     ],
     joinTitle: 'Want to join or partner with us?',
-    joinText: 'We work with experienced consultants and property owners across India. Tell us about yourself and we’ll get back to you.',
+    joinText: 'We work with experienced consultants and property owners across Delhi NCR and other major Indian cities. Tell us about yourself and we’ll get back to you.',
   },
 
   contact: {
@@ -203,7 +203,7 @@ export const SITE_DEFAULTS = {
   },
 
   footer: {
-    blurb: 'Discover verified homes, rentals and commercial spaces across India. Led by {ceoName}, {ceoTitle} — {years}+ years in real estate.',
+    blurb: 'Discover verified homes, rentals and commercial spaces across Delhi NCR — and other major Indian cities. Led by {ceoName}, {ceoTitle} — {years}+ years in real estate.',
     disclaimer:
       '{brand} is an intermediary platform. Prices, availability and specifications are provided by owners, developers and agents and may change — always verify RERA registration and documents before making any payment.',
   },

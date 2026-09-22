@@ -4,7 +4,7 @@ import { useSettings } from '../../context/SettingsContext'
 
 export { SITE_URL }
 const DEFAULT_DESCRIPTION =
-  'Find verified apartments, villas, studios and commercial properties to buy or rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram.'
+  'Find verified apartments, villas, studios and commercial properties to buy or rent in Gurugram, Noida, Delhi NCR and other major Indian cities.'
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200'
 
 // Every page renders one of these — the static index.html deliberately has no
@@ -22,7 +22,7 @@ export default function Seo({
 }) {
   const { company } = useSettings()
   const SITE_NAME = company.name
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Real Estate Across India`
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Real Estate in Delhi NCR`
   // Uploaded (data:) images can't be fetched by crawlers — fall back to the default share image.
   const shareImage = crawlableImage(image) ?? DEFAULT_IMAGE
   const canonical = `${SITE_URL}${path}`

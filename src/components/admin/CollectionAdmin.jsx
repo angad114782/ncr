@@ -38,6 +38,7 @@ export default function CollectionAdmin({
   extraFilters = [], // [{ value, label, test(item) }] — extra chips next to All / Active / Inactive
   sheetWidth = 'max-w-3xl',
   itemLabel = (x) => x.title ?? x.question ?? x.name ?? x.id,
+  onRowClick, // (item) => void — makes the whole row a big click target (e.g. Users → open their activity)
 }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all') // all | active | inactive
@@ -174,16 +175,27 @@ export default function CollectionAdmin({
             </thead>
             <tbody>
               {visible.map((item) => (
-                <tr key={item.id} className="border-b border-[var(--glass-border)] last:border-0 align-middle">
-                  <td className="p-4"><input type="checkbox" aria-label={`Select ${itemLabel(item)}`} checked={selected.has(item.id)} onChange={() => toggleSelect(item.id)} className="accent-[var(--color-accent)]" /></td>
+                <tr
+                  key={item.id}
+                  className={`border-b border-[var(--glass-border)] last:border-0 align-middle ${onRowClick ? 'cursor-pointer hover:bg-[var(--glass-surface-weak)]' : ''}`}
+                  {...(onRowClick
+                    ? {
+                        role: 'button',
+                        tabIndex: 0,
+                        onClick: () => onRowClick(item),
+                        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(item) } },
+                      }
+                    : {})}
+                >
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}><input type="checkbox" aria-label={`Select ${itemLabel(item)}`} checked={selected.has(item.id)} onChange={() => toggleSelect(item.id)} className="accent-[var(--color-accent)]" /></td>
                   {columns.map((c) => <td key={c.label} className={`p-4 ${c.className ?? ''}`}>{c.render(item)}</td>)}
-                  <td className="p-4">
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2">
                       <Toggle checked={item.active !== false} onChange={() => { const res = crud.toggleActive(item.id); if (res && res.ok === false) flash(res.error) }} label={`${item.active !== false ? activeLabels.off : activeLabels.on}: ${itemLabel(item)}`} />
                       <span className="text-xs text-secondary hidden lg:inline">{item.active !== false ? activeLabels.on : activeLabels.off}</span>
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1.5">
                       {rowExtras?.(item, { flash })}
                       {reorderable && !query && status === 'all' && (

@@ -15,7 +15,7 @@ export default function ExploreCities() {
         <h2 id="explore-cities-heading" className="text-2xl md:text-3xl font-bold mb-2">
           Explore Properties by City
         </h2>
-        <p className="text-secondary">Handpicked homes and commercial spaces in India's fastest-growing cities.</p>
+        <p className="text-secondary">Handpicked homes and commercial spaces across Delhi NCR and other major Indian cities.</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {cities.map((city) => {

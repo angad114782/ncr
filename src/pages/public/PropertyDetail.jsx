@@ -463,7 +463,7 @@ function PropertyDetailInner({ id }) {
       {moreOfType.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">More {property.type}s Across India</h2>
+            <h2 className="text-2xl font-bold">More {property.type}s You May Like</h2>
             <Link to={listingsPath({ purpose: property.purpose, type: property.type })} className="text-sm font-medium text-[var(--color-accent)] shrink-0">
               View All →
             </Link>

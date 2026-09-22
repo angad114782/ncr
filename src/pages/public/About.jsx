@@ -27,7 +27,7 @@ export default function About() {
     <div className="pb-16">
       <Seo
         title={`About ${company.name} — Trusted Property Platform Led by ${ceo.name}`}
-        description={`${company.name} helps you buy or rent verified homes across India. Led by ${ceo.title} ${ceo.name} (${ceo.experienceYears}+ years in real estate). Learn how we verify listings, who we are and how we work.`}
+        description={`${company.name} helps you buy or rent verified homes in Delhi NCR and other major Indian cities. Led by ${ceo.title} ${ceo.name} (${ceo.experienceYears}+ years in real estate). Learn how we verify listings, who we are and how we work.`}
         path="/about"
         jsonLd={[
           breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'About', path: '/about' }]),

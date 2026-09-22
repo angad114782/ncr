@@ -19,7 +19,7 @@ export default function Team() {
     <div className="pb-16">
       <Seo
         title={`Our Team — ${ceo.name}, ${ceo.title} & Property Experts`}
-        description={`Meet the people behind ${company.name}: ${ceo.name} (${ceo.title}, ${ceo.experienceYears}+ years of real estate experience) and our team of property consultants across India.`}
+        description={`Meet the people behind ${company.name}: ${ceo.name} (${ceo.title}, ${ceo.experienceYears}+ years of real estate experience) and our team of property consultants in Delhi NCR and other major Indian cities.`}
         path="/team"
         jsonLd={[
           breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'Our Team', path: '/team' }]),

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Agent, Audit, Consent, Faq, Lead, LegalVersion, Post, Property, SecurityBlock, Setting, Testimonial, User } from '../models/index.js'
+import { Agent, Audit, Consent, Event, Faq, Lead, LegalVersion, Post, Property, SecurityBlock, Setting, Testimonial, User } from '../models/index.js'
 import { badRequest, notFound } from '../lib/errors.js'
 import { audit, contentChanged, rebuildNow, rebuildStatus } from '../lib/misc.js'
 import { listQuery, parse, settingBody } from '../lib/schemas.js'
@@ -79,6 +79,64 @@ router.get('/stats', async (_req, res) => {
     users,
     leads: { total: leads, pending: newLeads, hotPending: hot, last7Days: weekLeads, byIntent: Object.fromEntries(byIntent.map((r) => [r._id ?? 'Cold', r.n])) },
     posts,
+  })
+})
+
+/**
+ * What visitors are searching for, and how that's trending — built from `Event` (`type: 'search'`), which is
+ * only ever recorded for a signed-in, consenting account (see docs/rules.md §15). It is a real sample, not
+ * every search on the site: most visitors browse without signing in, and their searches never reach the
+ * server by design. `signedInOnly: true` in the response says so — the admin screen must show that caveat,
+ * not present this as total site traffic.
+ */
+router.get('/analytics/searches', async (req, res) => {
+  const days = Math.min(90, Math.max(7, Number(req.query.days) || 30))
+  const DAY_MS = 24 * 60 * 60 * 1000
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const since = new Date(today.getTime() - (days - 1) * DAY_MS) // start of the day `days` calendar days ago, window ends today
+  const base = { type: 'search', at: { $gte: since } }
+  const topField = (field, extra = {}) => Event.aggregate([
+    { $match: { ...base, [field]: { $exists: true, $ne: '' }, ...extra } },
+    { $group: { _id: `$${field}`, n: { $sum: 1 } } },
+    { $sort: { n: -1 } },
+    { $limit: 8 },
+  ])
+
+  const [total, byCity, byType, byPurpose, topQueries, trendRaw] = await Promise.all([
+    Event.countDocuments(base),
+    topField('data.city'),
+    topField('data.type'),
+    topField('data.purpose'),
+    Event.aggregate([
+      { $match: { ...base, 'data.q': { $exists: true, $ne: '' } } },
+      { $group: { _id: { $toLower: { $trim: { input: '$data.q' } } }, n: { $sum: 1 } } },
+      { $sort: { n: -1 } },
+      { $limit: 10 },
+    ]),
+    Event.aggregate([
+      { $match: base },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$at' } }, n: { $sum: 1 } } },
+    ]),
+  ])
+
+  // Every day in the window gets an entry, even with zero searches — a real gap, not a missing bar.
+  const trendMap = new Map(trendRaw.map((r) => [r._id, r.n]))
+  const trend = []
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since.getTime() + i * DAY_MS).toISOString().slice(0, 10)
+    trend.push({ date: d, count: trendMap.get(d) ?? 0 })
+  }
+
+  res.json({
+    days,
+    signedInOnly: true,
+    totalSearches: total,
+    byCity: byCity.map((r) => ({ label: r._id, count: r.n })),
+    byType: byType.map((r) => ({ label: r._id, count: r.n })),
+    byPurpose: byPurpose.map((r) => ({ label: r._id, count: r.n })),
+    topQueries: topQueries.map((r) => ({ q: r._id, count: r.n })),
+    trend,
   })
 })
 

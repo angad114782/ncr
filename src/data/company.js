@@ -9,7 +9,7 @@
 export const COMPANY_DEFAULTS = {
   name: 'NCR Estates',
   domain: 'propertyinncr.com',
-  tagline: 'Verified homes to buy or rent across India',
+  tagline: 'Verified homes to buy or rent in Delhi NCR',
 
   foundedYear: null, // e.g. 2021
   reraAgentId: '', // state RERA real-estate-agent registration number

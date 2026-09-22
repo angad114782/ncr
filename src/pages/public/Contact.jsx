@@ -102,7 +102,7 @@ export default function Contact() {
     <div className="pb-16">
       <Seo
         title={`Contact ${company.name} — Talk to a Property Expert`}
-        description={`Call, WhatsApp or email ${company.name} to buy, rent or sell property across India. Free guidance from a team led by ${company.ceo.name}. We aim to respond within 24 hours.`}
+        description={`Call, WhatsApp or email ${company.name} to buy, rent or sell property in Delhi NCR and other major Indian cities. Free guidance from a team led by ${company.ceo.name}. We aim to respond within 24 hours.`}
         path="/contact"
         jsonLd={[
           breadcrumbLd([{ name: 'Home', path: '/' }, { name: 'Contact', path: '/contact' }]),
