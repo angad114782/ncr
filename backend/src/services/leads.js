@@ -9,14 +9,15 @@ const today = () => new Date().toISOString().slice(0, 10)
 const RANK = { Cold: 0, Warm: 1, Hot: 2 }
 const higher = (a, b) => (RANK[a] >= RANK[b] ? a : b)
 
-/** Who should follow up: the listing's agent if approved, otherwise an approved agent in the same city. */
-async function pickAgent(property, city) {
-  if (property?.agentId) {
-    const a = await Agent.findById(property.agentId)
-    if (a?.status === 'approved' && a.active !== false) return a
-  }
-  if (city) return Agent.findOne({ city, status: 'approved', active: { $ne: false } })
-  return null
+/**
+ * Who should follow up: the listing's own agent, if it has one and they're approved — never a
+ * same-city guess. A property the admin listed directly (no agentId) has no owner to hand the
+ * lead to, so it stays with the admin only.
+ */
+async function pickAgent(property) {
+  if (!property?.agentId) return null
+  const a = await Agent.findById(property.agentId)
+  return a?.status === 'approved' && a.active !== false ? a : null
 }
 
 /**
@@ -88,7 +89,7 @@ export async function createLead(req, data, { user, verified = false, source, co
     // The team was told when the lead first arrived. Someone who now confirmed the number gets the welcome.
     if (verified && !wasVerified) announce = { team: false, welcome: true }
   } else {
-    const agent = await pickAgent(property, city)
+    const agent = await pickAgent(property)
     lead = await Lead.create({
       otpSentAt: pending ? new Date() : null,
       propertyId,
