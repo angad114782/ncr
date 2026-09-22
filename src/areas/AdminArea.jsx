@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { BookOpen, Building2, HelpCircle, LayoutDashboard, LayoutTemplate, MessageSquare, Settings, Star, User as UserIcon, UserCheck, Users as UsersIcon } from 'lucide-react'
+import { BookOpen, Building2, HelpCircle, LayoutDashboard, LayoutTemplate, MessageSquare, Settings, ShieldAlert, Star, User as UserIcon, UserCheck, Users as UsersIcon } from 'lucide-react'
 import PanelShell from '../components/layout/PanelShell'
 import ProtectedRoute from '../components/layout/ProtectedRoute'
 import Profile from '../pages/dashboard/Profile'
@@ -13,6 +13,7 @@ import ManageFaqs from '../pages/admin/ManageFaqs'
 import ManageTestimonials from '../pages/admin/ManageTestimonials'
 import ManageAgents from '../pages/admin/ManageAgents'
 import SiteContent from '../pages/admin/SiteContent'
+import Security from '../pages/admin/Security'
 import { useSettings } from '../context/SettingsContext'
 import { ListSkeleton } from '../components/common/Skeleton'
 
@@ -25,6 +26,7 @@ const adminNav = [
   { to: '/admin/agents', label: 'Agents', icon: UserCheck },
   { to: '/admin/users', label: 'Users', icon: UsersIcon },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
+  { to: '/admin/security', label: 'Security', icon: ShieldAlert },
   { to: '/admin/site', label: 'Site Content', icon: LayoutTemplate },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
   { to: '/admin/profile', label: 'Profile', icon: UserIcon },
@@ -59,6 +61,7 @@ export default function AdminArea() {
         <Route path="site" element={<WaitForSettings><SiteContent /></WaitForSettings>} />
         <Route path="users" element={<ManageUsers />} />
         <Route path="inquiries" element={<ManageInquiries />} />
+        <Route path="security" element={<Security />} />
         <Route path="settings" element={<WaitForSettings><AdminSettings /></WaitForSettings>} />
         <Route path="profile" element={<Profile />} />
       </Route>

@@ -85,7 +85,7 @@
   {
     "id": "f9",
     "question": "Which cities do you cover?",
-    "answer": "We list properties to buy and rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram, and we keep adding cities based on demand.",
+    "answer": "We list properties to buy and rent across Mumbai, Delhi, Bangalore, Pune, Hyderabad, Chennai and Gurugram (Gurgaon), and we keep adding cities based on demand. Looking for Noida, Greater Noida, Ghaziabad or Faridabad? Send us your requirement from the Contact page and we'll reach out as soon as we have matching options there.",
     "category": "About",
     "pages": [
       "about"
@@ -95,7 +95,7 @@
   {
     "id": "f10",
     "question": "How do I list my property with you?",
-    "answer": "Use the Contact page, choose “I want to sell / list my property”, and share the basics — city, type, expected price and your phone number. Our team will call you to take it forward.",
+    "answer": "Tap “List My Property” (home page) or “Add Listing” (menu) and register with your mobile number — no password. Once registered, post your property from your own agent panel with photos, price and details; our team reviews it before it goes live.",
     "category": "Selling",
     "pages": [
       "about",
@@ -130,6 +130,17 @@
     "category": "Contact",
     "pages": [
       "contact"
+    ],
+    "active": true
+  },
+  {
+    "id": "f14",
+    "question": "Do you have plots or independent builder floors?",
+    "answer": "Our current listings are apartments, villas, studios, commercial spaces and penthouses. If you're looking for a plot or a builder floor, tell us the city and budget from the Contact page — we'll let you know as soon as a matching option is available.",
+    "category": "Buying",
+    "pages": [
+      "home",
+      "about"
     ],
     "active": true
   }

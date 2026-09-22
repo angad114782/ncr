@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Briefcase, Building2, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MessageCircle, Phone, ShieldCheck, X } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, ChevronRight, LayoutDashboard, LogOut, MessageCircle, Phone, Plus, ShieldCheck, X } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import Avatar from '../common/Avatar'
 import { useAuth } from '../../context/AuthContext'
@@ -17,7 +17,7 @@ const item = { hidden: { opacity: 0, x: 36 }, show: { opacity: 1, x: 0, transiti
  * focus back to the hamburger. Rendered in a portal because the navbar is a transformed
  * element — a `fixed` child inside it would be sized to the navbar, not the screen.
  */
-export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFocusRef }) {
+export default function MobileMenu({ open, onClose, links, onAuthOpen, onAddListing, returnFocusRef }) {
   const { user, isAdmin, isAgent, logout } = useAuth()
   const { whatsappConfig, company, siteContent, fill } = useSettings()
   const navigate = useNavigate()
@@ -177,6 +177,12 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, returnFoc
               ) : (
                 <button onClick={() => { onClose(); onAuthOpen() }} className="w-full rounded-full py-4 font-semibold text-white bg-[var(--color-accent)] shadow-[0_8px_24px_color-mix(in_srgb,var(--color-accent)_35%,transparent)] active:scale-[0.98]">
                   Sign In / Create Account
+                </button>
+              )}
+
+              {onAddListing && (
+                <button onClick={() => { onClose(); onAddListing() }} className="w-full rounded-full py-3.5 font-medium glass-strong flex items-center justify-center gap-2">
+                  <Plus size={17} /> Add Listing
                 </button>
               )}
 

@@ -7,7 +7,7 @@ import { out, paginate, publicAgent, publicPost, publicProperty } from '../lib/s
 import { PUBLIC_FILTER, findPropertyByParam, propertyPath } from '../services/property.js'
 import { publicSettings } from '../services/settings.js'
 import { createLead } from '../services/leads.js'
-import { leadLimiter } from '../middleware/index.js'
+import { ipBlockGuard, leadLimiter } from '../middleware/index.js'
 
 const router = Router()
 
@@ -133,7 +133,7 @@ router.get('/testimonials', async (_req, res) => {
  * Enquiry from the contact page or a property page. `phoneToken` (from POST /auth/verify-phone) proves the
  * number was checked with an OTP; without it the lead is stored as "not verified".
  */
-router.post('/leads', leadLimiter, async (req, res) => {
+router.post('/leads', ipBlockGuard, leadLimiter, async (req, res) => {
   const d = parse(leadCreate, req.body)
   if (d.propertyId) {
     const exists = await Property.exists({ _id: d.propertyId })

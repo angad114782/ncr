@@ -203,6 +203,15 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setError('This number has a buyer account, not an agent account. To list a property, register as an agent with a different mobile number.')
       return
     }
+    if (!listFlow && mode === 'login' && result.user.role === 'agent') {
+      // The reverse: this is the buyer/tenant door. An agent number is signed straight out again.
+      logout()
+      setStep('phone')
+      setOtpDigits(Array(otpLen).fill(''))
+      setSentOtp('')
+      setError('This number has an agent account. Agents sign in from “Add Listing” or “List My Property”.')
+      return
+    }
     if (USE_API && mode === 'signup') {
       if (isAgentSignup) fireLeadEvent('agent_signup', { city: agentCity })
       else fireLeadEvent('signup', { ...(summary.city ? { city: summary.city } : {}), ...(summary.type ? { property_type: summary.type } : {}), intent: summary.intent })
@@ -289,22 +298,6 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
             {notice && <p role="status" className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{notice}</p>}
             {isAgentSignup && source === 'list' && program.listIntro && (
               <p className="glass-weak rounded-[14px] px-4 py-3 text-sm text-secondary leading-relaxed">{fill(program.listIntro)}</p>
-            )}
-            {mode === 'signup' && program.enabled !== false && source !== 'list' && (
-              <div role="radiogroup" aria-label="I am a" className="glass-weak p-1 rounded-full flex">
-                {[['user', 'I’m a buyer / tenant'], ['agent', program.registerLabel || 'I’m an agent']].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={role === value}
-                    onClick={() => { setRole(value); setError('') }}
-                    className={`flex-1 py-2 px-2 rounded-full text-xs sm:text-sm font-medium spring ${role === value ? 'glass-strong text-[var(--color-accent)]' : 'text-secondary'}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
             )}
             {mode === 'signup' && (
               <GlassInput

@@ -31,8 +31,10 @@ export default function AgentRegisterCta({ className = '' }) {
         </div>
         {user?.role === 'agent' ? (
           <GlassButton as={Link} to={panelPath(user)}>Open agent panel</GlassButton>
-        ) : !user && outlet?.openAuth ? (
-          <GlassButton onClick={() => outlet.openAuth('signup', '', 'agent')}>Register as an agent</GlassButton>
+        ) : outlet?.openAuth ? (
+          // The one official agent door (same as "List My Property" and the navbar's "Add Listing"): agent-only
+          // sign-up/login, no buyer option. A signed-in buyer or the admin gets a switch-account notice.
+          <GlassButton onClick={() => outlet.openAuth('signup', 'list', 'agent')}>Register as an agent</GlassButton>
         ) : null}
       </div>
     </GlassCard>

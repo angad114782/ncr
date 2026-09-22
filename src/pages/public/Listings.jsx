@@ -13,7 +13,7 @@ import { buildListingsFaqs, summariseLocalities } from '../../utils/listingsSeo'
 import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
 import { useSettings } from '../../context/SettingsContext'
-import { SITE_URL, breadcrumbLd, faqLd, formatPriceShort, listingsHeading, listingsPath, propertyPath, resolveListingsSegments } from '../../utils/seo'
+import { SITE_URL, breadcrumbLd, cityAliasesOf, faqLd, formatPriceShort, listingsHeading, listingsPath, propertyPath, resolveListingsSegments } from '../../utils/seo'
 
 const PAGE_SIZE = 6
 
@@ -163,7 +163,8 @@ function ListingsView({ filters }) {
       if (possession && p.possessionStatus !== possession) return false
       if (maxPrice && p.price > Number(maxPrice)) return false
       if (q) {
-        const hay = `${p.title} ${p.locality} ${p.city}`.toLowerCase()
+        // A visitor searching "Gurgaon" should still find listings tagged with the official name "Gurugram".
+        const hay = `${p.title} ${p.locality} ${p.city} ${cityAliasesOf(p.city).join(' ')}`.toLowerCase()
         if (!hay.includes(q.toLowerCase())) return false
       }
       return true

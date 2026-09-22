@@ -10,13 +10,13 @@ import { out } from '../lib/serialize.js'
 import { checkOtp, endSession, issueOtp, publicUser, recordConsent, startSession, touchLogin } from '../services/auth.js'
 import { createLead } from '../services/leads.js'
 import { getSetting } from '../services/settings.js'
-import { authLimiter, requireAuth } from '../middleware/index.js'
+import { authLimiter, ipBlockGuard, phoneBlockGuard, requireAuth } from '../middleware/index.js'
 
 const router = Router()
 const today = () => new Date().toISOString().slice(0, 10)
 
 /** Sends a one-time code by WhatsApp. purpose: login (account must exist), register (number must be new), verify (any number). */
-router.post('/otp/send', authLimiter, async (req, res) => {
+router.post('/otp/send', ipBlockGuard, phoneBlockGuard, authLimiter, async (req, res) => {
   const { phone, purpose } = parse(otpSend, req.body)
   const existing = await User.findOne({ phone })
   if (purpose === 'login') {
@@ -27,7 +27,7 @@ router.post('/otp/send', authLimiter, async (req, res) => {
   res.json({ ok: true, ...(await issueOtp(phone, purpose, req.ip)) })
 })
 
-router.post('/login', authLimiter, async (req, res) => {
+router.post('/login', ipBlockGuard, phoneBlockGuard, authLimiter, async (req, res) => {
   const { phone, otp } = parse(login, req.body)
   const user = await User.findOne({ phone })
   if (!user) throw notFound("No account found with this number. Let's sign you up instead.")
@@ -44,7 +44,7 @@ router.post('/login', authLimiter, async (req, res) => {
  * Creates the account. A CLIENT (default) becomes a lead for the sales team, carrying what they looked at.
  * An AGENT gets a pending agent record that the admin approves. Both must accept the consent text.
  */
-router.post('/register', authLimiter, async (req, res) => {
+router.post('/register', ipBlockGuard, phoneBlockGuard, authLimiter, async (req, res) => {
   const d = parse(register, req.body)
   if (await User.exists({ phone: d.phone })) throw conflict('An account with this number already exists. Please log in instead.', 'phone_taken')
 
@@ -92,7 +92,7 @@ router.post('/register', authLimiter, async (req, res) => {
 })
 
 /** Proves a phone number to the server without creating an account — used before a public enquiry. */
-router.post('/verify-phone', authLimiter, async (req, res) => {
+router.post('/verify-phone', ipBlockGuard, phoneBlockGuard, authLimiter, async (req, res) => {
   const { phone, otp } = parse(verifyPhone, req.body)
   await checkOtp(phone, 'verify', otp)
   res.json({ ok: true, phoneToken: signPhoneToken(phone) })

@@ -3,9 +3,11 @@ import { Consent, Otp, User } from '../models/index.js'
 import { badRequest, tooMany, AppError } from '../lib/errors.js'
 import { generateOtp, hashOtp, safeEqual, signToken } from '../lib/security.js'
 import { sendOtpMessage } from '../lib/notify.js'
+import { registerOffense } from '../lib/security-block.js'
 import { getSetting, legalVersions } from './settings.js'
 
 const MAX_ATTEMPTS = 5
+const OTP_ABUSE_THRESHOLD = 8 // codes sent to one number in 24h with not one of them ever verified: a bot pattern, not a real person
 
 /** What the website may know about an account. */
 export const publicUser = (u) =>
@@ -24,13 +26,22 @@ export const publicUser = (u) =>
 /* --------------------------------------------------------------------- otp */
 export async function issueOtp(phone, purpose, ip = '') {
   const now = Date.now()
-  const [recent, fromIp] = await Promise.all([
+  const dayAgo = new Date(now - 24 * 60 * 60_000)
+  const [recent, fromIp, sentInDay, everVerified] = await Promise.all([
     Otp.find({ phone, createdAt: { $gt: new Date(now - 10 * 60_000) } }).sort({ createdAt: -1 }).lean(),
     ip ? Otp.countDocuments({ ip, createdAt: { $gt: new Date(now - 60 * 60_000) } }) : 0,
+    Otp.countDocuments({ phone, createdAt: { $gt: dayAgo } }),
+    Otp.exists({ phone, consumed: true, createdAt: { $gt: dayAgo } }),
   ])
   if (recent[0] && now - new Date(recent[0].createdAt).getTime() < 30_000) throw tooMany('Please wait 30 seconds before asking for another code.')
   if (recent.length >= 5) throw tooMany('Too many codes requested for this number. Try again in a few minutes.')
   if (fromIp >= 30) throw tooMany('Too many codes requested from this network. Try again later.')
+  // A number that keeps asking for a code and never once types it in, over a whole day, is a bot (or someone
+  // else's number being harassed) — block further codes to it rather than keep sending (and paying for) them.
+  if (sentInDay >= OTP_ABUSE_THRESHOLD && !everVerified) {
+    await registerOffense('phone', phone, 'otp_never_verified', '/api/auth/otp/send')
+    throw tooMany('Too many codes requested for this number without it being confirmed. Please try again later or contact support.')
+  }
 
   const code = generateOtp()
   const { delivered } = await sendOtpMessage(phone, code)

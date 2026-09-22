@@ -86,6 +86,14 @@
       {
         "question": "Where do I find the RERA number for a project?",
         "answer": "The number should be printed on the builder's brochure, agreement and website, and it must be searchable on the state RERA portal."
+      },
+      {
+        "question": "How do I check RERA registration for a project in Noida, Greater Noida or Ghaziabad?",
+        "answer": "These fall under Uttar Pradesh, so search the project or promoter on the UP-RERA portal (up-rera.in). The registration number, sanctioned plan, promoter details and complaint history are all published there — confirm them before you pay any token amount."
+      },
+      {
+        "question": "How do I check RERA registration in Gurugram (Gurgaon)?",
+        "answer": "Gurugram falls under Haryana, so search the project or agent on the HRERA (Haryana RERA) portal for the relevant district. Check that the promoter name and registration validity match your agreement before you pay."
       }
     ],
     "related": [
@@ -150,6 +158,14 @@
       {
         "question": "Can stamp duty be included in a home loan?",
         "answer": "Most lenders do not finance stamp duty and registration; you generally need to pay these from your own funds. Check with your bank."
+      },
+      {
+        "question": "What are property registry charges in Noida, Greater Noida and Ghaziabad?",
+        "answer": "As Uttar Pradesh towns, registry charges there combine UP's stamp duty percentage with a separate registration fee, calculated on the higher of the agreement value or the circle rate (the district's minimum valuation, revised periodically). For the current percentages, check the UP Stamps & Registration Department site or your sub-registrar's office — rates and any rebates (for example for women buyers) change from time to time."
+      },
+      {
+        "question": "What is the circle rate and how do I find it for a locality?",
+        "answer": "The circle rate (also called the guidance value or ready reckoner rate) is the government's minimum valuation for property in an area — you cannot register a sale below it even if you agreed a lower price. Each district publishes its own circle rates (for example Noida, Greater Noida and Ghaziabad separately), searchable by sector or locality on the state stamps and registration department's website."
       }
     ],
     "related": [
@@ -161,7 +177,7 @@
     "featured": false,
     "active": true,
     "media": {},
-    "body": "## What are stamp duty and registration charges?\n\nStamp duty is a state tax paid on the transfer document (sale deed). Registration charges are a separate fee paid to register that document with the sub-registrar. Once the deed is registered, the transfer becomes legally recorded.\n\n## Why the amount differs\n\nProperty is a state subject, so each state sets its own rates. The rate can also depend on the property's value, the circle rate (the government's minimum valuation for an area), the buyer profile — some states offer a concession for women buyers — and whether the property is urban or rural.\n\nBecause these rules are revised from time to time, always confirm the current rates on your state's stamps and registration department website before you finalise your budget.\n\n## How to estimate the cost\n\n1. Find the higher of the agreement value and the circle-rate value for the property.\n2. Multiply by the state's stamp-duty percentage.\n3. Add the registration fee, which is often a smaller percentage or capped amount.\n4. Add legal and documentation charges if you use a lawyer.\n\n## Other costs to budget for\n\n- GST on under-construction properties.\n- Loan processing and valuation fees.\n- Society transfer fee or maintenance deposit on resale flats.\n- Brokerage, if applicable.\n- Interiors, moving and utility deposits."
+    "body": "## What are stamp duty and registration charges?\n\nStamp duty is a state tax paid on the transfer document (sale deed). Registration charges are a separate fee paid to register that document with the sub-registrar. Once the deed is registered, the transfer becomes legally recorded.\n\n## Why the amount differs\n\nProperty is a state subject, so each state sets its own rates. The rate can also depend on the property's value, the circle rate (the government's minimum valuation for an area), the buyer profile — some states offer a concession for women buyers — and whether the property is urban or rural.\n\nBecause these rules are revised from time to time, always confirm the current rates on your state's stamps and registration department website before you finalise your budget.\n\n## How to estimate the cost\n\n1. Find the higher of the agreement value and the circle-rate value for the property.\n2. Multiply by the state's stamp-duty percentage.\n3. Add the registration fee, which is often a smaller percentage or capped amount.\n4. Add legal and documentation charges if you use a lawyer.\n\n## Delhi NCR: three states, three sets of rules\n\nA property in Delhi NCR can sit in Delhi, Uttar Pradesh (Noida, Greater Noida, Ghaziabad) or Haryana (Gurugram/Gurgaon, Faridabad) — three different state governments, each with its own stamp-duty percentage, registration fee and circle rate. The same-looking flat a few kilometres apart can have a different registry cost purely because it is across a state line. Always check the rate for the exact state and, where published, the exact sector or locality — not a neighbouring city's rate.\n\n## Other costs to budget for\n\n- GST on under-construction properties.\n- Loan processing and valuation fees.\n- Society transfer fee or maintenance deposit on resale flats.\n- Brokerage, if applicable.\n- Interiors, moving and utility deposits."
   },
   {
     "id": "b-property-documents-checklist-before-buying",

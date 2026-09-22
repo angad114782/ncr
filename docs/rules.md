@@ -61,6 +61,11 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 1. Every role gets its own `<role>Nav` array in its `areas/<Role>Area.jsx` and a `/<role>/profile` route in that role's shell (the agent's profile page also holds the public agent profile).
 2. Guard panels with `ProtectedRoute` (`requireAdmin` or `roles={['agent']}`); a signed-in user of the wrong role is sent to **their own** panel. `/admin`, `/agent` and `/dashboard` stay `Disallow`ed in `robots.txt`.
 3. Bulk imports must show a per-row error review **before** committing.
+4. **Each role has exactly one kind of door**, enforced in `AuthSheet`:
+   - **Admin** cannot register or log in through any public form — the only admin account is the one `ensureAdmin()` creates for `ADMIN_PHONE`; `register`'s role is `z.enum(['user', 'agent'])` at the schema level, so `admin` cannot even be requested.
+   - **Agent**: sign-up/login only from `source="list"` (the Home "List My Property" banner, the navbar/mobile-menu "Add Listing" button, `AgentRegisterCta` — all three call `openAuth('signup', 'list', 'agent')`). There is no buyer/agent switch anywhere else; a buyer number that logs in from this door is signed out again with a message.
+   - **User**: every other door (navbar Sign In, `LoginNudge`, `WelcomeModal`, `RecommendedForYou`) is buyer-only — no way to pick "agent" there. An **agent** number that logs in from one of these doors is signed out again with a message pointing to the agent door.
+   - Adding a new "become an agent" entry point means giving it `source: 'list'`, not a new switch.
 
 ## 6. SEO
 
@@ -185,7 +190,7 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 
 1. **Legal text is admin data, never hard-coded.** `/privacy`, `/terms`, `/disclaimer` render `siteContent.legal.<kind>` (defaults in `src/data/legalDefaults.js`, edit in Admin → Site Content → Privacy Policy / Terms & Conditions / Disclaimer). A section body is plain text: blank line = paragraph, `- ` lines = bullets; tokens `{brand} {email} {phone} {ceoName}`. Bump *Last updated* when the text changes. The defaults are a starting point — **a lawyer must review them** before real customer data or real listings.
 2. Every place that collects data links to the legal pages: the sign-up sheet (consent checkbox + Terms + Privacy links) and the footer. Keep it that way for new forms.
-3. **Sign-up is a client by default.** The "I'm a buyer / tenant | I'm a property agent" switch defaults to client; agent fields (city, agency, RERA) exist only when *Agent* is chosen. Admin can switch the option off (Site Content → Agent program).
+3. **Agent sign-up only happens at the agent door** (`source="list"` — see §5.4); agent fields (city, agency, RERA) render whenever that door is used. Admin can switch the whole program off (Site Content → Agent program).
 4. **An agent registers as pending.** Sign-up creates the login (`role: 'agent'`) **and** an agent record (`status: 'pending'`, `userId`, `agency`, `reraId`). Public pages use `approvedAgents` only, so nobody sees a pending agent. The admin approves in Admin → Agents.
 5. **Agent-posted listings are moderated.** An agent's listing is always saved as `reviewStatus: 'pending'`, `active: false`, stamped with `agentId` + `submittedBy`; only the admin's approval makes it live (`reviewStatus: 'approved'`, `active: true`) — and only if the agent is approved. `activeProperties` requires `reviewStatus` to be `approved` (missing = approved, so admin-created / seed listings are unaffected). Rejecting stores an optional `reviewNote` shown to the agent; editing a rejected listing resubmits it.
 6. **An agent can only touch their own listings and enquiries** (`agentId` match). They cannot set Featured / Verified / Active, change the listing agent, or see other agents' data. This is enforced in `AgentListings` today and **must be enforced again on the server** (see architecture §8a).
@@ -198,3 +203,10 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 3. A slug must be unique across slugs, old slugs **and ids** (so `/property/p6` is never ambiguous). The admin form rejects a typed slug that is taken; automatic slugs never collide, even for several rows of one CSV.
 4. The sitemap, `llms-full.txt`, JSON-LD and canonical all use the slug URL. The build also writes a small redirect page for every old `/property/<id>` (`dist/property/<id>/index.html`, canonical + instant refresh) and `dist/property-redirects.map` for real 301s in nginx (see `deploy/nginx.example.conf`).
 5. Seed listings in `src/data/properties.json` carry a `slug`; add one (or run the seed through `ensureSlugs`) when adding a seed listing.
+
+## 19. Abuse protection (backend)
+
+1. **The escalating IP/phone block ladder** (`backend/src/lib/security-block.js`): a rate limit trip on login/sign-up (`authLimiter`) or a public form (`leadLimiter`), or a phone that keeps requesting an OTP and never verifies (`otp_never_verified`, checked in `services/auth.js#issueOtp`), escalates that IP or phone — **24h → 48h → 7 days → permanent**. `ipBlockGuard` / `phoneBlockGuard` turn a currently-blocked key away with `403 blocked` before the route runs. Give a new public-facing, unauthenticated POST route the same two guards + a limiter with a `reason` (see `authLimiter`/`leadLimiter` in `middleware/index.js`) if it can be spammed.
+2. **The admin account is exempt, always.** `isExempt()` in `security-block.js` checks `value === config.adminPhone`; never remove that check, and never make the ladder apply to a route only admin can reach.
+3. **Every block is reversible.** Admin → Security (`GET/POST /admin/security/blocks*`) lists and clears blocks — a shared IP or a reassigned number can be caught by mistake, and there is no other way to undo a permanent block.
+4. This stops one abusive IP or number; it is not a defense against a distributed attack (many IPs), which needs infrastructure in front of the VPS (e.g. Cloudflare), not application code. CORS/`originGuard` stop a *browser* from using this site's cookies against the API from another origin — they do nothing against a non-browser client (curl, another server), which no server-side code can prevent.

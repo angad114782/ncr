@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, ShieldCheck } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, Plus, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import MobileMenu from './MobileMenu'
@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import Avatar from '../common/Avatar'
 
-export default function Navbar({ onAuthOpen }) {
+export default function Navbar({ onAuthOpen, onAgentDoor }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState(null)
@@ -21,6 +21,9 @@ export default function Navbar({ onAuthOpen }) {
   const navigate = useNavigate()
   const location = useLocation()
   const closeMobile = useCallback(() => setMobileOpen(false), [])
+  // One of the two official doors into an agent account (the other is the Home banner): a signed-in agent goes
+  // straight to My listings, everyone else opens the agent-only sign-up/login (no buyer option there).
+  const goToAddListing = () => (isAgent ? navigate('/agent/listings') : onAgentDoor())
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
@@ -108,6 +111,11 @@ export default function Navbar({ onAuthOpen }) {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          {!isAdmin && (
+            <GlassButton variant="glass" size="sm" icon={Plus} onClick={goToAddListing}>
+              Add Listing
+            </GlassButton>
+          )}
           <ThemeToggle />
           {user ? (
             <div className="flex items-center gap-2">
@@ -147,7 +155,7 @@ export default function Navbar({ onAuthOpen }) {
         </button>
       </div>
 
-      <MobileMenu open={mobileOpen} onClose={closeMobile} links={links} onAuthOpen={onAuthOpen} returnFocusRef={hamburgerRef} />
+      <MobileMenu open={mobileOpen} onClose={closeMobile} links={links} onAuthOpen={onAuthOpen} onAddListing={!isAdmin ? goToAddListing : null} returnFocusRef={hamburgerRef} />
     </motion.header>
   )
 }

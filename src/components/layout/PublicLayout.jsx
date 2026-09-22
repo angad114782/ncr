@@ -27,7 +27,7 @@ export default function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <TopBanner />
-      <Navbar onAuthOpen={() => openAuth('login')} />
+      <Navbar onAuthOpen={() => openAuth('login')} onAgentDoor={() => openAuth('signup', 'list', 'agent')} />
       <main className="flex-1 px-4 max-w-6xl mx-auto w-full" style={{ paddingTop: 'calc(7rem + var(--banner-h, 0px))' }}>
         <Outlet context={{ openAuth }} />
       </main>

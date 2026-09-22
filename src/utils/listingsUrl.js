@@ -17,6 +17,14 @@ export const slugify = (s) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
+// Common alternate spellings people actually search for, mapped to the real city name in `cities`. Only used
+// to RECOGNISE a typed/linked URL or a free-text search — every generated link and the canonical URL still use
+// the real name, so this never creates a second indexable URL for the same page (see resolveListingsSegments).
+export const CITY_ALIASES = { gurgaon: 'Gurugram', bengaluru: 'Bangalore' }
+/** The reverse map, for matching free-text search against a listing's real city: Gurugram -> also "gurgaon". */
+const CITY_ALIAS_OF = Object.entries(CITY_ALIASES).reduce((m, [alias, real]) => ({ ...m, [real]: [...(m[real] ?? []), alias] }), {})
+export const cityAliasesOf = (city) => CITY_ALIAS_OF[city] ?? []
+
 const BASE = { Buy: '/buy', Rent: '/rent' }
 
 export function listingsPath(filters = {}, page = 1) {
@@ -62,7 +70,8 @@ export function resolveListingsSegments({ purpose, a, b }, cities = [], types = 
   }
 
   if (a) {
-    const city = cities.find((c) => slugify(c) === a)
+    const aliased = CITY_ALIASES[a] && cities.includes(CITY_ALIASES[a]) ? CITY_ALIASES[a] : null
+    const city = cities.find((c) => slugify(c) === a) ?? aliased
     if (city) out.city = city
     else if (!segment(a)) return null
   }

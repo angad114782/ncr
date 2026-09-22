@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Agent, Audit, Consent, Faq, Lead, LegalVersion, Post, Property, Setting, Testimonial, User } from '../models/index.js'
-import { badRequest } from '../lib/errors.js'
+import { Agent, Audit, Consent, Faq, Lead, LegalVersion, Post, Property, SecurityBlock, Setting, Testimonial, User } from '../models/index.js'
+import { badRequest, notFound } from '../lib/errors.js'
 import { audit, contentChanged, rebuildNow, rebuildStatus } from '../lib/misc.js'
 import { listQuery, parse, settingBody } from '../lib/schemas.js'
 import { escapeRegex } from '../lib/security.js'
@@ -94,6 +94,30 @@ router.get('/consents', async (req, res) => {
   const filter = q.q ? { phone: new RegExp(escapeRegex(q.q)) } : {}
   const [items, total] = await Promise.all([Consent.find(filter).sort({ acceptedAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(), Consent.countDocuments(filter)])
   res.json({ items: out(items), ...paginate(total, q.page, q.limit) })
+})
+
+/**
+ * Blocked IPs / phone numbers (the escalating ladder in `lib/security-block.js`): currently-blocked first, then
+ * the most recently active. `q` searches the raw ip/phone.
+ */
+router.get('/security/blocks', async (req, res) => {
+  const q = parse(listQuery, req.query)
+  const filter = q.q ? { value: new RegExp(escapeRegex(q.q)) } : {}
+  const [items, total] = await Promise.all([
+    SecurityBlock.find(filter).sort({ permanent: -1, blockedUntil: -1, lastOffenseAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
+    SecurityBlock.countDocuments(filter),
+  ])
+  res.json({ items: out(items), ...paginate(total, q.page, q.limit) })
+})
+
+/** Clears a block immediately (a shared/office IP, a number that turned out to be a real person, …). */
+router.post('/security/blocks/:id/unblock', async (req, res) => {
+  const doc = await SecurityBlock.findById(req.params.id)
+  if (!doc) throw notFound('Not found.')
+  doc.set({ strikes: 0, blockedUntil: null, permanent: false, unblockedBy: req.user.id, unblockedAt: new Date() })
+  await doc.save()
+  audit(req, 'unblock-security', 'security_block', doc.id, { kind: doc.kind })
+  res.json({ ok: true, item: out(doc) })
 })
 
 /* ----------------------------------------------------- rebuild / backup */

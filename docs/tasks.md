@@ -5,7 +5,7 @@
 
 Legend: `[x]` done · `[~]` in progress / uncommitted · `[ ]` todo · 🔴 high · 🟡 medium · 🟢 low
 
-_Last updated: 2026-09-21_
+_Last updated: 2026-09-22_
 
 ---
 
@@ -118,6 +118,29 @@ _Last updated: 2026-09-21_
 - [x] **Agent role + Agent Panel** (`/agent`): overview with status banner, **My listings** (same editor as admin, CSV too), **Enquiries** on own listings, **Profile** (account + public agent profile)
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
+
+### Role-separated login doors + abuse protection (this batch)
+- [x] **Agent sign-up/login has exactly one door**: the Home "List My Property" banner, the navbar/mobile-menu **Add Listing** button (new), and `AgentRegisterCta` — all three open the same agent-only flow (`source: 'list'`, no buyer option). Every other entry point (navbar Sign In, login prompt, welcome/exit card, "picked for you") is buyer-only, with no way to choose "agent"
+- [x] **A number that logs in from the wrong door is signed out again**, both directions: a buyer number at the agent door, or an agent number at the buyer door — each with a message pointing to the right one. Admin was already unreachable via any public form (`register`'s role is `z.enum(['user','agent'])` at the schema level)
+- [x] **Escalating IP/phone block ladder** (`backend/src/lib/security-block.js`): repeated robotic login/sign-up attempts or repeated form junk → 24h → 48h → 7 days → permanent block on that IP or phone; a phone that keeps requesting an OTP and never verifies is blocked the same way. Blocked keys are turned away before the route runs (`ipBlockGuard`/`phoneBlockGuard`), so an abusive IP costs the server almost nothing — **the admin account is completely exempt**
+- [x] Admin → **Security**: lists every block (current + past), unblock button (a shared IP or reassigned number can be caught by mistake — see `backend/README.md` for what this does and does not protect against)
+- [x] 110 backend tests (was 101): the block ladder, exemption, guards, OTP-abuse trigger, admin list/unblock
+- [ ] Bigger, not done this round: a site-wide Content-Security-Policy for the *website's* HTML (the API already gets Helmet's strict CSP by default — it just has no visible effect on JSON responses), Cloudflare/WAF in front of the VPS for distributed attacks — see `docs/rules.md` §19
+
+### Bug sweep + SEO keywords applied (this batch)
+- [x] **Bug sweep**: full backend suite (110/110), a 33-route Playwright crawl (console errors, H1s) and 13 role-door
+  edge cases (mobile "Add Listing", admin never sees it, WelcomeModal's own login also rejects an agent number) — no
+  real bugs found. One stale FAQ caught in passing: "How do I list my property" still described the old contact-form
+  flow (fixed to match the agent sign-up door)
+- [x] **"Gurgaon" now works everywhere "Gurugram" does**: `/buy/gurgaon` resolves and self-corrects its canonical to
+  `/buy/gurugram` (`CITY_ALIASES` in `utils/listingsUrl.js`, no duplicate-content risk), and the free-text search box
+  matches it too. This was free, real search volume the site was silently missing
+- [x] FAQ updates targeting real search demand without fabricating inventory: "Which cities do you cover?" now names
+  Gurgaon and invites a Noida/Ghaziabad/Faridabad/Greater Noida requirement as a lead; new FAQ for
+  plot/builder-floor searches (same idea)
+- [x] `docs/seo/priority.md`: which of the 154 candidate keywords can be targeted **now** (cluster H: cost/legal
+  guides — pure content, no inventory) vs need real inventory first (new cities, a Plot/Builder-Floor type, a
+  metro-distance field) — reasoning-based since real volume/KD numbers still need Semrush/Ahrefs (see `keyword-candidates.csv`)
 
 ### Keyword research (this batch)
 - [x] `docs/seo/keyword-candidates.txt` / `.csv`: 154 NCR long-tail keywords (all seen in Google autocomplete on 2026-09-21), 9 clusters, with the page to build for each. **Volume and KD are blank** - paste the .txt into Semrush / Ahrefs (India), keep KD < 10 and volume 10-500

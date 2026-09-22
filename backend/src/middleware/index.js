@@ -3,6 +3,7 @@ import { ZodError } from 'zod'
 import mongoose from 'mongoose'
 import { config } from '../config.js'
 import { AppError, forbidden, unauthorized } from '../lib/errors.js'
+import { BLOCKED_MESSAGE, checkBlock, registerOffense } from '../lib/security-block.js'
 import { stripDangerousKeys, verifyToken } from '../lib/security.js'
 import { Agent, User } from '../models/index.js'
 
@@ -22,6 +23,28 @@ export function originGuard(req, _res, next) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next()
   const origin = req.get('origin')
   if (origin && !config.clientOrigins.includes(origin)) return next(forbidden('Requests from this website are not allowed.'))
+  next()
+}
+
+/**
+ * Turns away a request from an IP that is currently serving a block (see `lib/security-block.js`) before it does
+ * any real work — the point is that an abusive IP costs the server almost nothing once blocked, so the site keeps
+ * serving everyone else. Placed on the auth and public-lead routes, not globally (those are where abuse happens,
+ * and a blanket per-request DB lookup on every public page view would be its own cost).
+ */
+export async function ipBlockGuard(req, res, next) {
+  const blocked = await checkBlock('ip', req.ip)
+  if (blocked) return res.status(403).json({ error: { code: 'blocked', message: BLOCKED_MESSAGE } })
+  next()
+}
+
+/** Same, for the phone number in the request body (login / otp / register) — blocks a targeted number even from a fresh IP. */
+export async function phoneBlockGuard(req, res, next) {
+  const phone = req.body?.phone
+  if (phone) {
+    const blocked = await checkBlock('phone', phone)
+    if (blocked) return res.status(403).json({ error: { code: 'blocked', message: BLOCKED_MESSAGE } })
+  }
   next()
 }
 
@@ -76,19 +99,28 @@ export async function loadAgent(req, _res, next) {
 }
 
 /* ------------------------------------------------------------ rate limiting */
-const limiter = (windowMs, limit, message) =>
+/**
+ * `reason` (e.g. "auth_abuse", "form_spam"), when given, escalates the IP up the block ladder (24h → 48h → 7
+ * days → permanent, see `lib/security-block.js`) every time this limiter trips — not just throttles it for the
+ * current window. Repeated robotic attempts against login/signup or repeated junk on a public form are the two
+ * things this is for; ordinary traffic bursts (globalLimiter) are just throttled, never escalated.
+ */
+const limiter = (windowMs, limit, message, reason) =>
   rateLimit({
     windowMs,
     limit,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     skip: () => config.isTest,
-    handler: (_req, res) => res.status(429).json({ error: { code: 'rate_limited', message } }),
+    handler: (req, res) => {
+      res.status(429).json({ error: { code: 'rate_limited', message } })
+      if (reason) registerOffense('ip', req.ip, reason, req.path).catch(() => {})
+    },
   })
 
 export const globalLimiter = limiter(15 * 60_000, 600, 'Too many requests. Please slow down.')
-export const authLimiter = limiter(15 * 60_000, 40, 'Too many attempts. Please try again in a few minutes.')
-export const leadLimiter = limiter(60 * 60_000, 20, 'Too many enquiries from this network. Please try again later.')
+export const authLimiter = limiter(15 * 60_000, 40, 'Too many attempts. Please try again in a few minutes.', 'auth_abuse')
+export const leadLimiter = limiter(60 * 60_000, 20, 'Too many enquiries from this network. Please try again later.', 'form_spam')
 export const uploadLimiter = limiter(60 * 60_000, 120, 'Too many uploads. Please try again later.')
 
 /* ------------------------------------------------------------------ errors */

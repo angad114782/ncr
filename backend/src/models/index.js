@@ -262,3 +262,26 @@ export const Upload = model(
   'Upload',
   makeSchema({ file: str({ required: true }), url: str(), mime: str(), size: Number, by: str() }, { prefix: 'up' }),
 )
+
+/**
+ * Escalating block ladder for an abusive IP or phone number (`lib/security-block.js`): 24h → 48h → 7 days →
+ * permanent. `key` is `ip:<address>` or `phone:<number>`, so both share one collection and one admin screen.
+ */
+const securityBlockSchema = makeSchema(
+  {
+    key: str({ required: true, unique: true }),
+    kind: { type: String, enum: ['ip', 'phone'], required: true, index: true },
+    value: str({ required: true }), // the raw ip or phone, for display
+    strikes: { type: Number, default: 0 },
+    blockedUntil: { type: Date, default: null, index: true },
+    permanent: { type: Boolean, default: false, index: true },
+    reason: str({ default: '' }), // auth_abuse | form_spam | otp_never_verified — the most recent trigger
+    firstOffenseAt: Date,
+    lastOffenseAt: Date,
+    log: { type: [{ _id: false, at: Date, reason: String, path: String }], default: [] }, // last 20, for the admin screen
+    unblockedBy: str({ default: null }),
+    unblockedAt: Date,
+  },
+  { prefix: 'sb' },
+)
+export const SecurityBlock = model('SecurityBlock', securityBlockSchema)

@@ -13,9 +13,9 @@ backend/
     models/index.js      User, Agent, Property, Post, Faq, Testimonial, Lead, Consent, Otp, Saved, Event, Setting, LegalVersion, Audit, Upload
     routes/              public · auth · me · agent · admin-* · uploads
     services/            settings, auth (OTP, sessions, consent), property (slugs), leads
-    lib/                 validation schemas (zod), security helpers, notifications, slug + interest rules (copies of the website's)
+    lib/                 validation schemas (zod), security helpers, notifications, the IP/phone block ladder, slug + interest rules (copies of the website's)
     seed/seed.js         loads the website's sample data into MongoDB
-  tests/                 88 tests (run on a throw-away in-memory MongoDB — never on your real database)
+  tests/                 110 tests (run on a throw-away in-memory MongoDB — never on your real database)
   uploads/               uploaded images (git-ignored)
 ```
 
@@ -159,6 +159,27 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 | `POST settings/whatsapp/test` | sends the two lead messages to the signed-in admin's own number and returns each result (with Meta's error) |
 | `legal-history?kind=` | every published version of privacy / terms / disclaimer |
 | `stats`, `audit`, `consents?q=phone`, `backup`, `rebuild` | dashboard numbers, action log, consent proof, JSON backup (no secrets), trigger the site rebuild |
+| `security/blocks?q=`, `POST security/blocks/:id/unblock` | the IP/phone block ladder (below) — list and clear one |
+
+### Abuse protection: the IP/phone block ladder
+Repeated robotic attempts at `/auth/otp/send`, `/auth/login`, `/auth/register`, `/auth/verify-phone` (an "auth_abuse" trip
+of `authLimiter`), repeated junk on the public lead form (a "form_spam" trip of `leadLimiter`), or a phone number that keeps
+asking for an OTP and never once verifies it (`otp_never_verified`, checked in `services/auth.js#issueOtp`) escalate that
+IP or phone up a ladder: **24 hours → 48 hours → 7 days → permanent** (`lib/security-block.js`). A blocked key is turned
+away at the door (`ipBlockGuard` / `phoneBlockGuard`, before the rate limiter even runs) with `403 { error: { code:
+"blocked" } }`, so an abusive IP costs the server almost nothing once flagged — the site keeps serving everyone else.
+A burst of requests while a block is already active is logged but never escalates the ladder further by itself (no
+jumping straight to permanent from one flood). **The admin account (`ADMIN_PHONE`) is completely exempt** — it can never
+be throttled or blocked, however it is attacked. Admin → **Security** lists every block and can clear one (a shared
+office Wi-Fi or a mobile number reassigned later to someone else can be caught by mistake).
+
+This stops a single abusive IP or number; it is **not** protection against a large distributed attack (many IPs at
+once) — that needs something in front of the VPS (Cloudflare's free tier is the usual choice), which this app cannot
+provide by itself. It's also not possible to make the API answer "only this website" in any absolute sense: CORS is
+enforced by browsers, not servers, so a script (curl, another server) that isn't a browser is never subject to it. What
+actually protects the API is what's here: `originGuard` (rejects a cookie-carrying state-changing request from a
+different site — the CSRF defense), the CORS allow-list (stops a *browser* on another site from reading responses),
+authentication on everything but public listing data, and this block ladder for volume abuse.
 
 ### Uploads
 `POST /uploads` (multipart field `files`, ≤ 10 images, 8 MB each; JPG/PNG/WebP/GIF/AVIF, bytes verified) → `{ items: [{ url }] }`. `DELETE /uploads/:file`. Files are served from `/uploads/…`.
@@ -192,4 +213,4 @@ Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uplo
 
 ## 7. Tests
 
-`npm test` — 88 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security). They start their own in-memory MongoDB and refuse to run against a remote database.
+`npm test` — 110 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages). They start their own in-memory MongoDB and refuse to run against a remote database.

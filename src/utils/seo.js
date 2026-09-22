@@ -103,5 +103,5 @@ export function listingsHeading({ purpose, city, type, beds, possession }) {
 export { formatPriceShort } from './format.js'
 
 // Clean listing URLs live in a dependency-free module shared with the build scripts.
-export { listingsPath, resolveListingsSegments, slugify } from './listingsUrl.js'
+export { cityAliasesOf, listingsPath, resolveListingsSegments, slugify } from './listingsUrl.js'
 export { propertyPath } from './propertySlug.js'
