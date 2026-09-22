@@ -8,7 +8,8 @@
 // development the Vite dev server does. Same origin ⇒ the login cookie needs no CORS.
 
 export const USE_API = import.meta.env.VITE_USE_API === 'true'
-const BASE = String(import.meta.env.VITE_API_URL ?? '/api').replace(/\/+$/, '')
+export const API_BASE = String(import.meta.env.VITE_API_URL ?? '/api').replace(/\/+$/, '')
+const BASE = API_BASE
 
 export class ApiError extends Error {
   constructor(status, code, message, details) {

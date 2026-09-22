@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import usePersistedState from '../hooks/usePersistedState'
 import { newId } from '../utils/ids'
 import { ensureSlugs, resolveSlug } from '../utils/propertySlug'
-import { USE_API, api, fetchAll, reportApiError } from '../api/client'
+import { API_BASE, USE_API, api, fetchAll, reportApiError } from '../api/client'
 import { useAuth } from './AuthContext'
 import snapshot from '../data/snapshot.json'
 import propertiesSeed from '../data/properties.json'
@@ -237,6 +237,27 @@ export function DataProvider({ children }) {
   useEffect(() => {
     if (USE_API && authReady) load()
   }, [authReady, load])
+
+  // Live updates: a new lead, a listing's review status, or any admin content change re-fetches the lists that
+  // moment, instead of everyone having to refresh (backend/src/lib/events.js). Server-Sent Events — one open
+  // connection, the server pushes; nothing here sends anything back over it. Coalesced into one reload even when
+  // a single action fires more than one event (e.g. approving a listing sends both content:changed and
+  // listing:status). The browser's EventSource reconnects on its own if the connection drops.
+  useEffect(() => {
+    if (!USE_API || !authReady || typeof EventSource === 'undefined') return undefined
+    const source = new EventSource(`${API_BASE}/events`, { withCredentials: true })
+    let debounce
+    const reload = () => {
+      clearTimeout(debounce)
+      debounce = setTimeout(load, 300)
+    }
+    for (const name of ['content:changed', 'lead:new', 'listing:status', 'listing:pending']) source.addEventListener(name, reload)
+    return () => {
+      clearTimeout(debounce)
+      source.close()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, role])
 
   // Saved homes follow the account: merged in at sign-in, then kept on the server.
   const wasSignedIn = useRef(false)

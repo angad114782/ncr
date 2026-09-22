@@ -23,7 +23,9 @@ export function createApp() {
       maxAge: 600,
     }),
   )
-  app.use(compression())
+  // Never compress the live-updates stream (/api/events): compression buffers output to build a good-sized
+  // chunk before sending, which would delay every push by seconds — exactly what a "live" connection can't do.
+  app.use(compression({ filter: (req, res) => (req.path === '/api/events' ? false : compression.filter(req, res)) }))
 
   if (!config.isTest) {
     app.use((req, res, next) => {

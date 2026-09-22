@@ -11,11 +11,11 @@ backend/
     app.js               Express app (security headers, CORS, CSRF guard, rate limits, routes, errors)
     config.js            environment settings (+ refuses unsafe production config)
     models/index.js      User, Agent, Property, Post, Faq, Testimonial, Lead, Consent, Otp, Saved, Event, Setting, LegalVersion, Audit, Upload
-    routes/              public · auth · me · agent · admin-* · uploads
+    routes/              public · auth · me · agent · admin-* · uploads · events (live updates)
     services/            settings, auth (OTP, sessions, consent), property (slugs), leads
     lib/                 validation schemas (zod), security helpers, notifications, the IP/phone block ladder, slug + interest rules (copies of the website's)
     seed/seed.js         loads the website's sample data into MongoDB
-  tests/                 110 tests (run on a throw-away in-memory MongoDB — never on your real database)
+  tests/                 127 tests (run on a throw-away in-memory MongoDB — never on your real database)
   uploads/               uploaded images (git-ignored)
 ```
 
@@ -153,7 +153,7 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 |---|---|
 | `properties` | list (`q reviewStatus active agentId city`), get, create, update, delete, `POST :id/approve`, `POST :id/reject {note}`, `POST bulk/action {ids, action}`, `POST import/rows {items}` |
 | `agents`, `blog`, `faqs`, `testimonials` | list, get, create, update, delete, `bulk/action`, `import/rows`; `faqs` / `testimonials` also `reorder` |
-| `users` | list, create, update, delete (the last active admin can never be removed or demoted) |
+| `users` | list, create, update, delete (the last active admin can never be removed or demoted); `GET users/:id/activity` — one account's full on-site history (view/search/save/compare), newest first, paginated, each event stamped with the IP + best-effort city/region/pincode it happened from (`lib/geo.js`) |
 | `leads` | list (`q status intent source`), get, update (`status assignedAgentId note`), delete, `export.csv` |
 | `settings`, `PUT settings/:key` | keys: `company siteContent ticker topBanner cities propertyTypes marketing whatsapp mail` (secrets are write-only) |
 | `POST settings/whatsapp/test` | sends the two lead messages to the signed-in admin's own number and returns each result (with Meta's error) |
@@ -184,6 +184,33 @@ authentication on everything but public listing data, and this block ladder for 
 ### Uploads
 `POST /uploads` (multipart field `files`, ≤ 10 images, 8 MB each; JPG/PNG/WebP/GIF/AVIF, bytes verified) → `{ items: [{ url }] }`. `DELETE /uploads/:file`. Files are served from `/uploads/…`.
 
+### Live updates
+`GET /events` — Server-Sent Events, open once per tab and left open. Anyone may connect (public scope); signed in
+as admin or agent adds more scopes. See "Live updates" below.
+
+## 4a. Live updates (Server-Sent Events)
+
+The admin panel, agent panel and (in API mode) the public site update **without a refresh**: a new lead, a
+listing's review status, or any admin content change pushes to already-open tabs. `GET /api/events` is a plain
+Server-Sent Events stream (not Socket.io/WebSocket — nothing here needs the browser to push back over this
+channel, so a one-way push is simpler and lighter; the browser's built-in `EventSource` reconnects on its own).
+
+- `lib/events.js` — `subscribe(res, scopes)` / `broadcast(scope, event, data)`, a 20 s heartbeat. Scopes:
+  `'public'` (everyone), `'admin'` (any admin), `` `agent:<agentId>` `` (that agent only).
+- `contentChanged()` (`lib/misc.js`) — already called from almost every admin mutation — now also broadcasts
+  `content:changed` to `'admin'` and `'public'` immediately, alongside its existing debounced site rebuild.
+- Specific events with their own payload: `lead:new` (new lead → the team + the assigned agent), `listing:status`
+  (approved/rejected → that listing's agent), `listing:pending` (an agent posted/imported → the team).
+- **Sized for 1000+ concurrent connections** on this single-process deploy (`ecosystem.config.cjs`:
+  `exec_mode: 'fork'`, `instances: 1`) — each connection is cheap (a response object + a scope string), but raise
+  `ulimit -n` for the pm2-managed process and nginx's `worker_rlimit_nofile` / `worker_connections` well past
+  1000 before relying on this at that scale (each connection holds one file descriptor on both nginx and Node).
+- **One real limit**: connections live in the memory of **this one Node process**. A broadcast never reaches a
+  different process. Don't move to pm2 cluster mode (or more than one server) without adding a shared fan-out
+  layer (e.g. Redis pub/sub) first — see `docs/architecture.md` §8b.
+- `/api/events` has its own nginx `location` (`deploy/nginx-api.snippet.conf.template`): no buffering, a long
+  read timeout, no gzip — all needed so a push isn't delayed, and it must win over the general `/api/` block.
+
 ## 5. The website is connected
 
 The website talks to this API when it is built with `VITE_USE_API=true` (the production build does this through
@@ -213,4 +240,4 @@ Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uplo
 
 ## 7. Tests
 
-`npm test` — 110 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages). They start their own in-memory MongoDB and refuse to run against a remote database.
+`npm test` — 127 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages, live updates, per-user activity + IP geolocation). They start their own in-memory MongoDB and refuse to run against a remote database.

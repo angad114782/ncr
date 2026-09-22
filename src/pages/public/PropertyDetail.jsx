@@ -5,6 +5,7 @@ import {
   BedDouble,
   Calendar,
   Check,
+  Eye,
   Heart,
   LayoutPanelLeft,
   Mail,
@@ -35,6 +36,7 @@ import GuideLinks from '../../components/common/GuideLinks'
 import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath, propertyPath } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
 import { DetailSkeleton, Skeleton } from '../../components/common/Skeleton'
+import { useRevealPhone } from '../../hooks/useRevealPhone'
 
 // Leaflet needs `window`, so the map is a client-only lazy chunk. Until it loads (and in the
 // pre-rendered HTML) we render the address and nearby places as plain, crawlable text.
@@ -94,6 +96,9 @@ function PropertyDetailInner({ id }) {
 
   // `id` is the URL segment: the slug, an old slug, or (old links like /property/p6) the id.
   const property = findByParam(properties, id)
+  const agent = property ? agents.find((a) => a.id === property.agentId) : null
+  // Called unconditionally (before the early returns below) — React's rules of hooks.
+  const revealPhone = useRevealPhone(agent, property)
 
   useEffect(() => {
     if (property) {
@@ -127,7 +132,6 @@ function PropertyDetailInner({ id }) {
     )
   }
 
-  const agent = agents.find((a) => a.id === property.agentId)
   const isSaved = savedIds.includes(property.id)
 
   const similarInCity = activeProperties.filter((p) => p.city === property.city && p.id !== property.id).slice(0, 3)
@@ -376,9 +380,22 @@ function PropertyDetailInner({ id }) {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <a href={`tel:${agent.phone}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm">
-                  <Phone size={14} /> {agent.phone}
-                </a>
+                {revealPhone.revealed ? (
+                  <a href={`tel:${agent.phone}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm">
+                    <Phone size={14} /> {agent.phone}
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={revealPhone.onReveal}
+                    aria-label="Show phone number"
+                    className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm w-full text-left"
+                  >
+                    <Phone size={14} className="shrink-0" />
+                    <span className="flex-1 font-mono tracking-wide">{revealPhone.masked}</span>
+                    <Eye size={15} className="text-[var(--color-accent)] shrink-0" />
+                  </button>
+                )}
                 <a href={`mailto:${agent.email}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm truncate">
                   <Mail size={14} /> {agent.email}
                 </a>

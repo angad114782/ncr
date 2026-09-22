@@ -152,7 +152,7 @@ export const leadCreate = z.object({
   message: z.string().trim().max(2000).optional(),
   propertyId: optText(60),
   city: optText(80),
-  source: z.enum(['contact_page', 'property_lead_form']).default('contact_page'),
+  source: z.enum(['contact_page', 'property_lead_form', 'phone_reveal']).default('contact_page'),
   contactIntent: optText(40),
   phoneToken: z.string().max(1000).optional(),
   // "otp_sent": the visitor filled the form and a code was sent, but the number is not confirmed (yet). The lead is

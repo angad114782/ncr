@@ -119,6 +119,52 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### User activity timeline — admin sees a signed-in visitor's full history, with IP + city + pincode (this batch)
+- [x] Every signed-in account's on-site activity (view / search / save / compare) is now a permanent, growing
+  timeline, not just the live on-device profile from §15 — Admin → Users has a new **Activity** button per row
+  (`UserActivitySheet.jsx`) that lists every event newest-first, paginated, with a human-readable summary
+  ("Searched — Buy 2 BHK in Gurugram") and, where available, the visitor's rough city/region/pincode and raw IP
+- [x] `backend/src/lib/geo.js`: free IP→city lookup (`ip-api.com`, no key), 24h in-memory cache per IP, private/
+  local IPs (`127.0.0.1`, `10.x`, `192.168.x`, …) are never looked up, a failed/slow lookup (3s timeout) resolves
+  to `null` and never breaks the request — the existing `POST /api/me/events` batch endpoint now stamps every
+  event with `ip` + best-effort `geo` on the way in
+- [x] New `GET /api/admin/users/:id/activity` (paginated, admin-only); UI carries an explicit disclaimer that
+  city/region/pincode are an IP-based estimate, not exact
+- [x] **Privacy boundary unchanged**: this only ever records for a signed-in, consenting account (same people the
+  interest profile in §15 already covers) — an anonymous visitor's browsing stays on-device only, never sent to
+  the server or shown to admin
+- [x] 10 new backend tests (geo caching/failure/private-IP skip + the admin endpoint) — 117 -> 127; frontend
+  Playwright-checked (button, sheet, both event types, location/pincode/IP shown, disclaimer)
+- [ ] Next up (confirmed order): reviews (agent/property, admin-moderated) → search analytics (top-searches pie
+  chart + trend forecasting) → agent leaderboard/position
+
+### Agent phone: masked, reveal-to-show, and a lead every time (this batch)
+- [x] An agent's phone number (property page + agent profile) shows masked (`91XXXXXXX667`) with an eye icon.
+  Signed in: tapping it reveals the real number at once and creates a Hot-intent lead (`source: 'phone_reveal'`,
+  no duplicate "thank you" WhatsApp — the team is still notified). Signed out: tapping it opens sign-in/sign-up
+  first; on success it reveals and creates the lead automatically, staying on the same page (no redirect to a
+  panel) — `AuthSheet`'s new `onSuccess` callback, `hooks/useRevealPhone.js`
+- [x] 11 Playwright checks (masked/revealed states, logged-in instant reveal, logged-out login-then-reveal without
+  losing the page, agent profile) + 1 new backend test (Hot intent, team notified, no welcome) — 116 -> 117
+- [ ] The WhatsApp chat button next to it is **not** gated the same way (kept one-click, unlike the number) — say
+  if that should change too
+
+### Live updates (Server-Sent Events) — no more "everyone has to refresh" (this batch)
+- [x] **Admin**: a new lead appears in Admin -> Inquiries (and its stats) the moment it arrives, without a refresh
+- [x] **Agent**: a listing's review status (approved / needs changes) flips live in the agent panel the moment the
+  admin decides; a lead on the agent's own listing also reaches them live
+- [x] **Admin/agent collaboration**: any content change one admin/agent makes (listing, blog, FAQ, testimonial,
+  agent, settings) pushes to every other open admin session (`contentChanged()` now broadcasts, on top of its
+  existing debounced site rebuild)
+- [x] **Public site** (API mode): an already-open visitor tab re-fetches when content changes, same mechanism
+- [x] Server-Sent Events, not Socket.io — nothing here needs the browser to push back over this channel, so a
+  one-way push is simpler and lighter (no client library, native reconnect). Sized for 1000+ concurrent
+  connections on the single-process VPS deploy (see `docs/architecture.md` §8b for the scope model, the nginx
+  config, and the one real limitation: single Node process, no cross-process fan-out without adding Redis)
+- [x] 6 new backend tests (headers, scoping, lead + listing-approval broadcasts, cleanup) — 110 -> 116; verified
+  once for real too: a live backend + a real browser tab on Admin -> Inquiries updated with zero reload while a
+  second, separate session submitted a real enquiry
+
 ### One phone-number flow, no login/sign-up choice (this batch)
 - [x] `AuthSheet` no longer has login/sign-up tabs. One screen: Mobile Number → Send Code. The code is sent either
   way (tries `login` purpose, silently falls back to `register` on a 404 — the visitor never sees that error);
@@ -214,7 +260,7 @@ _Last updated: 2026-09-22_
 ## 📋 Backlog
 
 ### ✅ Backend built (this batch) — see `backend/README.md`
-- [x] `backend/` — Express + MongoDB API: public data, phone-OTP auth (JWT cookie), roles user / agent / admin, leads with consent records and server-side intent, agent panel API with moderation, admin API (listings, agents, users, blog, FAQs, reviews, leads, settings incl. legal pages with version history, stats, audit, backup), image uploads, slugs, rebuild webhook, seed script — **88 tests pass**
+- [x] `backend/` — Express + MongoDB API: public data, phone-OTP auth (JWT cookie), roles user / agent / admin, leads with consent records and server-side intent, agent panel API with moderation, admin API (listings, agents, users, blog, FAQs, reviews, leads, settings incl. legal pages with version history, stats, audit, backup), image uploads, slugs, rebuild webhook, seed script — **116 tests pass**
 - [x] **Website connected to the API** (API mode: auth, data, admin / agent panels, settings, legal pages, forms with OTP, image uploads, saved homes, interest events) — 44-step browser test on the real backend + all earlier local-mode tests still pass
 - [x] **Deploy workflow** builds & starts both: tests → backend (pm2) → website (`npm run release`, no downtime) → nginx; `backend/ecosystem.config.cjs`, `deploy/nginx-api.snippet.conf`
 - [x] Publishing content in the admin rebuilds the pre-rendered site by itself (`REBUILD_COMMAND`)

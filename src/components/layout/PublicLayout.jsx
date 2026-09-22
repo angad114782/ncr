@@ -17,10 +17,14 @@ export default function PublicLayout() {
   const [authSource, setAuthSource] = useState('')
   const [authRole, setAuthRole] = useState('user')
   const [welcomeOpen, setWelcomeOpen] = useState(false)
-  const openAuth = (mode = 'login', source = '', role = 'user') => {
+  const [authOnSuccess, setAuthOnSuccess] = useState(null)
+  // `onSuccess`, when given, means "stay on this page and hand the signed-in user back" (e.g. reveal an agent's
+  // number) instead of the usual redirect to the person's panel — see AuthSheet's use of `onSuccess`.
+  const openAuth = (mode = 'login', source = '', role = 'user', onSuccess = null) => {
     setAuthMode(mode === 'signup' ? 'signup' : 'login')
     setAuthSource(source)
     setAuthRole(role === 'agent' ? 'agent' : 'user')
+    setAuthOnSuccess(() => onSuccess)
     setAuthOpen(true)
   }
 
@@ -32,7 +36,7 @@ export default function PublicLayout() {
         <Outlet context={{ openAuth }} />
       </main>
       <Footer />
-      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} source={authSource} initialRole={authRole} />
+      <AuthSheet open={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} source={authSource} initialRole={authRole} onSuccess={authOnSuccess} />
       <WelcomeModal onOpenAuth={openAuth} authOpen={authOpen} onOpenChange={setWelcomeOpen} />
       <LoginNudge onOpenAuth={openAuth} authOpen={authOpen || welcomeOpen} />
       <ApiToast />

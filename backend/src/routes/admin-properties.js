@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Agent, Property } from '../models/index.js'
 import { badRequest, notFound } from '../lib/errors.js'
 import { audit, contentChanged } from '../lib/misc.js'
+import { broadcast } from '../lib/events.js'
 import { notifyPerson } from '../lib/notify.js'
 import { adminPropertyCreate, adminPropertyQuery, adminPropertyUpdate, bulkBody, parse, propertyImport } from '../lib/schemas.js'
 import { escapeRegex } from '../lib/security.js'
@@ -14,8 +15,9 @@ const router = Router()
 
 const review = (p) => p.reviewStatus ?? 'approved'
 
-/** Tells the agent how their listing was decided. */
+/** Tells the agent how their listing was decided — WhatsApp/e-mail, and live in their open agent panel. */
 async function tellAgent(property, subject, text) {
+  broadcast(`agent:${property.agentId}`, 'listing:status', { id: property.id, reviewStatus: review(property), reviewNote: property.reviewNote ?? '' })
   const agent = property.agentId ? await Agent.findById(property.agentId) : null
   if (agent) notifyPerson({ phone: agent.phone, email: agent.email }, subject, text).catch(() => {})
 }

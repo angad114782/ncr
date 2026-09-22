@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Agent, Faq, Lead, Post, Property, Testimonial, User } from '../models/index.js'
+import { Agent, Event, Faq, Lead, Post, Property, Testimonial, User } from '../models/index.js'
 import { AppError, conflict, notFound } from '../lib/errors.js'
 import { newId } from '../lib/ids.js'
 import { audit, contentChanged } from '../lib/misc.js'
@@ -194,6 +194,23 @@ users.get('/', async (req, res) => {
     User.countDocuments(filter),
   ])
   res.json({ items: out(items), ...paginate(total, q.page, q.limit) })
+})
+
+/**
+ * One person's complete on-site activity: every view / search / save / compare / visit event, newest first, with
+ * the IP and best-effort city/region/pincode it was seen from (lib/geo.js — a pincode is often missing or only
+ * approximate; never treat it as exact). Only ever recorded for a SIGNED-IN, consenting account — an anonymous
+ * visitor's browsing stays on their own device, by design (see docs/rules.md §15).
+ */
+users.get('/:id/activity', async (req, res) => {
+  const user = await User.findById(req.params.id).select('name phone city').lean()
+  if (!user) throw notFound('User not found.')
+  const q = parse(listQuery, req.query)
+  const [items, total] = await Promise.all([
+    Event.find({ userId: req.params.id }).sort({ at: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
+    Event.countDocuments({ userId: req.params.id }),
+  ])
+  res.json({ user: out(user), items: out(items), ...paginate(total, q.page, q.limit) })
 })
 
 users.post('/', async (req, res) => {

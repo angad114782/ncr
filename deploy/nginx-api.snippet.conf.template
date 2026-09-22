@@ -9,6 +9,25 @@
 # It sends /api and /uploads to the backend (Node on 127.0.0.1:__PORT__, run by pm2). The website and the API are
 # then on the SAME origin, so the login cookie needs no CORS and cannot be sent to another site.
 
+# Live updates (Server-Sent Events, GET /api/events — see backend/src/lib/events.js). A longer prefix than
+# /api/ below, so nginx picks this one for it: no buffering (a push must reach the browser immediately, not
+# once nginx's buffer fills), a long read timeout (the connection is meant to stay open indefinitely — the
+# app itself pings every 20s to keep it alive well under this), and no gzip (nothing to compress usefully,
+# and gzip's own buffering would add the same delay it's disabled to avoid).
+location ^~ /api/events {
+    proxy_pass http://127.0.0.1:__PORT__;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_cache off;
+    gzip off;
+    proxy_read_timeout 1h;
+    add_header Cache-Control "no-store" always;
+}
+
 # ^~ = "this prefix wins over any regex location" (e.g. the usual `location ~* .(jpg|png|css|js)$ { … }` static-file rule,
 # which would otherwise catch /uploads/photo.jpg and answer 404 from the empty dist folder).
 location ^~ /api/ {

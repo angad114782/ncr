@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, User } from 'lucide-react'
+import { Activity, ShieldCheck, User } from 'lucide-react'
 import CollectionAdmin from '../../components/admin/CollectionAdmin'
+import UserActivitySheet from './UserActivitySheet'
 import { useAuth } from '../../context/AuthContext'
 import { useData } from '../../context/DataContext'
+import { USE_API } from '../../api/client'
 
 const schema = [
   { key: 'name', label: 'Full name', required: true },
@@ -16,6 +19,7 @@ export default function ManageUsers() {
   const { allUsers, addUser, updateUserById, setUserActive, deleteUser, user } = useAuth()
   const { agents } = useData()
   const pending = agents.filter((a) => a.status === 'pending').length
+  const [viewingUserId, setViewingUserId] = useState(null)
 
   // Adapter: CollectionAdmin talks to a generic CRUD object; users live in AuthContext.
   const crud = {
@@ -73,8 +77,20 @@ export default function ManageUsers() {
             ),
           },
         ]}
+        rowExtras={USE_API ? (u) => (
+          <button
+            type="button"
+            onClick={() => setViewingUserId(u.id)}
+            aria-label={`View ${u.name}'s activity`}
+            title="Activity — searches, saved & compared homes"
+            className="glass w-8 h-8 rounded-full flex items-center justify-center"
+          >
+            <Activity size={13} />
+          </button>
+        ) : undefined}
       />
       <p className="text-tertiary text-xs">Built-in accounts can be deactivated but not deleted. Deactivated users are signed out and can’t log in.</p>
+      {USE_API && <UserActivitySheet userId={viewingUserId} onClose={() => setViewingUserId(null)} />}
     </div>
   )
 }

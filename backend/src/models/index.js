@@ -229,6 +229,9 @@ const eventSchema = makeSchema(
     userId: str({ required: true, index: true }),
     type: { type: String, enum: ['view', 'search', 'save', 'compare', 'visit'], required: true },
     data: { type: Mixed, default: {} },
+    ip: str({ default: '' }),
+    // Best-effort from the IP (lib/geo.js) — city/region only reliably; pincode is frequently missing/approximate.
+    geo: { city: str({ default: '' }), region: str({ default: '' }), pincode: str({ default: '' }), country: str({ default: '' }) },
     at: { type: Date, default: () => new Date() },
   },
   { prefix: 'e', timestamps: false },

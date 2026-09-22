@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { config } from '../config.js'
 import { Audit } from '../models/index.js'
+import { broadcast } from './events.js'
 
 /* --------------------------------------------------------------------- audit */
 /** Who changed what — kept for a year. Never blocks or fails the request. */
@@ -69,6 +70,13 @@ async function fire(reason) {
 }
 
 export function contentChanged(reason = 'content') {
+  // Live-updates first, instantly: other admins re-fetch their lists, and the public site (already-open tabs)
+  // re-fetches so a new/changed listing appears without a refresh. The rebuild of the pre-rendered HTML (for
+  // search engines and new visits) still happens on its own debounced schedule below.
+  if (!config.isTest) {
+    broadcast('admin', 'content:changed', { reason })
+    broadcast('public', 'content:changed', { reason })
+  }
   if (!configured() || config.isTest) return
   clearTimeout(timer)
   timer = setTimeout(() => {

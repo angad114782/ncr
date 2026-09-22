@@ -4,6 +4,7 @@ import authRoutes from './auth.js'
 import meRoutes from './me.js'
 import agentRoutes from './agent.js'
 import uploadRoutes from './uploads.js'
+import eventsRoutes from './events.js'
 import adminProperties from './admin-properties.js'
 import adminSystem from './admin-system.js'
 import { agents, blog, faqs, leads, testimonials, users } from './admin-content.js'
@@ -15,6 +16,7 @@ api.use('/auth', authRoutes)
 api.use('/me', meRoutes)
 api.use('/uploads', uploadRoutes)
 api.use('/agent', agentRoutes)
+api.use('/events', eventsRoutes)
 
 const admin = Router()
 admin.use(requireRole('admin'))

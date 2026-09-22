@@ -1,4 +1,5 @@
 import { Agent, Lead, Property } from '../models/index.js'
+import { broadcast } from '../lib/events.js'
 import { emptyProfile, leadInterest, summarise } from '../lib/interest.js'
 import { notifyNewLead } from '../lib/notify.js'
 import { recordConsent } from './auth.js'
@@ -53,8 +54,9 @@ async function announceLead(lead, property, { team, welcome: wantWelcome, agent,
 export async function createLead(req, data, { user, verified = false, source, consentKind = 'enquiry', consentTextKey, contactConsent = true } = {}) {
   const phone = data.phone
   const summary = summarise(data.profile ?? emptyProfile())
-  const enquiry = source === 'property_lead_form' || source === 'contact_page'
-  const intent = enquiry ? higher(summary.intent, 'Warm') : summary.intent
+  const enquiry = source === 'property_lead_form' || source === 'contact_page' || source === 'phone_reveal'
+  // Revealing an agent's number is one of the clearest buying signals there is — always Hot, not just "at least Warm".
+  const intent = source === 'phone_reveal' ? 'Hot' : enquiry ? higher(summary.intent, 'Warm') : summary.intent
   const interest = summary.hasSignal ? leadInterest(summary) : null
 
   const propertyId = data.propertyId ?? (source?.startsWith('signup') ? summary.lastViewedId : null) ?? null
@@ -107,7 +109,12 @@ export async function createLead(req, data, { user, verified = false, source, co
     })
     // The team hears about every new lead at once — including one whose code has not been typed in. The welcome waits
     // until the number is confirmed.
-    announce = { team: true, welcome: !pending, agent }
+    // No "thank you for your enquiry" welcome for a phone reveal — they didn't fill a form, they clicked to see a
+    // number to call themselves, and they are already a signed-in, known visitor; the team still hears about it.
+    announce = { team: true, welcome: !pending && source !== 'phone_reveal', agent }
+    // Live update: Admin -> Inquiries (and the assigned agent's own leads list) picks it up without a refresh.
+    broadcast('admin', 'lead:new', { id: lead.id, userName: lead.userName, intent: lead.intent })
+    if (agent) broadcast(`agent:${agent.id}`, 'lead:new', { id: lead.id, userName: lead.userName })
   }
 
   if (announce) await announceLead(lead, property, { ...announce, enquiry, contactConsent, verified, since })

@@ -3,6 +3,7 @@ import { Agent, Lead, Property, User } from '../models/index.js'
 import { AppError, conflict, forbidden, notFound } from '../lib/errors.js'
 import { newId } from '../lib/ids.js'
 import { audit, contentChanged } from '../lib/misc.js'
+import { broadcast } from '../lib/events.js'
 import { notifyTeam } from '../lib/notify.js'
 import { agentProfile, agentPropertyCreate, agentPropertyImport, agentPropertyUpdate, leadPatch, leadQuery, parse } from '../lib/schemas.js'
 import { out, paginate } from '../lib/serialize.js'
@@ -83,6 +84,7 @@ router.post('/properties', async (req, res) => {
   if (req.agent.status === 'rejected') throw forbidden(REJECTED)
   const property = await createOwn(req, parse(agentPropertyCreate, req.body))
   audit(req, 'agent-create-listing', 'property', property.id)
+  broadcast('admin', 'listing:pending', { id: property.id, title: property.title, agentName: req.agent.name })
   notifyTeam('New listing waiting for review', `${req.agent.name} posted “${property.title}” (${property.city}).`).catch(() => {})
   res.status(201).json({ property: out(property) })
 })
@@ -94,6 +96,7 @@ router.post('/properties/import', async (req, res) => {
   const created = []
   for (const item of items) created.push(await createOwn(req, item)) // one by one so same-title rows get distinct slugs
   audit(req, 'agent-import-listings', 'property', '', { count: created.length })
+  broadcast('admin', 'listing:pending', { count: created.length, agentName: req.agent.name })
   notifyTeam('New listings waiting for review', `${req.agent.name} imported ${created.length} listings.`).catch(() => {})
   res.status(201).json({ added: created.length, items: out(created) })
 })

@@ -219,4 +219,16 @@ describe('lead WhatsApp messages', () => {
     await sleep(300)
     assert.equal(calls.length, 0)
   })
+
+  it('revealing an agent\'s phone number: the team is told at once (Hot), but the visitor gets no "thank you" welcome', async () => {
+    const res = await t.request.post('/api/leads').send({ name: 'Reveal Buyer', phone: '9811100011', source: 'phone_reveal', propertyId: 'p1', message: "Revealed Agent's phone number for \"Test Home\"." })
+    assert.equal(res.status, 201)
+    await waitFor(() => sentTo(ADMIN_PHONE).length >= 1)
+    await sleep(200)
+    assert.equal(sentTo(ADMIN_PHONE).length, 1, 'team notified')
+    assert.equal(sentTo('9811100011').length, 0, 'no welcome for a phone reveal')
+    const { Lead } = await import('../src/models/index.js')
+    const lead = await Lead.findOne({ phone: '9811100011' }).lean()
+    assert.equal(lead.intent, 'Hot', 'revealing a number is always treated as Hot intent')
+  })
 })

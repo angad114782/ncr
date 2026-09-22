@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { Agent, Consent, Event, Lead, Property, Saved, User } from '../models/index.js'
 import { conflict, notFound } from '../lib/errors.js'
 import { audit } from '../lib/misc.js'
+import { geoForIp } from '../lib/geo.js'
 import { eventsBody, meDelete, meUpdate, parse } from '../lib/schemas.js'
 import { sha256 } from '../lib/security.js'
 import { out, publicProperty } from '../lib/serialize.js'
@@ -68,7 +69,9 @@ router.get('/inquiries', async (req, res) => {
  */
 router.post('/events', async (req, res) => {
   const { events } = parse(eventsBody, req.body)
-  await Event.insertMany(events.map((e) => ({ userId: req.user.id, type: e.type, data: e.data, at: e.at ? new Date(e.at) : new Date() })))
+  // One lookup per request (cached per IP for a day in lib/geo.js), not per event — a batch is all one visit.
+  const geo = await geoForIp(req.ip)
+  await Event.insertMany(events.map((e) => ({ userId: req.user.id, type: e.type, data: e.data, ip: req.ip, geo: geo ?? undefined, at: e.at ? new Date(e.at) : new Date() })))
   res.status(201).json({ ok: true, stored: events.length })
 })
 

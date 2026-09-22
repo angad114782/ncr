@@ -17,7 +17,7 @@ function generateOtp() {
   return String(Math.floor(1000 + Math.random() * 9000))
 }
 
-export default function AuthSheet({ open, onClose, initialMode = 'login', source = '', initialRole = 'user' }) {
+export default function AuthSheet({ open, onClose, initialMode = 'login', source = '', initialRole = 'user', onSuccess = null }) {
   const [mode, setMode] = useState(initialMode)
   const [agree, setAgree] = useState(false)
   const [role, setRole] = useState(initialRole) // 'user' (client, the default) | 'agent'
@@ -266,6 +266,12 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       })
     }
     onClose()
+    if (onSuccess) {
+      // e.g. revealing an agent's phone number: stay exactly on this page and hand the now-signed-in user back —
+      // never redirect to a panel for this.
+      onSuccess(result.user)
+      return
+    }
     // From the login prompt they stay exactly where they were browsing; otherwise go to their panel.
     // Coming from "List My Property", an agent lands on "My listings" to post the property right away.
     const home = source === 'list' && result.user.role === 'agent' ? '/agent/listings' : panelPath(result.user)

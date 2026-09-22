@@ -235,12 +235,13 @@ Property CSV column order is `PROPERTY_CSV_COLUMNS` in `src/utils/csv.js`. Array
 | Esri World Imagery | satellite | free, no key |
 | Unsplash / pravatar | demo images | replace with own uploads/CDN |
 | Meta Pixel, Google Ads | ad tracking | real |
+| ip-api.com | IP → city/region/pincode for the admin activity timeline (§8c) | free tier, no key, ~45 req/min; server calls it, never the browser |
 
 > CartoDB free raster tiles now show a "KEY REQUIRED" watermark — do not use without a key.
 
 ## 8. Backend (built — `backend/`)
 
-The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 88 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
+The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 127 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
 
 **Two modes, one code base.** `VITE_USE_API=true` (set for production builds in `.env.production`) makes the site use the API; without it the site runs on browser storage as before (handy for front-end work without the backend). The switch lives in `src/api/client.js` (`USE_API`, `api()`, `fetchAll()`, error toast bus) and the contexts:
 
@@ -249,7 +250,7 @@ The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/M
 | `AuthContext` | `ApiAuthProvider`: session from `GET /auth/me` (HttpOnly cookie), OTP send / login / register, admin user management (optimistic, server decides) |
 | `DataContext` | starts from the build snapshot, then loads `/public/bootstrap` (+ `/admin/*` for admins, `/agent/*` + `/me/*` for agents / clients); `makeApiCrud` gives every admin screen the same `upsert / patch / remove / setActive / move / upsertMany` that now save on the server (optimistic, rolled back with a toast on refusal) |
 | `SettingsContext` | `useApiSettings`: snapshot → `/public/settings` or `/admin/settings`; an admin's edit is saved with `PUT /admin/settings/:key` after 1 s |
-| `InterestContext` | still on-device; for a signed-in client also batches events to `/me/events` |
+| `InterestContext` | still on-device; for a signed-in client also batches events to `/me/events` (stamped with IP + geo server-side — see §8c) |
 | forms | `AuthSheet`, `LeadForm`, `Contact` use the OTP + lead endpoints; images upload to `/uploads` (`utils/images.js`) |
 
 **Build data = snapshot.** `scripts/fetch-snapshot.mjs` writes `src/data/snapshot.json` from `GET /api/public/bootstrap` (falls back to the previous snapshot, then to the sample data). The sitemap / llms files, the pre-render and the client bundle all read it, so the pre-rendered HTML and the first client render are identical (hydration), and the page then refreshes itself from the live API. `npm run release` (`scripts/release.mjs`) builds into `dist-next/` and swaps it in (no downtime); the backend runs it (`REBUILD_COMMAND`) when the admin publishes content.
@@ -257,6 +258,68 @@ The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/M
 **Deploy**: `.github/workflows/deploy.yml` — tests, then on the VPS: backend (`npm ci`, pm2 `ncr-api`, health check), website (`npm run release`), nginx reload. nginx proxies `/api` and `/uploads` (`deploy/nginx-api.snippet.conf`, generated from the `.template` with `PORT` from `backend/.env`; the health check requires `"service":"ncr-api"` so another app on the same port can never pass as this API), so the site and API share one origin.
 
 Where §8a's requirements live in the code: OTP + sessions → `services/auth.js`; leads / consent / intent → `services/leads.js`, `models` (Lead, Consent); agent rules → `routes/agent.js`; approval workflow → `routes/admin-properties.js`; slugs → `services/property.js` + `lib/propertySlug.js`; legal history + secrets masking → `services/settings.js`; rebuild hook → `lib/misc.js`; uploads → `routes/uploads.js`.
+
+## 8b. Live updates (Server-Sent Events)
+
+The admin panel, agent panel and (in API mode) the public site update **without a manual refresh** — a new lead,
+a listing's review status, or any admin content change pushes to already-open tabs. Built with **Server-Sent
+Events**, not WebSocket/Socket.io: nothing here needs the browser to push to the server over this channel (every
+write is already a normal REST call), so a one-way, plain-HTTP push is simpler and lighter — no client library,
+the browser's built-in `EventSource` reconnects on its own.
+
+- **Backend** — `lib/events.js` (`subscribe`, `broadcast(scope, event, data)`, a 20 s heartbeat) + `GET /api/events`
+  (`routes/events.js`). A connection's scopes come from who is signed in: `'public'` (everyone, incl. anonymous),
+  `'admin'` (any admin), `` `agent:<their own agentId>` `` (that agent only). `contentChanged()` (`lib/misc.js`)
+  already fires from almost every admin mutation (listings, blog, FAQs, testimonials, agents, settings, an
+  agent's own approved-listing edits) — it now also broadcasts `'content:changed'` to `'admin'` and `'public'`
+  instantly, on top of its existing debounced site rebuild. More specific events carry their own payload:
+  `lead:new` (→ `'admin'` + the assigned agent's scope, from `services/leads.js`), `listing:status` (→ the
+  listing's agent, from `admin-properties.js`'s `tellAgent()`), `listing:pending` (→ `'admin'`, from `routes/agent.js`
+  when an agent posts/imports).
+- **Frontend** — one `EventSource('/api/events', { withCredentials: true })` opened in `DataContext` (API mode
+  only, alongside the existing snapshot→bootstrap load), listening for the event names above and calling the
+  already-existing `load()` (debounced 300 ms so one action that fires more than one event only re-fetches once).
+  No new UI needed: every screen that already reads from `DataContext` (stats, lists, badges) just re-renders
+  when its data changes underneath it.
+- **nginx** — `/api/events` has its own, more specific `location` in `deploy/nginx-api.snippet.conf.template`
+  (`proxy_buffering off`, a 1 h read timeout, no gzip) — it must win over the general `/api/` block, or pushes
+  would be delayed by nginx's own buffering.
+- **Scale**: sized for **1000+ concurrent connections on the single VPS this runs on** — each is a few KB (a
+  response object + a scope string), which Node's event-loop model handles cheaply. The real ceiling is OS file
+  descriptors (nginx holds one per proxied SSE connection, same as the backend process) — raise `ulimit -n` for
+  the pm2-managed process and nginx's `worker_rlimit_nofile`/`worker_connections` well past 1000 before relying
+  on this at that scale.
+- **One real limitation**: `subscribers` lives in the memory of **one Node process** (matches `ecosystem.config.cjs`:
+  `exec_mode: 'fork'`, `instances: 1`). A broadcast only reaches connections held by that same process. This
+  breaks the moment the app runs as more than one process (pm2 cluster mode, or more than one server) — don't
+  switch to cluster mode without first adding a shared fan-out layer (e.g. Redis pub/sub) that every process
+  broadcasts through instead of writing to its own `subscribers` directly.
+- **Tests**: `backend/tests/events.test.js` — headers, scoping (admin/agent/public), a lead and a listing-approval
+  broadcasting live to the right connection only, connection cleanup. Verified once end-to-end too: a real
+  backend (isolated in-memory MongoDB) + a real browser tab left open on Admin → Inquiries with no reload, while
+  a second, separate browser session submitted a real enquiry — the count and the new lead appeared live.
+
+## 8c. Per-user activity timeline (IP + city/pincode, admin-only)
+
+Admin → Users → **Activity** shows one signed-in account's full on-site history (view / search / save / compare),
+newest first, with the rough location it happened from. This is separate from — and in addition to — the
+on-device interest profile in §4b/rules §15: that stays anonymous-friendly and local; this is a durable,
+server-side record kept **only** for accounts that are signed in (see rules §15.2a for the privacy boundary).
+
+- **Backend** — the existing `POST /api/me/events` (`requireAuth`) now calls `geoForIp(req.ip)`
+  (`lib/geo.js`) once per batch and stores `ip` + `geo: {city, region, pincode, country}` on every `Event` it
+  inserts. `geoForIp` hits the free `ip-api.com` JSON endpoint (no key, ~45 req/min), skips private/local IPs
+  outright (`127.0.0.1`, `10.x`, `172.16-31.x`, `192.168.x`), caches each IP for 24 h in memory, and — like every
+  best-effort lookup in this codebase — never throws: a timeout or a bad response just means no `geo` on that
+  event, not a broken request. `GET /api/admin/users/:id/activity` (admin-only, paginated, newest first) reads
+  them back.
+- **Frontend** — `src/pages/admin/UserActivitySheet.jsx`, opened from a new per-row **Activity** button on
+  Admin → Users (`ManageUsers.jsx`, API mode only). Renders each event with an icon, a plain-English summary
+  built from the event's own `data` (never the raw payload), the timestamp, and — when present — `city, region ·
+  pincode (ip)` with an explicit "estimate, not exact" disclaimer under the list.
+- **Tests**: `backend/tests/activity.test.js` — 4 unit tests on `geo.js` (private-IP skip, parse, cache, failure
+  → `null`) + 6 on the admin endpoint (auth/role gating, events accumulate across visits newest-first,
+  pagination, empty state, 404 for an unknown user).
 
 ## 8-old. Original backend plan (kept for reference)
 

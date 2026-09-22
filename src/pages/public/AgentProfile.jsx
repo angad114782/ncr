@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Award, Mail, MapPin, Phone, Star } from 'lucide-react'
+import { Award, Eye, Mail, MapPin, Phone, Star } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
@@ -9,6 +9,7 @@ import { useSettings } from '../../context/SettingsContext'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
 import { DetailSkeleton } from '../../components/common/Skeleton'
+import { useRevealPhone } from '../../hooks/useRevealPhone'
 
 export default function AgentProfile() {
   const { id } = useParams()
@@ -18,6 +19,8 @@ export default function AgentProfile() {
 
   // Only approved agents get a public profile — pending / rejected ones 404.
   const agent = approvedAgents.find((a) => a.id === id)
+  // Called unconditionally (before the early returns below) — React's rules of hooks.
+  const revealPhone = useRevealPhone(agent, null)
   if (!agent && !dataReady) return <DetailSkeleton />
   if (!agent) {
     return (
@@ -70,9 +73,15 @@ export default function AgentProfile() {
           <p className="text-secondary leading-relaxed max-w-xl">{agent.bio}</p>
         </div>
         <div className="flex flex-col gap-2 w-full md:w-56 shrink-0">
-          <a href={`tel:${agent.phone}`}>
-            <GlassButton variant="glass" className="w-full justify-center"><Phone size={16} /> Call</GlassButton>
-          </a>
+          {revealPhone.revealed ? (
+            <a href={`tel:${agent.phone}`}>
+              <GlassButton variant="glass" className="w-full justify-center"><Phone size={16} /> {agent.phone}</GlassButton>
+            </a>
+          ) : (
+            <GlassButton variant="glass" className="w-full justify-center font-mono tracking-wide" onClick={revealPhone.onReveal}>
+              <Eye size={16} /> {revealPhone.masked}
+            </GlassButton>
+          )}
           <a href={`mailto:${agent.email}`}>
             <GlassButton className="w-full justify-center"><Mail size={16} /> Email</GlassButton>
           </a>
