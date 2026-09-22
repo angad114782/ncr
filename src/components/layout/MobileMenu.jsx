@@ -32,7 +32,7 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, onAddList
     document.documentElement.classList.add('menu-open')
     closeRef.current?.focus()
     const onKey = (e) => e.key === 'Escape' && onClose()
-    const mq = window.matchMedia('(min-width: 768px)')
+    const mq = window.matchMedia('(min-width: 1024px)') // must match Navbar.jsx's lg breakpoint
     const onResize = () => mq.matches && onClose()
     window.addEventListener('keydown', onKey)
     mq.addEventListener('change', onResize)
@@ -52,7 +52,7 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, onAddList
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] md:hidden" role="dialog" aria-modal="true" aria-label="Main menu">
+        <div className="fixed inset-0 z-[80] lg:hidden" role="dialog" aria-modal="true" aria-label="Main menu">
           <motion.div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}

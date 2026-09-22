@@ -4,7 +4,9 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import AuthSheet from './AuthSheet'
 import ContactRail from './ContactRail'
+import ContactStrip from './ContactStrip'
 import TopBanner from './TopBanner'
+import DisableInspect from './DisableInspect'
 import CompareBar from '../property/CompareBar'
 import CursorFollower from '../effects/CursorFollower'
 import LoginNudge from './LoginNudge'
@@ -30,9 +32,11 @@ export default function PublicLayout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <DisableInspect />
+      <ContactStrip />
       <TopBanner />
       <Navbar onAuthOpen={() => openAuth('login')} onAgentDoor={() => openAuth('signup', 'list', 'agent')} />
-      <main className="flex-1 px-4 max-w-6xl mx-auto w-full" style={{ paddingTop: 'calc(7rem + var(--banner-h, 0px))' }}>
+      <main className="flex-1 px-4 max-w-6xl mx-auto w-full" style={{ paddingTop: 'calc(7rem + var(--banner-h, 0px) + var(--contact-h, 0px))' }}>
         <Outlet context={{ openAuth }} />
       </main>
       <Footer />

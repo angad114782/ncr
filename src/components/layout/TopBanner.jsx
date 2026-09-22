@@ -49,8 +49,8 @@ export default function TopBanner() {
 
   return (
     <div
-      className="fixed top-0 inset-x-0 z-50 flex items-center justify-center px-10 text-sm font-medium text-white bg-[var(--color-accent)]"
-      style={{ height: BANNER_HEIGHT }}
+      className="fixed inset-x-0 z-50 flex items-center justify-center px-10 text-sm font-medium text-white bg-[var(--color-accent)]"
+      style={{ height: BANNER_HEIGHT, top: 'var(--contact-h, 0px)' }}
     >
       {topBanner.link ? (
         topBanner.link.startsWith('http') ? (

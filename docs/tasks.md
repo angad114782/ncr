@@ -119,24 +119,47 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Navbar overflow on iPad / tablet widths (this batch)
+- [x] **Real bug, caught by asking for a tablet-width check specifically**: at 768-1024px (iPad portrait, and the
+  `md`-`lg` Tailwind range generally) the desktop nav's link row *and* action buttons both turned on at `md`
+  (768px) but didn't actually fit until much wider — "Add Listing" wrapped and got clipped, the theme toggle and
+  Sign In button were pushed off-screen entirely. Invisible in a normal `document.documentElement.scrollWidth`
+  check because the navbar is `fixed` — it doesn't grow the page, it just silently clips
+- [x] Fix: the desktop nav (both the link row and the action-button row) now switches on at `lg` (1024px), not
+  `md` — anything narrower gets the hamburger menu. `MobileMenu.jsx`'s own breakpoint (root `lg:hidden`, the
+  auto-close `matchMedia`) moved from 768px to 1024px to match, so there's no dead zone
+- [x] Signed-in Admin/Agent-panel/Dashboard buttons (more of them than the anonymous "Sign In" state, so a
+  tighter fit) still overflowed right at the exact 1024px edge — they render icon-only from `lg` and get their
+  text label back only from `xl` (1280px)
+- [x] Playwright-checked at 7 widths (768 / 820 / 834 / 900 / 1024 / 1194 / 1280px) × signed-out and signed-in-
+  as-admin, plus confirmed the hamburger still opens a working menu at iPad width — 26/26 pass. `docs/rules.md`
+  §3.10-11 now calls out tablet widths specifically, since mobile + desktop testing alone missed this
+
 ### Visible contact number (GMB/NAP) + closing the WhatsApp number leak (this batch)
-- [x] **Desktop navbar now shows a real `tel:` phone link** (large screens, next to "Add Listing") — previously
-  only the footer and the mobile menu did. Matches what a Google Business Profile listing expects to find on
-  the website (the same number, visibly placed) for NAP consistency during verification/approval
+- [x] **New `ContactStrip.jsx`**: a slim, permanent, non-dismissible bar above the top banner/navbar, on every
+  public page, showing the phone (+ email on wider screens) as real `tel:`/`mailto:` links. First tried adding
+  the phone straight into the Navbar pill — that broke at medium/large widths once it was carrying the logo,
+  menu, Add Listing and Sign In too, so it moved to its own bar instead (stacks correctly with `TopBanner` via
+  `--contact-h`/`--banner-h` CSS vars — see `docs/rules.md` §15a). Matches what a Google Business Profile listing
+  expects to find on the website (the same number, visibly placed, on every page) for NAP consistency
 - [x] Footer's and the mobile menu's Call/WhatsApp links now render **nothing** (not a broken `tel:+91` with no
   digits) when `whatsappConfig.displayPhone` is empty — that empty state is the actual reason a number "isn't
   showing", not a rendering bug; it needs to be filled in at Admin → Settings → WhatsApp → *Display Phone Number*
-  (drives the header, footer, mobile menu **and** the JSON-LD `telephone` field Google reads)
-- [x] **Closed the real leak behind "just disable DevTools"**: the agent's phone number is masked in what the
-  page *shows*, but the "Chat on WhatsApp" button next to it still had the real number sitting in its `wa.me`
-  `href` — visible with plain "View Page Source", no DevTools needed, and the link opens that real number the
-  moment it's clicked regardless of the masked text. Gated it the same way the Call button already is: before
-  reveal it's a button that reveals (+ creates the lead) first, the real link appears after — see `docs/rules.md`
-  §21. Blocking DevTools/right-click was asked for too and explicitly **not** done — it's bypassable in seconds
-  (View Source alone defeats it) and breaks accessibility tools for no real protection; this is the fix that
-  actually closes the gap
-- [x] Playwright-verified (navbar/footer real `tel:` links, WhatsApp button is a gated button — not a live link —
-  before reveal, opens sign-in first when signed out)
+  (drives the strip, footer, mobile menu **and** the JSON-LD `telephone` field Google reads)
+- [x] **Closed the real leak behind the DevTools request**: the agent's phone number is masked in what the page
+  *shows*, but the "Chat on WhatsApp" button next to it still had the real number sitting in its `wa.me` `href`
+  — visible with plain "View Page Source", no DevTools needed, and the link opens that real number the moment
+  it's clicked regardless of the masked text. Gated it the same way the Call button already is: before reveal
+  it's a button that reveals (+ creates the lead) first, the real link appears after — see `docs/rules.md` §21.
+  **This is the fix that actually closes the gap** — blocking DevTools does not, and was explained as such
+- [x] **`DisableInspect.jsx` built anyway, on explicit request after that explanation**: blocks right-click and
+  F12/Ctrl+Shift+I,J,C/Ctrl+U on public pages only (never in admin/agent/dashboard, so the team can still debug).
+  Documented plainly in code and in `docs/rules.md` §21 as a nuisance deterrent, not protection — View Page
+  Source from a browser's own menu, a different browser, curl, an extension or disabled JavaScript all still
+  show the full source; it also blocks a legitimate visitor's right-click (open link in new tab, copy text)
+- [x] Playwright-verified (strip's `tel:` link sits above the navbar with no overlap, navbar no longer carries
+  its own phone link, WhatsApp button is a gated button — not a live link — before reveal and opens sign-in
+  first when signed out, right-click/F12/Ctrl+U are prevented on the public page) — mobile screenshot checked too
 
 ### NCR-first positioning (this batch)
 - [x] **Fixed a real brand/content mismatch an SEO review caught**: domain `propertyinncr.com` + brand "NCR

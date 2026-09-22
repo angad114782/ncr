@@ -37,9 +37,10 @@
 7. Sticky flex children need `self-start`.
 8. Reuse the glass primitives (`GlassCard`, `GlassButton`, `GlassInput`, `GlassSheet`) — don't hand-roll new surfaces.
 9. Every new interactive element needs a hover, focus and active/pressed state that works in **both** themes.
-10. Test light and dark mode and a mobile width (360 / 390 px) for every UI change — `document.documentElement.scrollWidth` must equal `clientWidth` (no horizontal scroll).
-11. **Mobile grids:** write `grid grid-cols-1 lg:grid-cols-3` (never a bare `lg:` grid) and add `min-w-0` to grid/flex children with long text, or the page scrolls sideways.
-12. **CTA copy:** benefit-first, first-person, low-friction and honest — "Get My Free Callback", "Confirm & Book My Callback", "Create My Free Account" instead of "Send OTP" / "Verify & Submit". Add a one-line reassurance under the button (why we ask for the code, no spam, no obligation). No false urgency or scarcity ("only 2 left!") unless it is true.
+10. Test light and dark mode, a mobile width (360 / 390 px) **and a tablet width (768-1024 px, iPad portrait and landscape)** for every UI change touching the header/nav — `document.documentElement.scrollWidth` must equal `clientWidth` (no horizontal scroll), and check that nothing inside a `fixed` element (which doesn't affect `scrollWidth`) spills past the viewport edge either. The Navbar's own overflow at exactly this range (2026-09-22) went unnoticed until it was: a `fixed`-positioned pill doesn't trigger page scroll when it overflows, it just clips content off-screen silently.
+11. **`Navbar.jsx`'s desktop nav switches on at `lg` (1024px), not `md` (768px)** — at tablet-portrait widths the full link row plus the action buttons (Add Listing, theme toggle, Sign In — or Admin/Agent panel/Dashboard/avatar when signed in) doesn't fit. `MobileMenu.jsx`'s own breakpoint (`lg:hidden` on its root, `matchMedia('(min-width: 1024px)')` for its auto-close effect) must stay in sync with this — changing one without the other opens a dead zone where the hamburger shows but the menu it opens doesn't. Signed-in Admin/Agent-panel/Dashboard buttons render icon-only until `xl` (1280px) — full labels return only once there's room; that's the two-step pattern for a button row that grows conditionally (some buttons only exist when signed in), not "hide it entirely" at the tight end.
+12. **Mobile grids:** write `grid grid-cols-1 lg:grid-cols-3` (never a bare `lg:` grid) and add `min-w-0` to grid/flex children with long text, or the page scrolls sideways.
+13. **CTA copy:** benefit-first, first-person, low-friction and honest — "Get My Free Callback", "Confirm & Book My Callback", "Create My Free Account" instead of "Send OTP" / "Verify & Submit". Add a one-line reassurance under the button (why we ask for the code, no spam, no obligation). No false urgency or scarcity ("only 2 left!") unless it is true.
 
 ## 4. React & code
 
@@ -87,7 +88,8 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 12. **Dynamic interlinking:** blog / FAQ text goes through `AutoLinkedText` / `BlogBody` (admin rules in Site Content → *SEO & links* + city names). Every article shows related guides (`relatedPosts`) and `ExploreLinks`; listing pages show `ExploreLinks` + `GuideLinks`; `/sitemap` lists everything. A new page must be reachable from at least one of these.
 13. **AIO / GEO:** every guide has a **Quick answer** (`summary`, 40–60 words, answer first) — rendered in a `data-speakable` box, exposed as `abstract` + `speakable` in JSON-LD, and copied into `llms-full.txt`. Keep `robots.txt` open to AI crawlers (GPTBot, ClaudeBot, PerplexityBot …) unless the owner opts out. Author, updated date and CEO credentials (E-E-A-T) stay visible on articles.
 14. Pages that must not be indexed (search text, price caps, empty results, panels) use `noindex, follow` — bots still follow their links.
-15. **NAP (Name, Address, Phone) must be real and visible**, not buried — Google Business Profile checks that the number it has on file matches what a visitor (and its own crawler) actually sees on the website, ideally without scrolling. The one number is `whatsappConfig.displayPhone` (Admin → Settings → WhatsApp → *Display Phone Number*) — it drives the header `tel:` link (`Navbar.jsx`, desktop only, `lg:` breakpoint), the footer, the mobile menu's Call/WhatsApp buttons, and the `telephone` field in `organizationLd()`'s JSON-LD. Change it in one place, not four. Every one of those is guarded to render nothing (not a broken `tel:+91` with no digits) when it's empty — that's the tell that it still needs to be filled in, not a bug to "fix" by hard-coding a number.
+15. **NAP (Name, Address, Phone) must be real and visible**, not buried — Google Business Profile checks that the number it has on file matches what a visitor (and its own crawler) actually sees on the website, ideally without scrolling. The one number is `whatsappConfig.displayPhone` (Admin → Settings → WhatsApp → *Display Phone Number*) — it drives `ContactStrip.jsx` (a slim, permanent, non-dismissible bar above the top banner/navbar, on **every** public page — not stuffed into the Navbar pill itself, which breaks at medium/large widths once it's carrying the logo, menu, Add Listing and Sign In too), the footer, the mobile menu's Call/WhatsApp buttons, and the `telephone` field in `organizationLd()`'s JSON-LD. Change it in one place, not five. Every one of those is guarded to render nothing (not a broken `tel:+91` with no digits) when it's empty — that's the tell that it still needs to be filled in, not a bug to "fix" by hard-coding a number.
+15a. **Stacking multiple fixed top bars**: `ContactStrip` sets `--contact-h`, `TopBanner` sets `--banner-h` — each renders at `top: var(--<the one above it>, 0px)`, and both `Navbar`'s `top` and `PublicLayout`'s `<main>` `paddingTop` add **both** vars. A new permanent top bar follows the same pattern: own CSS var, stack it under the ones already there, add it into both consumers.
 
 ## 7. Process
 
@@ -232,13 +234,21 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 Masking a phone number in what a visitor *reads* (`useRevealPhone`'s `91XXXXXXX667`) does nothing if the real
 number is still sitting in an `href` on the same page — `tel:`, `mailto:`, and especially `wa.me/91<number>`
 links carry the full number in plain text in the page's HTML. Anyone can read it with "View Page Source" (never
-blockable) without ever opening DevTools, and a `wa.me` link *opens WhatsApp chatting that real number* the
-moment it's clicked, regardless of what text is shown next to it. **Trying to block DevTools / right-click /
-F12 does not fix this and isn't attempted here** — it's trivially bypassed (View Source, a different browser,
-curl, disabling the blocking script itself), breaks legitimate use (accessibility tools, the person's own
-review of their own site), and doesn't touch the actual leak. The real fix: **every link that would embed the
-masked value must be gated exactly like the visible text is** — build the `href` only after `revealPhone.revealed`
-is true (see the agent's "Chat on WhatsApp" button on `PropertyDetail.jsx`, gated the same way as its Call
-button); before that, render a button that calls the same `onReveal()`. Apply this to any *future* masked field
-too (an email, a second number) — the rule is the mask and the link must reveal together, never one without the
-other.
+truly blockable) without ever opening DevTools, and a `wa.me` link *opens WhatsApp chatting that real number*
+the moment it's clicked, regardless of what text is shown next to it. **Blocking DevTools / right-click / F12
+does not fix this** — it's trivially bypassed (View Source from the browser's own menu, a different browser,
+curl, disabling the blocking script itself) and breaks legitimate use (accessibility tools, the person's own
+review of their own site); `DisableInspect.jsx` below exists only as a deterrent the owner explicitly asked for
+after this was explained, not as the fix. The real fix: **every link that would embed the masked value must be
+gated exactly like the visible text is** — build the `href` only after `revealPhone.revealed` is true (see the
+agent's "Chat on WhatsApp" button on `PropertyDetail.jsx`, gated the same way as its Call button); before that,
+render a button that calls the same `onReveal()`. Apply this to any *future* masked field too (an email, a
+second number) — the rule is the mask and the link must reveal together, never one without the other.
+
+`DisableInspect.jsx` (mounted in `PublicLayout` only, never in the admin/agent/dashboard shells, so the team can
+still debug their own site) blocks right-click and the common DevTools/view-source keyboard shortcuts, at the
+owner's explicit request after the limitation above was explained. **Treat it as a nuisance deterrent, never as
+protection** — it does not stop View Page Source from a browser's own menu, a different browser, curl, an
+extension, or JavaScript being disabled, all of which still show the full page source, and it blocks a
+legitimate visitor's right-click (open link in new tab, copy text) along the way. Its presence is never a reason
+to relax the real rule above — a link's `href` and any client-side code stay exactly as inspectable as before.

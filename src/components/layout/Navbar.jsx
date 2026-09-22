@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, Phone, Plus, ShieldCheck } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, Plus, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import MobileMenu from './MobileMenu'
@@ -15,8 +15,7 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
   const [openMenu, setOpenMenu] = useState(null)
   const hamburgerRef = useRef(null)
   const { user, isAdmin, isAgent, logout } = useAuth()
-  const { siteContent, company, whatsappConfig } = useSettings()
-  const phoneDigits = whatsappConfig.displayPhone
+  const { siteContent, company } = useSettings()
   // Menu comes from Admin → Site Content → Menu & Footer (hidden items are skipped).
   const links = siteContent.nav.filter((l) => l.visible !== false && l.label)
   const navigate = useNavigate()
@@ -43,7 +42,7 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 200, damping: 24 }}
       className="fixed left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-6xl"
-      style={{ top: 'calc(1rem + var(--banner-h, 0px))' }}
+      style={{ top: 'calc(1rem + var(--banner-h, 0px) + var(--contact-h, 0px))' }}
     >
       <div
         className={`glass-strong rounded-[24px] px-5 py-3 flex items-center justify-between transition-all ${
@@ -57,7 +56,11 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
           <span className="font-display">{company.name}</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
+        {/* `lg` (1024px), not `md` (768px): at tablet-portrait widths (iPad ~768-834px) the full link row plus
+            Add Listing / theme toggle / Sign In (or Admin+Dashboard+avatar when signed in) doesn't fit and spills
+            past the pill's edge. Anything narrower than `lg` gets the hamburger menu instead — MobileMenu.jsx's
+            own breakpoint must stay in sync with this one. */}
+        <nav className="hidden lg:flex items-center gap-1">
           {links.map((l) => (
             <div
               key={l.to}
@@ -111,15 +114,7 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          {/* A real, visible, clickable phone number in the header — not just the footer — matches what a Google
-              Business Profile listing expects to find on the website (NAP consistency). Admin → Settings →
-              WhatsApp → Display Phone Number is the one place this (and the footer / JSON-LD telephone) comes from. */}
-          {phoneDigits && (
-            <a href={`tel:+91${phoneDigits}`} className="hidden lg:flex items-center gap-1.5 text-sm font-medium text-secondary hover:text-[var(--color-accent)] spring px-2">
-              <Phone size={14} /> +91 {phoneDigits}
-            </a>
-          )}
+        <div className="hidden lg:flex items-center gap-3">
           {/* Not shown while signed in as a buyer or admin — only to a guest (the door in) or an already-signed-in agent (straight to My listings). */}
           {(!user || isAgent) && (
             <GlassButton variant="glass" size="sm" icon={Plus} onClick={goToAddListing}>
@@ -128,21 +123,23 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
           )}
           <ThemeToggle />
           {user ? (
+            // Icon-only at lg (signed-in admins/agents get 2-3 extra buttons the anonymous state doesn't have,
+            // which overflowed right at the 1024px edge with full labels) — full labels return from xl (1280px).
             <div className="flex items-center gap-2">
               {isAdmin && (
-                <GlassButton variant="glass" size="sm" icon={ShieldCheck} onClick={() => navigate('/admin')}>
-                  Admin
+                <GlassButton variant="glass" size="sm" icon={ShieldCheck} onClick={() => navigate('/admin')} aria-label="Admin">
+                  <span className="hidden xl:inline">Admin</span>
                 </GlassButton>
               )}
               {isAgent && (
-                <GlassButton variant="glass" size="sm" icon={Briefcase} onClick={() => navigate('/agent')}>
-                  Agent panel
+                <GlassButton variant="glass" size="sm" icon={Briefcase} onClick={() => navigate('/agent')} aria-label="Agent panel">
+                  <span className="hidden xl:inline">Agent panel</span>
                 </GlassButton>
               )}
-              <GlassButton variant="glass" size="sm" icon={LayoutDashboard} onClick={() => navigate('/dashboard')}>
-                Dashboard
+              <GlassButton variant="glass" size="sm" icon={LayoutDashboard} onClick={() => navigate('/dashboard')} aria-label="Dashboard">
+                <span className="hidden xl:inline">Dashboard</span>
               </GlassButton>
-              <button onClick={logout} aria-label="Sign out" className="w-10 h-10 rounded-full overflow-hidden glass spring hover:scale-105">
+              <button onClick={logout} aria-label="Sign out" className="w-10 h-10 rounded-full overflow-hidden glass spring hover:scale-105 shrink-0">
                 <Avatar src={user.avatar} name={user.name} className="w-full h-full" />
               </button>
             </div>
@@ -155,7 +152,7 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
 
         <button
           ref={hamburgerRef}
-          className="md:hidden glass w-11 h-11 rounded-full flex items-center justify-center spring active:scale-90"
+          className="lg:hidden glass w-11 h-11 rounded-full flex items-center justify-center spring active:scale-90"
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
           aria-expanded={mobileOpen}
