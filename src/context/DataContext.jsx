@@ -52,7 +52,7 @@ function makeCrud(list, setList) {
         const known = new Set(prev.map((x) => x.id))
         return [...items.filter((x) => !known.has(x.id)), ...updated]
       })
-      return { added, updated: items.length - added }
+      return { added, updated: items.length - added, ready: Promise.resolve() }
     },
     patch: (id, patch) => apply((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x))),
     remove: (id) => apply((prev) => prev.filter((x) => x.id !== id)),
@@ -106,10 +106,14 @@ function makeApiCrud(list, setList, { base, reload, reorderable = false, itemKey
     upsertMany(items) {
       const known = new Set(list.map((x) => x.id))
       const added = items.filter((x) => !known.has(x.id)).length
-      local.upsertMany(items)
-      if (bulkDelete) run(api(`${base}/import/rows`, { method: 'POST', body: { items } }).then(reload))
-      else run(api(`${base}/import`, { method: 'POST', body: { items: items.map(({ id, ...rest }) => rest) } }).then(reload)) // eslint-disable-line no-unused-vars
-      return { added, updated: items.length - added }
+      local.upsertMany(items) // optimistic — rolled back by run()'s reload() if the request below fails
+      // The local list updates immediately either way, so a caller (CsvToolbar) that doesn't check `ready`
+      // still sees a table that looks right for a moment — `ready` is what tells it whether that's real.
+      const req = bulkDelete
+        ? api(`${base}/import/rows`, { method: 'POST', body: { items } })
+        : api(`${base}/import`, { method: 'POST', body: { items: items.map(({ id, ...rest }) => rest) } })
+      run(req.then(reload))
+      return { added, updated: items.length - added, ready: req }
     },
     patch(id, patch) {
       local.patch(id, patch)
@@ -202,7 +206,7 @@ export function DataProvider({ children }) {
       latest.current = next
       setProperties(next)
       const added = items.filter((x) => !known.has(x.id)).length
-      return { added, updated: items.length - added }
+      return { added, updated: items.length - added, ready: Promise.resolve() }
     },
   }
 

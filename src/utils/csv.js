@@ -92,7 +92,12 @@ function toBool(v) {
 }
 
 function toNumber(v, fallback = 0) {
-  const n = Number(v)
+  // `Number('')` is 0, not NaN — a blank CSV cell must fall back, not silently become a real (wrong) 0.
+  // This bit for real: 92 rows with an empty yearBuilt column all came out as "year 0" instead of falling
+  // back to the current year, failing the backend's 1800-2100 range check on every single row.
+  const s = String(v ?? '').trim()
+  if (!s) return fallback
+  const n = Number(s)
   return Number.isFinite(n) ? n : fallback
 }
 

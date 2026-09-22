@@ -39,10 +39,24 @@ export default function CsvToolbar({ config, items, seedItems = [], onImport, it
     e.target.value = ''
   }
 
-  const confirmImport = () => {
+  const confirmImport = async () => {
+    const importing = preview.items.length
     const summary = onImport(preview.items)
-    setNotice(`Imported ${preview.items.length} ${config.entity}${summary ? ` — ${summary.added} new, ${summary.updated} updated` : ''}.`)
     setPreview(null)
+    // In API mode this doesn't actually land until the server confirms it — a CSV with even one bad row is
+    // refused as a whole batch (no partial import), so "Imported" must mean the server said so, not just that
+    // the on-screen table updated optimistically (see docs/rules.md — the whole point of this fix).
+    if (summary?.ready) {
+      setNotice(`Importing ${importing} ${config.entity}…`)
+      try {
+        await summary.ready
+        setNotice(`Imported ${importing} ${config.entity} — ${summary.added} new, ${summary.updated} updated.`)
+      } catch (err) {
+        setNotice(`Import failed — nothing was saved: ${err.message}`)
+      }
+    } else {
+      setNotice(`Imported ${importing} ${config.entity}${summary ? ` — ${summary.added} new, ${summary.updated} updated` : ''}.`)
+    }
   }
 
   return (

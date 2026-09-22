@@ -119,6 +119,38 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### "102 CSV listings didn't show" — two real incidents, one real bug fix (this batch)
+- [x] **Read-only checked the live Atlas DB** (explicit request — "check db"; never written to without asking,
+  and only counts/finds, no mutations, until the fix below was explicitly confirmed) and found two separate
+  things, neither of them the CSV file's fault:
+  1. **All 14 existing listings had been bulk-deactivated** at 10:53 AM that day (`Audit` had the exact entry:
+     `bulk-deactivate · property · count:14 · admin`) — almost certainly a "select all" + wrong bulk button in
+     Admin → Listings. The site was showing **zero** listings anywhere, not just missing the 102 new ones. The
+     admin re-activated them via the panel themselves (`bulk-activate` entries 2 minutes later) before this was
+     even finished being diagnosed — confirmed fixed, no corrective write was needed after all.
+  2. **The 102-row import never reached the server at all** — total stayed at 14, and the full audit history
+     back to Sep 21 has zero `import-listings` entries, success or failure (a validation failure never reaches
+     the `audit()` call, so it wouldn't show either way — this only proves "not attempted or not accepted",
+     not which one).
+- [x] **Found the real bug while investigating**: `CsvToolbar.jsx`'s import confirmation updated the on-screen
+  table optimistically and showed "Imported N listings" **unconditionally**, without ever checking whether the
+  server actually accepted the batch. Since `propertyImport` is one `z.array(...)` — a single bad row 400s the
+  *entire* batch, nothing saved — a CSV with even one bad price/city/whatever would have looked completely
+  successful (table updated, success message shown) for a moment, then quietly reverted when the failed
+  request's `reload()` fired, with only an easy-to-miss toast as any evidence. This is almost certainly what
+  actually happened to the 102 rows.
+- [x] **Fixed**: `upsertMany` (API mode) now exposes `ready` — the real request promise, not the optimistic
+  local one — and `CsvToolbar.confirmImport` awaits it before saying "Imported"; on failure it shows the
+  server's real error (which names the offending row/field) instead of a false success. Local/non-API mode gets
+  a `ready: Promise.resolve()` so the caller never has to branch on `USE_API`. `docs/rules.md` §4.11
+- [x] Playwright-verified both directions (a 400 from the server shows "Import failed" + the real field-level
+  error message and never claims anything was imported; a real 201 still shows the accurate "Imported N" it
+  always did) — 5/5
+- [ ] **Still don't know why the 102-row CSV itself failed validation** — the user hasn't shared the file yet;
+  next step if it comes up again is to check the CSV against `adminPropertyCreate`'s required fields (price > 0,
+  city, title ≥ 3 chars, purpose exactly `Buy`/`Rent`, any image cell a real link not a `data:` URL) — the fix
+  above will now show that error clearly on the next attempt instead of hiding it
+
 ### Navbar overflow on iPad / tablet widths (this batch)
 - [x] **Real bug, caught by asking for a tablet-width check specifically**: at 768-1024px (iPad portrait, and the
   `md`-`lg` Tailwind range generally) the desktop nav's link row *and* action buttons both turned on at `md`
