@@ -6,6 +6,7 @@ import agentRoutes from './agent.js'
 import uploadRoutes from './uploads.js'
 import eventsRoutes from './events.js'
 import adminProperties from './admin-properties.js'
+import adminReviews from './admin-reviews.js'
 import adminSystem from './admin-system.js'
 import { agents, blog, faqs, leads, testimonials, users } from './admin-content.js'
 import { requireRole } from '../middleware/index.js'
@@ -26,6 +27,7 @@ admin.use('/users', users)
 admin.use('/blog', blog)
 admin.use('/faqs', faqs)
 admin.use('/testimonials', testimonials)
+admin.use('/reviews', adminReviews)
 admin.use('/leads', leads)
 admin.use('/', adminSystem)
 api.use('/admin', admin)

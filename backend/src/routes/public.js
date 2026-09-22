@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { Agent, Faq, Post, Property, Testimonial } from '../models/index.js'
+import { Agent, Faq, Post, Property, Review, Testimonial } from '../models/index.js'
 import { notFound, AppError, badRequest } from '../lib/errors.js'
 import { escapeRegex, parse, readPhoneToken } from '../lib/security.js'
-import { leadCreate, propertyQuery } from '../lib/schemas.js'
+import { leadCreate, propertyQuery, reviewPublicQuery } from '../lib/schemas.js'
 import { out, paginate, publicAgent, publicPost, publicProperty } from '../lib/serialize.js'
 import { PUBLIC_FILTER, findPropertyByParam, propertyPath } from '../services/property.js'
 import { publicSettings } from '../services/settings.js'
@@ -126,6 +126,18 @@ router.get('/faqs', async (req, res) => {
 
 router.get('/testimonials', async (_req, res) => {
   res.json({ items: out(await Testimonial.find(ACTIVE).sort({ order: 1, createdAt: 1 }).lean()) })
+})
+
+/** Approved reviews for one agent or one property, newest first, plus the average and how many there are. */
+router.get('/reviews', async (req, res) => {
+  const q = parse(reviewPublicQuery, req.query)
+  const filter = { targetType: q.targetType, targetId: q.targetId, status: 'approved' }
+  const [items, total, agg] = await Promise.all([
+    Review.find(filter).select('-reviewNote -status').sort({ createdAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
+    Review.countDocuments(filter),
+    Review.aggregate([{ $match: filter }, { $group: { _id: null, average: { $avg: '$rating' } } }]),
+  ])
+  res.json({ items: out(items), average: Math.round((agg[0]?.average ?? 0) * 10) / 10, ...paginate(total, q.page, q.limit) })
 })
 
 /* ------------------------------------------------------------------- leads */

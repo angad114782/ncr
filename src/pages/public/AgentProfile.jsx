@@ -8,6 +8,7 @@ import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { SITE_URL, breadcrumbLd } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
+import ReviewsSection from '../../components/common/ReviewsSection'
 import { DetailSkeleton } from '../../components/common/Skeleton'
 import { useRevealPhone } from '../../hooks/useRevealPhone'
 
@@ -90,12 +91,14 @@ export default function AgentProfile() {
 
       <h2 className="text-2xl font-bold mb-6">Listings by {agent.name}</h2>
       {listings.length === 0 ? (
-        <p className="text-secondary">No active listings right now.</p>
+        <p className="text-secondary mb-12">No active listings right now.</p>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
           {listings.map((p) => <PropertyCard key={p.id} property={p} />)}
         </div>
       )}
+
+      <ReviewsSection targetType="agent" targetId={agent.id} />
     </div>
   )
 }

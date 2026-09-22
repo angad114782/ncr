@@ -119,6 +119,27 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Reviews — real, admin-approved ratings for agents and properties (this batch)
+- [x] A signed-in visitor can rate + review an agent or a property (`ReviewsSection` on the property page and the
+  agent profile) — stars + optional text; writing one opens sign-in first if needed, without losing what was
+  typed (same pattern as the phone-reveal flow), and self-reviews (your own agent profile, or a listing you
+  posted yourself) are refused
+- [x] **Admin-approved before public, like Testimonials** — new reviews start pending; a signed-in visitor's
+  average/count/list only ever shows `approved` ones. New Admin → **Ratings & Reviews** page: filter by status,
+  approve / reject (with a note) / delete, one at a time or in bulk — separate from the existing Admin → *Reviews*
+  page, which is still the admin-authored home-page Testimonials (kept the old name to avoid breaking that page)
+- [x] Resubmitting your review (same person, same target) edits it and re-queues it for approval — never a
+  second row sitting next to the old one
+- [x] Deleting your account keeps the rating/text (real feedback about the agent/property) but strips your name
+  and unlinks the account, same treatment leads already get
+- [x] **Deliberately not wired to WhatsApp**: the `lead_notification` template's variables (budget, a property
+  link, a callback number) don't fit "someone left a review" — admin sees a new one live in the panel instead
+  (same mechanism pending agent listings already use), not by message. Said so explicitly rather than forcing
+  the template onto data it wasn't built for; revisit if that's not enough in practice
+- [x] 13 new backend tests (moderation queue, approve/reject/bulk, self-review blocks, resubmission, public-only-
+  when-approved, account erasure) — 127 -> 140; Playwright-checked end to end (existing reviews shown, sign-in-
+  first submission on both a property and an agent page, request payload, pending notice)
+
 ### User activity timeline — admin sees a signed-in visitor's full history, with IP + city + pincode (this batch)
 - [x] Every signed-in account's on-site activity (view / search / save / compare) is now a permanent, growing
   timeline, not just the live on-device profile from §15 — Admin → Users has a new **Activity** button per row

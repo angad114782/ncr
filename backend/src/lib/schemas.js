@@ -209,6 +209,22 @@ export const agentAdmin = z
 export const userCreate = z.object({ name: text(80).min(2), phone, email, city: optText(80), role: z.enum(['user', 'agent', 'admin']).default('user'), active: bool.optional() })
 export const userUpdate = z.object({ name: text(80).min(2), phone, email, city: optText(80), role: z.enum(['user', 'agent', 'admin']), active: bool, avatar: optImage }).partial()
 
+/* ------------------------------------------------------------------ reviews */
+export const reviewCreate = z.object({
+  targetType: z.enum(['agent', 'property']),
+  targetId: text(60).min(1, 'Missing what this review is for'),
+  rating: z.coerce.number().int().min(1, 'Pick a rating').max(5),
+  text: z.string().trim().max(1500).optional(),
+})
+export const reviewPublicQuery = z.object({ ...page, targetType: z.enum(['agent', 'property']), targetId: text(60) })
+export const reviewAdminQuery = z.object({
+  ...page,
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  targetType: z.enum(['agent', 'property']).optional(),
+  q: z.string().trim().max(100).optional(),
+})
+export const reviewDecision = z.object({ note: z.string().trim().max(500).optional() })
+
 /* ------------------------------------------------------------ content types */
 export const postInput = z
   .object({

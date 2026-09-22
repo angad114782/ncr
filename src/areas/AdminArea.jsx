@@ -1,5 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
-import { BookOpen, Building2, HelpCircle, LayoutDashboard, LayoutTemplate, MessageSquare, Settings, ShieldAlert, Star, User as UserIcon, UserCheck, Users as UsersIcon } from 'lucide-react'
+import { BookOpen, Building2, HelpCircle, LayoutDashboard, LayoutTemplate, MessageSquare, Settings, ShieldAlert, Star, ThumbsUp, User as UserIcon, UserCheck, Users as UsersIcon } from 'lucide-react'
 import PanelShell from '../components/layout/PanelShell'
 import ProtectedRoute from '../components/layout/ProtectedRoute'
 import Profile from '../pages/dashboard/Profile'
@@ -11,6 +11,7 @@ import AdminSettings from '../pages/admin/AdminSettings'
 import ManageBlog from '../pages/admin/ManageBlog'
 import ManageFaqs from '../pages/admin/ManageFaqs'
 import ManageTestimonials from '../pages/admin/ManageTestimonials'
+import ManageReviews from '../pages/admin/ManageReviews'
 import ManageAgents from '../pages/admin/ManageAgents'
 import SiteContent from '../pages/admin/SiteContent'
 import Security from '../pages/admin/Security'
@@ -23,6 +24,7 @@ const adminNav = [
   { to: '/admin/blog', label: 'Blog', icon: BookOpen },
   { to: '/admin/faqs', label: 'FAQs', icon: HelpCircle },
   { to: '/admin/testimonials', label: 'Reviews', icon: Star },
+  { to: '/admin/ratings', label: 'Ratings & Reviews', icon: ThumbsUp },
   { to: '/admin/agents', label: 'Agents', icon: UserCheck },
   { to: '/admin/users', label: 'Users', icon: UsersIcon },
   { to: '/admin/inquiries', label: 'Inquiries', icon: MessageSquare },
@@ -57,6 +59,7 @@ export default function AdminArea() {
         <Route path="blog" element={<ManageBlog />} />
         <Route path="faqs" element={<ManageFaqs />} />
         <Route path="testimonials" element={<ManageTestimonials />} />
+        <Route path="ratings" element={<ManageReviews />} />
         <Route path="agents" element={<ManageAgents />} />
         <Route path="site" element={<WaitForSettings><SiteContent /></WaitForSettings>} />
         <Route path="users" element={<ManageUsers />} />

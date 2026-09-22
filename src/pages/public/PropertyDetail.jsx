@@ -35,6 +35,7 @@ import ExploreLinks from '../../components/common/ExploreLinks'
 import GuideLinks from '../../components/common/GuideLinks'
 import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath, propertyPath } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
+import ReviewsSection from '../../components/common/ReviewsSection'
 import { DetailSkeleton, Skeleton } from '../../components/common/Skeleton'
 import { useRevealPhone } from '../../hooks/useRevealPhone'
 
@@ -420,6 +421,8 @@ function PropertyDetailInner({ id }) {
           <EMICalculator propertyPrice={property.purpose === 'Buy' ? property.price : property.price * 200} />
         </div>
       </div>
+
+      <ReviewsSection targetType="property" targetId={property.id} className="mt-6" />
 
       {similarInCity.length > 0 && (
         <section className="mt-12">

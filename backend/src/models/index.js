@@ -150,6 +150,31 @@ export const Testimonial = model(
   ),
 )
 
+/**
+ * A real, signed-in person's rating + text for an agent or a property — distinct from `Testimonial` (which is
+ * admin-authored home-page copy). Same moderation idea as everything else user-submitted: starts `pending`,
+ * only `approved` ones are ever public (see routes/admin-reviews.js, routes/public.js). One review per person
+ * per target — resubmitting (editing) it puts it back to `pending` for a fresh look.
+ */
+const reviewSchema = makeSchema(
+  {
+    targetType: { type: String, enum: ['agent', 'property'], required: true, index: true },
+    targetId: str({ required: true, index: true }),
+    userId: str({ default: null, index: true }), // always set on creation; cleared (not required) so account erasure can null it and keep the rating/text
+    userName: str({ required: true }),
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    text: { type: String, default: '', trim: true },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
+    reviewNote: str({ default: '' }), // admin's private note on a rejection — not shown publicly today
+  },
+  { prefix: 'rv' },
+)
+reviewSchema.index({ targetType: 1, targetId: 1, status: 1 })
+// Partial: only while userId is still set — once an account is erased userId is nulled (see routes/me.js), and
+// several erased reviews on the same target must not collide on this uniqueness constraint.
+reviewSchema.index({ userId: 1, targetType: 1, targetId: 1 }, { unique: true, partialFilterExpression: { userId: { $type: 'string' } } })
+export const Review = model('Review', reviewSchema)
+
 /* -------------------------------------------------------------------- leads */
 export const Lead = model(
   'Lead',

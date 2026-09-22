@@ -1,9 +1,10 @@
 import { Router } from 'express'
-import { Agent, Consent, Event, Lead, Property, Saved, User } from '../models/index.js'
-import { conflict, notFound } from '../lib/errors.js'
+import { Agent, Consent, Event, Lead, Property, Review, Saved, User } from '../models/index.js'
+import { badRequest, conflict, notFound } from '../lib/errors.js'
 import { audit } from '../lib/misc.js'
+import { broadcast } from '../lib/events.js'
 import { geoForIp } from '../lib/geo.js'
-import { eventsBody, meDelete, meUpdate, parse } from '../lib/schemas.js'
+import { eventsBody, meDelete, meUpdate, parse, reviewCreate } from '../lib/schemas.js'
 import { sha256 } from '../lib/security.js'
 import { out, publicProperty } from '../lib/serialize.js'
 import { endSession, publicUser } from '../services/auth.js'
@@ -75,6 +76,41 @@ router.post('/events', async (req, res) => {
   res.status(201).json({ ok: true, stored: events.length })
 })
 
+/* -------------------------------------------------------------------- reviews */
+/** This person's own reviews (any status) — lets the page show "you already reviewed this, pending approval". */
+router.get('/reviews', async (req, res) => {
+  res.json({ items: out(await Review.find({ userId: req.user.id }).sort({ createdAt: -1 }).lean()) })
+})
+
+/**
+ * Leave (or edit) a rating + review for an agent or a property. One per person per target — resubmitting
+ * replaces the old text/rating and puts it back to `pending`, so admin sees the current version, not the old
+ * one. Reviewing your own agent profile, or a listing you posted yourself, is refused (real reviews only).
+ */
+router.post('/reviews', async (req, res) => {
+  const d = parse(reviewCreate, req.body)
+  if (d.targetType === 'property') {
+    const property = await Property.findById(d.targetId).select('submittedBy').lean()
+    if (!property) throw notFound('Property not found.')
+    if (property.submittedBy === req.user.id) throw badRequest('You cannot review your own listing.')
+  } else {
+    const agent = await Agent.findById(d.targetId).select('userId').lean()
+    if (!agent) throw notFound('Agent not found.')
+    if (agent.userId === req.user.id) throw badRequest('You cannot review your own agent profile.')
+  }
+  const existing = await Review.findOne({ userId: req.user.id, targetType: d.targetType, targetId: d.targetId })
+  let review
+  if (existing) {
+    existing.set({ rating: d.rating, text: d.text ?? '', status: 'pending', reviewNote: '' })
+    await existing.save()
+    review = existing
+  } else {
+    review = await Review.create({ userId: req.user.id, userName: req.user.name, targetType: d.targetType, targetId: d.targetId, rating: d.rating, text: d.text ?? '' })
+  }
+  broadcast('admin', 'review:new', { id: review.id, targetType: review.targetType, targetId: review.targetId, rating: review.rating, userName: review.userName })
+  res.status(existing ? 200 : 201).json({ item: out(review) })
+})
+
 /* ------------------------------------------------------------ data rights */
 /** Everything we hold about the signed-in person. */
 router.get('/data', async (req, res) => {
@@ -112,6 +148,8 @@ router.delete('/', async (req, res) => {
     Saved.deleteMany({ userId: user.id }),
     Event.deleteMany({ userId: user.id }),
     Lead.updateMany(myLeadsFilter(user), { userName: 'Deleted user', userEmail: '', phone: mask, message: '[removed at the person’s request]', budget: '', interest: null, notes: [], userId: null }),
+    // The rating + text stay (they're real feedback about the agent/property), the name and account link don't.
+    Review.updateMany({ userId: user.id }, { userName: 'Deleted user', userId: null }),
     Consent.updateMany({ $or: [{ userId: user.id }, { phone: user.phone }] }, { phone: sha256(user.phone), userId: null, withdrawnAt: now, ip: '', userAgent: '' }),
   ])
   if (user.role === 'agent') {

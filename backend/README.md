@@ -10,12 +10,12 @@ backend/
     server.js            starts the API (connects to MongoDB, makes sure an admin exists)
     app.js               Express app (security headers, CORS, CSRF guard, rate limits, routes, errors)
     config.js            environment settings (+ refuses unsafe production config)
-    models/index.js      User, Agent, Property, Post, Faq, Testimonial, Lead, Consent, Otp, Saved, Event, Setting, LegalVersion, Audit, Upload
+    models/index.js      User, Agent, Property, Post, Faq, Testimonial, Review, Lead, Consent, Otp, Saved, Event, Setting, LegalVersion, Audit, Upload
     routes/              public · auth · me · agent · admin-* · uploads · events (live updates)
     services/            settings, auth (OTP, sessions, consent), property (slugs), leads
     lib/                 validation schemas (zod), security helpers, notifications, the IP/phone block ladder, slug + interest rules (copies of the website's)
     seed/seed.js         loads the website's sample data into MongoDB
-  tests/                 127 tests (run on a throw-away in-memory MongoDB — never on your real database)
+  tests/                 140 tests (run on a throw-away in-memory MongoDB — never on your real database)
   uploads/               uploaded images (git-ignored)
 ```
 
@@ -124,11 +124,12 @@ switch the visitor welcome off, or restrict it to OTP-verified numbers (the cont
 |---|---|
 | `GET /health` | status + database |
 | `GET /public/settings` | company, siteContent (legal pages, nudge, agent program…), cities, property types, ticker, banner, marketing ids, contact |
-| `GET /public/bootstrap` | settings + all public properties, agents, posts, FAQs, reviews in one call (also for the build scripts) |
+| `GET /public/bootstrap` | settings + all public properties, agents, posts, FAQs, testimonials in one call (also for the build scripts) |
 | `GET /properties` | `purpose city type beds possession maxPrice q featured agentId sort page limit` → `{ items, total, page, pages }` |
 | `GET /properties/:slugOrIdOrOldSlug` | `{ property, agent, canonicalPath, redirect }` · 410 if switched off · 404 otherwise |
 | `GET /agents`, `/agents/:id` | approved agents (+ their listings) |
 | `GET /blog`, `/blog/:slug`, `/faqs?page=`, `/testimonials` | active content |
+| `GET /reviews?targetType=agent\|property&targetId=` | approved user-submitted reviews for one agent/property → `{ items, average, total, page, pages }` |
 | `POST /leads` | enquiry `{ name, phone, email?, budget?, message?, propertyId?, city?, source, contactIntent?, phoneToken?, profile? }` |
 
 ### Auth
@@ -141,7 +142,7 @@ switch the visitor welcome off, or restrict it to OTP-verified numbers (the cont
 | `POST /auth/logout`, `GET /auth/me` | |
 
 ### Signed-in user (`/me`)
-`GET /me` · `PATCH /me` · `GET/PUT /me/saved`, `POST/DELETE /me/saved/:propertyId` · `GET /me/inquiries` · `POST /me/events` · `GET /me/data` (export) · `POST /me/withdraw-consent` · `DELETE /me` (`{ confirm: true }` — erasure)
+`GET /me` · `PATCH /me` · `GET/PUT /me/saved`, `POST/DELETE /me/saved/:propertyId` · `GET /me/inquiries` · `POST /me/events` · `GET/POST /me/reviews` (your own reviews; posting again for the same target edits it and re-queues it for approval — self-reviews are refused) · `GET /me/data` (export) · `POST /me/withdraw-consent` · `DELETE /me` (`{ confirm: true }` — erasure)
 
 ### Agent (`/agent`, role `agent`)
 `GET/PATCH /agent/profile` · `GET /agent/stats` · `GET/POST /agent/properties` · `POST /agent/properties/import` · `GET/PATCH/DELETE /agent/properties/:id` · `PATCH /agent/properties/:id/active` (approved only) · `GET /agent/leads` · `PATCH /agent/leads/:id`
@@ -154,6 +155,7 @@ Rules enforced: listings are always saved `pending` + hidden and stamped with th
 | `properties` | list (`q reviewStatus active agentId city`), get, create, update, delete, `POST :id/approve`, `POST :id/reject {note}`, `POST bulk/action {ids, action}`, `POST import/rows {items}` |
 | `agents`, `blog`, `faqs`, `testimonials` | list, get, create, update, delete, `bulk/action`, `import/rows`; `faqs` / `testimonials` also `reorder` |
 | `users` | list, create, update, delete (the last active admin can never be removed or demoted); `GET users/:id/activity` — one account's full on-site history (view/search/save/compare), newest first, paginated, each event stamped with the IP + best-effort city/region/pincode it happened from (`lib/geo.js`) |
+| `reviews` | list (`status targetType q`, target resolved to a readable label), `POST :id/approve`, `POST :id/reject {note}`, delete, `POST bulk/action` (`approve`/`reject`/`delete`) — user-submitted agent/property reviews; nothing here is created by the admin, only moderated |
 | `leads` | list (`q status intent source`), get, update (`status assignedAgentId note`), delete, `export.csv` |
 | `settings`, `PUT settings/:key` | keys: `company siteContent ticker topBanner cities propertyTypes marketing whatsapp mail` (secrets are write-only) |
 | `POST settings/whatsapp/test` | sends the two lead messages to the signed-in admin's own number and returns each result (with Meta's error) |
@@ -240,4 +242,4 @@ Backups: Atlas snapshots for the database; copy `backend/uploads/` (or move uplo
 
 ## 7. Tests
 
-`npm test` — 127 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages, live updates, per-user activity + IP geolocation). They start their own in-memory MongoDB and refuse to run against a remote database.
+`npm test` — 140 tests (auth/OTP, public API, leads, agent moderation, admin, data rights, uploads, security, the IP/phone block ladder, WhatsApp lead messages, live updates, per-user activity + IP geolocation). They start their own in-memory MongoDB and refuse to run against a remote database.

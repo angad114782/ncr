@@ -241,7 +241,7 @@ Property CSV column order is `PROPERTY_CSV_COLUMNS` in `src/utils/csv.js`. Array
 
 ## 8. Backend (built — `backend/`)
 
-The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 127 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
+The API described in §8a exists in the `backend/` folder (Express 5 + MongoDB/Mongoose, 140 tests) **and the website is connected to it**. Start with [`backend/README.md`](../backend/README.md): setup, environment, endpoint list, security notes, deploy.
 
 **Two modes, one code base.** `VITE_USE_API=true` (set for production builds in `.env.production`) makes the site use the API; without it the site runs on browser storage as before (handy for front-end work without the backend). The switch lives in `src/api/client.js` (`USE_API`, `api()`, `fetchAll()`, error toast bus) and the contexts:
 
@@ -320,6 +320,29 @@ server-side record kept **only** for accounts that are signed in (see rules §15
 - **Tests**: `backend/tests/activity.test.js` — 4 unit tests on `geo.js` (private-IP skip, parse, cache, failure
   → `null`) + 6 on the admin endpoint (auth/role gating, events accumulate across visits newest-first,
   pagination, empty state, 404 for an unknown user).
+
+## 8d. Reviews (agent + property)
+
+A real, signed-in person's rating + text for one agent or one property — admin-moderated before it's public,
+the same idea as Testimonials but applied to visitor-submitted content instead of admin-authored copy (see
+`docs/rules.md` §20 for the full rules; this is the "where it lives in code" summary).
+
+- **Model** — `Review` (`backend/src/models/index.js`): `targetType` (`agent`/`property`) + `targetId`,
+  `userId`/`userName`, `rating` (1-5), `text`, `status` (`pending`/`approved`/`rejected`). A partial unique index
+  on `{userId, targetType, targetId}` enforces one review per person per target (resubmitting updates it and
+  resets it to `pending`); the index is partial so several erased accounts' reviews (`userId: null`) on the
+  same target never collide.
+- **Backend** — `POST /me/reviews` (create/update your own, self-review blocked), `GET /me/reviews` (your own,
+  any status), `GET /reviews` (public — approved only, plus the average and count for one target),
+  `routes/admin-reviews.js` (list/filter, approve, reject with a note, delete, bulk action — mounted at
+  `/admin/reviews`). A new review broadcasts `review:new` to the `'admin'` SSE scope (§8b); approving/rejecting
+  calls `contentChanged()` so an already-open public tab picks up the change live.
+- **Frontend** — `hooks/useReviews.js` (fetch + submit, same sign-in-first pattern as `useRevealPhone`) +
+  `components/common/ReviewsSection.jsx` (star picker, list, average) on `PropertyDetail` and `AgentProfile`;
+  Admin → **Ratings & Reviews** (`pages/admin/ManageReviews.jsx`, `/admin/ratings` — not the same page as
+  Admin → *Reviews*, which is still Testimonials).
+- **Tests**: `backend/tests/reviews.test.js` — 13 tests (validation, moderation queue, approve/reject/bulk,
+  self-review blocks, resubmission, public visibility only once approved, account-erasure handling).
 
 ## 8-old. Original backend plan (kept for reference)
 
