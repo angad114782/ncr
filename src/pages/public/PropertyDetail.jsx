@@ -400,14 +400,28 @@ function PropertyDetailInner({ id }) {
                 <a href={`mailto:${agent.email}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm truncate">
                   <Mail size={14} /> {agent.email}
                 </a>
-                <a
-                  href={`https://wa.me/91${agent.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(fill(siteContent.contact.waProperty).replace(/\{property\}/g, property.title))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm text-[#25D366] font-medium"
-                >
-                  <Phone size={14} /> Chat on WhatsApp
-                </a>
+                {revealPhone.revealed ? (
+                  <a
+                    href={`https://wa.me/91${agent.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(fill(siteContent.contact.waProperty).replace(/\{property\}/g, property.title))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm text-[#25D366] font-medium"
+                  >
+                    <Phone size={14} /> Chat on WhatsApp
+                  </a>
+                ) : (
+                  // Same reveal gate as the Call button above — a wa.me link always carries the real number in
+                  // its own href, so showing it before reveal would defeat the masking regardless of what the
+                  // page displays. Tapping this reveals (and creates the lead) first; the real link appears next.
+                  <button
+                    type="button"
+                    onClick={revealPhone.onReveal}
+                    aria-label="Reveal number to chat on WhatsApp"
+                    className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm text-[#25D366] font-medium w-full text-left"
+                  >
+                    <Phone size={14} /> Chat on WhatsApp
+                  </button>
+                )}
               </div>
             </GlassCard>
           )}

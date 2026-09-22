@@ -186,20 +186,22 @@ export default function MobileMenu({ open, onClose, links, onAuthOpen, onAddList
                 </button>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <a href={`tel:+91${digits}`} className="glass rounded-full py-3 font-medium flex items-center justify-center gap-2">
-                  <Phone size={16} className="text-[var(--color-accent)]" /> Call
-                </a>
-                <a
-                  href={`https://wa.me/91${digits}?text=${encodeURIComponent(fill(siteContent.contact.waGeneral))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-full py-3 font-medium flex items-center justify-center gap-2 text-white"
-                  style={{ background: '#25D366' }}
-                >
-                  <MessageCircle size={16} /> WhatsApp
-                </a>
-              </div>
+              {digits && (
+                <div className="grid grid-cols-2 gap-3">
+                  <a href={`tel:+91${digits}`} className="glass rounded-full py-3 font-medium flex items-center justify-center gap-2">
+                    <Phone size={16} className="text-[var(--color-accent)]" /> Call
+                  </a>
+                  <a
+                    href={`https://wa.me/91${digits}?text=${encodeURIComponent(fill(siteContent.contact.waGeneral))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full py-3 font-medium flex items-center justify-center gap-2 text-white"
+                    style={{ background: '#25D366' }}
+                  >
+                    <MessageCircle size={16} /> WhatsApp
+                  </a>
+                </div>
+              )}
 
               <div className="flex items-center justify-between text-sm text-secondary px-1">
                 <span>Appearance</span>

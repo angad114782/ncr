@@ -87,6 +87,7 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 12. **Dynamic interlinking:** blog / FAQ text goes through `AutoLinkedText` / `BlogBody` (admin rules in Site Content → *SEO & links* + city names). Every article shows related guides (`relatedPosts`) and `ExploreLinks`; listing pages show `ExploreLinks` + `GuideLinks`; `/sitemap` lists everything. A new page must be reachable from at least one of these.
 13. **AIO / GEO:** every guide has a **Quick answer** (`summary`, 40–60 words, answer first) — rendered in a `data-speakable` box, exposed as `abstract` + `speakable` in JSON-LD, and copied into `llms-full.txt`. Keep `robots.txt` open to AI crawlers (GPTBot, ClaudeBot, PerplexityBot …) unless the owner opts out. Author, updated date and CEO credentials (E-E-A-T) stay visible on articles.
 14. Pages that must not be indexed (search text, price caps, empty results, panels) use `noindex, follow` — bots still follow their links.
+15. **NAP (Name, Address, Phone) must be real and visible**, not buried — Google Business Profile checks that the number it has on file matches what a visitor (and its own crawler) actually sees on the website, ideally without scrolling. The one number is `whatsappConfig.displayPhone` (Admin → Settings → WhatsApp → *Display Phone Number*) — it drives the header `tel:` link (`Navbar.jsx`, desktop only, `lg:` breakpoint), the footer, the mobile menu's Call/WhatsApp buttons, and the `telephone` field in `organizationLd()`'s JSON-LD. Change it in one place, not four. Every one of those is guarded to render nothing (not a broken `tel:+91` with no digits) when it's empty — that's the tell that it still needs to be filled in, not a bug to "fix" by hard-coding a number.
 
 ## 7. Process
 
@@ -225,3 +226,19 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 5. **Writing a review needs a sign-in**, same one-flow pattern as `useRevealPhone` (§ phone reveal, `hooks/useReviews.js`): the visitor can fill in the stars and text first; only on Submit, if they're signed out, does `AuthSheet` open (via `onSuccess`), and the review is sent the moment sign-in succeeds — they never lose what they typed.
 6. **Account erasure keeps the rating and text, but not the name** (`DELETE /me`): `Review.userName` becomes "Deleted user" and `userId` is cleared, same treatment as an erased person's leads. The feedback about the agent/property is real and stays; the identity doesn't.
 7. Not wired to WhatsApp: unlike a lead, a new review does not trigger the `lead_notification` template (its variables — budget, property link, callback number — don't fit "someone left a review"). Admin sees new reviews the same way pending agent listings already work: **live in the panel** (`broadcast('admin', 'review:new', …)`, plus the pending count on Admin → Ratings & Reviews), not by WhatsApp. Revisit only if that turns out not to be enough in practice.
+
+## 21. Masked contact info: gate every href, not just the visible text
+
+Masking a phone number in what a visitor *reads* (`useRevealPhone`'s `91XXXXXXX667`) does nothing if the real
+number is still sitting in an `href` on the same page — `tel:`, `mailto:`, and especially `wa.me/91<number>`
+links carry the full number in plain text in the page's HTML. Anyone can read it with "View Page Source" (never
+blockable) without ever opening DevTools, and a `wa.me` link *opens WhatsApp chatting that real number* the
+moment it's clicked, regardless of what text is shown next to it. **Trying to block DevTools / right-click /
+F12 does not fix this and isn't attempted here** — it's trivially bypassed (View Source, a different browser,
+curl, disabling the blocking script itself), breaks legitimate use (accessibility tools, the person's own
+review of their own site), and doesn't touch the actual leak. The real fix: **every link that would embed the
+masked value must be gated exactly like the visible text is** — build the `href` only after `revealPhone.revealed`
+is true (see the agent's "Chat on WhatsApp" button on `PropertyDetail.jsx`, gated the same way as its Call
+button); before that, render a button that calls the same `onReveal()`. Apply this to any *future* masked field
+too (an email, a second number) — the rule is the mask and the link must reveal together, never one without the
+other.

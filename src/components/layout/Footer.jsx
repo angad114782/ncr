@@ -22,10 +22,12 @@ export default function Footer() {
           </div>
           <p className="text-secondary text-sm leading-relaxed mb-4">{fill(siteContent.footer.blurb)}</p>
           <ul className="flex flex-col gap-2 text-sm text-secondary">
-            <li className="flex items-center gap-2">
-              <Phone size={14} className="text-[var(--color-accent)]" />
-              <a href={`tel:+91${whatsappConfig.displayPhone}`} className="hover:text-[var(--color-accent)]">+91 {whatsappConfig.displayPhone}</a>
-            </li>
+            {whatsappConfig.displayPhone && (
+              <li className="flex items-center gap-2">
+                <Phone size={14} className="text-[var(--color-accent)]" />
+                <a href={`tel:+91${whatsappConfig.displayPhone}`} className="hover:text-[var(--color-accent)]">+91 {whatsappConfig.displayPhone}</a>
+              </li>
+            )}
             <li className="flex items-center gap-2">
               <Mail size={14} className="text-[var(--color-accent)]" />
               <a href={`mailto:${mailConfig.fromEmail}`} className="hover:text-[var(--color-accent)]">{mailConfig.fromEmail}</a>

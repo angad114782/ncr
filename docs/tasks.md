@@ -119,6 +119,25 @@ _Last updated: 2026-09-22_
 - [x] **Moderation**: agent listings start pending + hidden; admin sees *Pending review (n)*, approves (needs approved agent) or rejects with a note; agents can hide/show only approved listings; only approved listings + approved agents are public
 - [x] "Register as an agent" card on /agents and /team; agent links in navbar / mobile menu; Users admin can set role `agent`; 55-step browser test
 
+### Visible contact number (GMB/NAP) + closing the WhatsApp number leak (this batch)
+- [x] **Desktop navbar now shows a real `tel:` phone link** (large screens, next to "Add Listing") — previously
+  only the footer and the mobile menu did. Matches what a Google Business Profile listing expects to find on
+  the website (the same number, visibly placed) for NAP consistency during verification/approval
+- [x] Footer's and the mobile menu's Call/WhatsApp links now render **nothing** (not a broken `tel:+91` with no
+  digits) when `whatsappConfig.displayPhone` is empty — that empty state is the actual reason a number "isn't
+  showing", not a rendering bug; it needs to be filled in at Admin → Settings → WhatsApp → *Display Phone Number*
+  (drives the header, footer, mobile menu **and** the JSON-LD `telephone` field Google reads)
+- [x] **Closed the real leak behind "just disable DevTools"**: the agent's phone number is masked in what the
+  page *shows*, but the "Chat on WhatsApp" button next to it still had the real number sitting in its `wa.me`
+  `href` — visible with plain "View Page Source", no DevTools needed, and the link opens that real number the
+  moment it's clicked regardless of the masked text. Gated it the same way the Call button already is: before
+  reveal it's a button that reveals (+ creates the lead) first, the real link appears after — see `docs/rules.md`
+  §21. Blocking DevTools/right-click was asked for too and explicitly **not** done — it's bypassable in seconds
+  (View Source alone defeats it) and breaks accessibility tools for no real protection; this is the fix that
+  actually closes the gap
+- [x] Playwright-verified (navbar/footer real `tel:` links, WhatsApp button is a gated button — not a live link —
+  before reveal, opens sign-in first when signed out)
+
 ### NCR-first positioning (this batch)
 - [x] **Fixed a real brand/content mismatch an SEO review caught**: domain `propertyinncr.com` + brand "NCR
   Estates" vs. a homepage pitching "Find Your Next Home Across India" — and the underlying inventory didn't
@@ -209,8 +228,11 @@ _Last updated: 2026-09-22_
   panel) — `AuthSheet`'s new `onSuccess` callback, `hooks/useRevealPhone.js`
 - [x] 11 Playwright checks (masked/revealed states, logged-in instant reveal, logged-out login-then-reveal without
   losing the page, agent profile) + 1 new backend test (Hot intent, team notified, no welcome) — 116 -> 117
-- [ ] The WhatsApp chat button next to it is **not** gated the same way (kept one-click, unlike the number) — say
-  if that should change too
+- [x] **Update:** the "Chat on WhatsApp" button next to it is now gated the same way (a `wa.me/91<number>` link
+  always carries the real number in its own `href`, so leaving it one-click defeated the masking regardless of
+  what the page displayed — visible in "View Page Source", not just DevTools). Tapping it before reveal now
+  reveals first (same lead), the real link appears on the next render — property page only; the agent profile
+  page has no WhatsApp button
 
 ### Live updates (Server-Sent Events) — no more "everyone has to refresh" (this batch)
 - [x] **Admin**: a new lead appears in Admin -> Inquiries (and its stats) the moment it arrives, without a refresh

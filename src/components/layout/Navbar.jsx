@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, Plus, ShieldCheck } from 'lucide-react'
+import { Briefcase, Building2, ChevronDown, LayoutDashboard, Menu, Phone, Plus, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '../glass/ThemeToggle'
 import GlassButton from '../glass/GlassButton'
 import MobileMenu from './MobileMenu'
@@ -15,7 +15,8 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
   const [openMenu, setOpenMenu] = useState(null)
   const hamburgerRef = useRef(null)
   const { user, isAdmin, isAgent, logout } = useAuth()
-  const { siteContent, company } = useSettings()
+  const { siteContent, company, whatsappConfig } = useSettings()
+  const phoneDigits = whatsappConfig.displayPhone
   // Menu comes from Admin → Site Content → Menu & Footer (hidden items are skipped).
   const links = siteContent.nav.filter((l) => l.visible !== false && l.label)
   const navigate = useNavigate()
@@ -111,6 +112,14 @@ export default function Navbar({ onAuthOpen, onAgentDoor }) {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          {/* A real, visible, clickable phone number in the header — not just the footer — matches what a Google
+              Business Profile listing expects to find on the website (NAP consistency). Admin → Settings →
+              WhatsApp → Display Phone Number is the one place this (and the footer / JSON-LD telephone) comes from. */}
+          {phoneDigits && (
+            <a href={`tel:+91${phoneDigits}`} className="hidden lg:flex items-center gap-1.5 text-sm font-medium text-secondary hover:text-[var(--color-accent)] spring px-2">
+              <Phone size={14} /> +91 {phoneDigits}
+            </a>
+          )}
           {/* Not shown while signed in as a buyer or admin — only to a guest (the door in) or an already-signed-in agent (straight to My listings). */}
           {(!user || isAgent) && (
             <GlassButton variant="glass" size="sm" icon={Plus} onClick={goToAddListing}>
