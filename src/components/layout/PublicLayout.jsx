@@ -12,6 +12,8 @@ import CursorFollower from '../effects/CursorFollower'
 import LoginNudge from './LoginNudge'
 import WelcomeModal from './WelcomeModal'
 import ApiToast from './ApiToast'
+import VisitPing from './VisitPing'
+import BackToTopButton from './BackToTopButton'
 
 export default function PublicLayout() {
   const [authOpen, setAuthOpen] = useState(false)
@@ -47,6 +49,8 @@ export default function PublicLayout() {
       <ContactRail />
       <CompareBar />
       <CursorFollower />
+      <VisitPing />
+      <BackToTopButton />
     </div>
   )
 }
