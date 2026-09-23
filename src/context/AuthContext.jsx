@@ -210,7 +210,7 @@ function ApiAuthProvider({ children }) {
     try {
       const d = await api('/auth/register', { method: 'POST', body: payload })
       setUser(d.user)
-      return { ok: true, user: d.user, agent: d.agent }
+      return { ok: true, user: d.user, agent: d.agent, leadId: d.leadId }
     } catch (err) {
       return { ok: false, error: messageOf(err), code: err.code }
     }

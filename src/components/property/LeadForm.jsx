@@ -59,8 +59,8 @@ export default function LeadForm({ property }) {
 
   /** API mode: sends the enquiry to the server. `phoneToken` proves the number was checked (or the person is signed in with it). */
   const sendLead = async (phoneToken) => {
-    await submitLead({ ...leadPayload(), phoneToken })
-    fireLeadEvent(property ? 'property_lead_form' : 'lead_form')
+    const lead = await submitLead({ ...leadPayload(), phoneToken })
+    fireLeadEvent(property ? 'property_lead_form' : 'lead_form', {}, lead.id)
     navigate('/thank-you', { state: { leadName: form.name } })
   }
 

@@ -61,6 +61,7 @@ router.post('/register', ipBlockGuard, phoneBlockGuard, authLimiter, async (req,
   const user = await User.create({ _id: id, name: d.name, phone: d.phone, role: isAgent ? 'agent' : 'user', city: d.city || (isAgent ? '' : 'Mumbai'), agentId: isAgent ? `a${id}` : undefined })
 
   let agent = null
+  let lead = null
   if (isAgent) {
     agent = await Agent.create({
       _id: user.agentId,
@@ -76,7 +77,7 @@ router.post('/register', ipBlockGuard, phoneBlockGuard, authLimiter, async (req,
     await recordConsent(req, { phone: d.phone, userId: user.id, kind: 'agent-registration', textKey: 'agentProgram.consentText', source: 'signup' })
     notifyTeam('New agent registration', `${d.name} (${d.city}${d.agency ? `, ${d.agency}` : ''}) registered as an agent and is waiting for approval.`).catch(() => {})
   } else {
-    await createLead(req, { name: d.name, phone: d.phone, profile: d.profile }, {
+    lead = await createLead(req, { name: d.name, phone: d.phone, profile: d.profile }, {
       user,
       verified: true,
       source: d.source ? 'signup-prompt' : 'signup',
@@ -88,7 +89,10 @@ router.post('/register', ipBlockGuard, phoneBlockGuard, authLimiter, async (req,
   startSession(res, user)
   await touchLogin(user)
   audit({ user, ip: req.ip }, 'register', 'user', user.id, { role: user.role })
-  res.status(201).json({ user: publicUser(user), agent: agent ? out(agent) : null })
+  // `leadId`: the frontend Pixel fires a matching `fbq('track', 'Lead', …, { eventID })` right after
+  // this call (see AuthSheet.jsx) — sharing this id is what lets Meta dedupe it against the
+  // Conversions API event createLead() already fired server-side for the same signup.
+  res.status(201).json({ user: publicUser(user), agent: agent ? out(agent) : null, leadId: lead?.id ?? null })
 })
 
 /** Proves a phone number to the server without creating an account — used before a public enquiry. */

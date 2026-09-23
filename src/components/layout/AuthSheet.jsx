@@ -218,8 +218,10 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       return
     }
     if (USE_API && mode === 'signup') {
+      // Agent registration never creates a Lead server-side (see backend/src/routes/auth.js) — there's
+      // no id to share for CAPI dedup, so that one stays Pixel-only, same as before.
       if (isAgentSignup) fireLeadEvent('agent_signup', { city: agentCity })
-      else fireLeadEvent('signup', { ...(summary.city ? { city: summary.city } : {}), ...(summary.type ? { property_type: summary.type } : {}), intent: summary.intent })
+      else fireLeadEvent('signup', { ...(summary.city ? { city: summary.city } : {}), ...(summary.type ? { property_type: summary.type } : {}), intent: summary.intent }, result.leadId)
     } else if (isAgentSignup) {
       // A new agent = a login (role "agent") plus an agent record that waits for the admin's approval.
       agentCrud.upsert({

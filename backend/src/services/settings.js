@@ -32,7 +32,14 @@ const STATIC_DEFAULTS = {
       { text: 'Want us to call you back? Talk to an expert today', link: '/contact' },
     ],
   },
-  marketing: { metaPixelId: '', googleAnalyticsId: '', googleAdsId: '', googleAdsConversionLabel: '' },
+  marketing: {
+    metaPixelId: '',
+    metaCapiAccessToken: '', // Conversions API (server-side) — same Pixel ID, a separate token from Events Manager → Settings → Conversions API
+    metaTestEventCode: '', // Events Manager → Test Events — paste while testing, then clear so real events aren't marked test-only
+    googleAnalyticsId: '',
+    googleAdsId: '',
+    googleAdsConversionLabel: '',
+  },
   whatsapp: {
     displayPhone: '8619930583',
     phoneNumberId: '',
@@ -59,7 +66,7 @@ const STATIC_DEFAULTS = {
 }
 
 /** Fields that must never leave the server. */
-const SECRETS = { whatsapp: ['accessToken', 'webhookVerifyToken'], mail: ['smtpPassword'] }
+const SECRETS = { marketing: ['metaCapiAccessToken'], whatsapp: ['accessToken', 'webhookVerifyToken'], mail: ['smtpPassword'] }
 
 let defaultsPromise
 export function loadDefaults() {
@@ -115,7 +122,8 @@ export async function publicSettings() {
     propertyTypes: s.propertyTypes,
     ticker: s.ticker,
     topBanner: s.topBanner,
-    marketing: s.marketing,
+    // Only the browser-side ids — metaCapiAccessToken and metaTestEventCode never reach the public bootstrap.
+    marketing: { metaPixelId: s.marketing.metaPixelId, googleAnalyticsId: s.marketing.googleAnalyticsId, googleAdsId: s.marketing.googleAdsId, googleAdsConversionLabel: s.marketing.googleAdsConversionLabel },
     whatsapp: { displayPhone: s.whatsapp.displayPhone },
     mail: { fromEmail: s.mail.fromEmail, fromName: s.mail.fromName },
   }

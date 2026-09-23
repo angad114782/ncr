@@ -6,6 +6,7 @@ import {
   Contact as ContactIcon,
   Eye,
   EyeOff,
+  FlaskConical,
   Hash,
   Link2,
   Mail,
@@ -73,6 +74,8 @@ export default function AdminSettings() {
   const [waTest, setWaTest] = useState(null) // result of "Send test messages": { busy } | { to, results } | { error }
   const [mailSaved, setMailSaved] = useState(false)
   const [marketingSaved, setMarketingSaved] = useState(false)
+  const [showCapiToken, setShowCapiToken] = useState(false)
+  const [capiTest, setCapiTest] = useState(null) // { busy } | { to, ok, error }
 
   const handleContactSave = (e) => {
     e.preventDefault()
@@ -137,6 +140,16 @@ export default function AdminSettings() {
     updateMarketingConfig(marketingForm)
     setMarketingSaved(true)
     setTimeout(() => setMarketingSaved(false), 2000)
+  }
+
+  /** Sends one test "Lead" event to Meta for the signed-in admin's own number, using the SAVED settings. */
+  const handleCapiTest = async () => {
+    setCapiTest({ busy: true })
+    try {
+      setCapiTest(await api('/admin/settings/meta-capi/test', { method: 'POST' }))
+    } catch (err) {
+      setCapiTest({ error: err.message })
+    }
   }
 
   return (
@@ -407,6 +420,27 @@ export default function AdminSettings() {
           />
 
           <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-medium text-secondary px-1">Meta Conversions API Access Token</span>
+            <StatusBadge active={!!marketingConfig.hasMetaCapiAccessToken} />
+          </div>
+          <GlassInput
+            icon={showCapiToken ? EyeOff : Eye}
+            type={showCapiToken ? 'text' : 'password'}
+            hint="Events Manager → Settings → Conversions API → Generate access token. Server-side, same Pixel ID — this is what makes lead conversions survive ad-blockers and iOS."
+            placeholder={marketingForm.hasMetaCapiAccessToken ? '•••••••• saved on the server — leave blank to keep it' : 'EAAG...'}
+            value={marketingForm.metaCapiAccessToken ?? ''}
+            onChange={(e) => setMarketingForm({ ...marketingForm, metaCapiAccessToken: e.target.value.trim() })}
+            onIconClick={() => setShowCapiToken((v) => !v)}
+          />
+          <GlassInput
+            label="Meta Test Event Code (optional)"
+            icon={FlaskConical}
+            placeholder="TEST12345 — paste while verifying in Events Manager, then clear it"
+            value={marketingForm.metaTestEventCode}
+            onChange={(e) => setMarketingForm({ ...marketingForm, metaTestEventCode: e.target.value.trim() })}
+          />
+
+          <div className="flex items-center justify-between mt-1">
             <span className="text-sm font-medium text-secondary px-1">Google Analytics Measurement ID</span>
             <StatusBadge active={!!marketingForm.googleAnalyticsId} />
           </div>
@@ -439,6 +473,24 @@ export default function AdminSettings() {
           <GlassButton type="submit" className="w-full justify-center mt-2">
             {marketingSaved ? <><Check size={16} /> Saved</> : 'Save Tracking Config'}
           </GlassButton>
+
+          {USE_API && (
+            <div className="flex flex-col gap-2.5">
+              <GlassButton type="button" variant="glass" className="w-full justify-center" loading={capiTest?.busy} loadingText="Sending…" icon={Send} onClick={handleCapiTest}>
+                Send a test Lead event to Meta
+              </GlassButton>
+              <p className="text-tertiary text-xs px-1">
+                Save first — sends one Conversions API event using your own (hashed) number. Check Events Manager → Test Events with the code above, or Overview if you leave it blank.
+              </p>
+              {capiTest?.error && <p className="text-[var(--color-danger)] text-sm px-1">{capiTest.error}</p>}
+              {capiTest && !capiTest.busy && !capiTest.error && (
+                <p className="text-sm px-1" aria-live="polite">
+                  <span className={`font-semibold ${capiTest.ok ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>{capiTest.ok ? '✓ Accepted by Meta' : '✗ Not accepted'}</span>{' '}
+                  <span className="text-tertiary">→ {capiTest.to}</span>
+                </p>
+              )}
+            </div>
+          )}
         </form>
       </GlassCard>
 

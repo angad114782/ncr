@@ -53,8 +53,9 @@ export default function Contact() {
     const intentLabel = fill(intents.find((i) => i.value === form.intent)?.label ?? 'Enquiry')
     if (USE_API) {
       setBusy(true)
+      let lead
       try {
-        await submitLead({
+        lead = await submitLead({
           name: form.name.trim(),
           phone: form.phone,
           email: form.email.trim() || undefined,
@@ -68,7 +69,7 @@ export default function Contact() {
         setBusy(false)
         return setError(err.message)
       }
-      fireLeadEvent('contact_form')
+      fireLeadEvent('contact_form', {}, lead.id)
       navigate('/thank-you', { state: { leadName: form.name.trim() } })
       return
     }

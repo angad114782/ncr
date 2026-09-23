@@ -37,6 +37,8 @@ const DEFAULT_MAIL_CONFIG = {
 
 const DEFAULT_MARKETING_CONFIG = {
   metaPixelId: '',
+  metaCapiAccessToken: '',
+  metaTestEventCode: '',
   googleAnalyticsId: '',
   googleAdsId: '',
   googleAdsConversionLabel: '',
@@ -192,7 +194,7 @@ export function SettingsProvider({ children }) {
   }
   const removePropertyType = (name) => setPropertyTypes((prev) => prev.filter((t) => t !== name))
 
-  const fireLeadEvent = (formName, extra) => fireLeadEventUtil(marketingConfig, formName, extra)
+  const fireLeadEvent = (formName, extra, eventId) => fireLeadEventUtil(marketingConfig, formName, extra, eventId)
 
   /** Replace {brand} {ceoName} {ceoTitle} {years} in admin-written copy. */
   const fill = (text) => fillTokens(text, company)

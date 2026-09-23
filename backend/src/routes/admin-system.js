@@ -8,6 +8,7 @@ import { escapeRegex } from '../lib/security.js'
 import { out, paginate } from '../lib/serialize.js'
 import { config } from '../config.js'
 import { whatsappSend } from '../lib/notify.js'
+import { sendMetaLeadEvent } from '../lib/metaCapi.js'
 import { maskPhone } from '../lib/phone.js'
 import { SETTING_KEYS, adminSettings, getSetting, saveSetting } from '../services/settings.js'
 
@@ -47,6 +48,27 @@ router.post('/settings/whatsapp/test', async (req, res) => {
   }
   audit(req, 'test-whatsapp', 'setting', 'whatsapp')
   res.json({ to: maskPhone(phone), results })
+})
+
+/**
+ * Sends one test "Lead" event to Meta using the signed-in admin's own (hashed) phone number, so a
+ * wrong Pixel ID, an expired/invalid access token, or a permissions problem shows up here — with
+ * Meta's own error — instead of every real lead silently failing to report. Check it landed in
+ * Meta Events Manager → Test Events (paste the admin's Test Event Code into Marketing & Ad Tracking
+ * first, then remove it once confirmed working).
+ */
+router.post('/settings/meta-capi/test', async (req, res) => {
+  const result = await sendMetaLeadEvent({
+    eventId: `test-${Date.now()}`,
+    phone: req.user.phone,
+    name: req.user.name,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    sourceUrl: config.siteUrl,
+    contentName: 'Test event from Admin Settings',
+  })
+  audit(req, 'test-meta-capi', 'setting', 'marketing')
+  res.json({ to: maskPhone(req.user.phone), ok: result.ok, error: result.error ?? '' })
 })
 
 /** Legal pages: every published version, newest first. */

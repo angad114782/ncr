@@ -1,7 +1,8 @@
 import { Agent, Lead, Property } from '../models/index.js'
 import { broadcast } from '../lib/events.js'
 import { emptyProfile, leadInterest, summarise } from '../lib/interest.js'
-import { notifyNewLead } from '../lib/notify.js'
+import { leadPageUrl, leadTopic, notifyNewLead } from '../lib/notify.js'
+import { sendMetaLeadEvent } from '../lib/metaCapi.js'
 import { recordConsent } from './auth.js'
 import { getSetting } from './settings.js'
 
@@ -42,6 +43,26 @@ async function announceLead(lead, property, { team, welcome: wantWelcome, agent,
       if (Object.keys(update).length) await Lead.updateOne({ _id: lead.id }, update)
     })
     .catch(() => {})
+}
+
+/**
+ * Meta Conversions API — fired at the same moment the browser Pixel fires its own `fbq('track',
+ * 'Lead', …, { eventID: lead.id })` (see LeadForm.jsx/Contact.jsx/AuthSheet.jsx): once a lead's
+ * phone number is actually confirmed, never for an unverified/pending submission. Sharing `lead.id`
+ * as the event_id is what lets Meta deduplicate the two into one conversion. Best-effort — never
+ * delays or fails the request the lead came from.
+ */
+function capiForLead(req, lead, property) {
+  sendMetaLeadEvent({
+    eventId: lead.id,
+    phone: lead.phone,
+    email: lead.userEmail,
+    name: lead.userName,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    sourceUrl: leadPageUrl(lead, property),
+    contentName: leadTopic(lead, property),
+  }).catch(() => {})
 }
 
 /**
@@ -87,7 +108,10 @@ export async function createLead(req, data, { user, verified = false, source, co
     if (user) existing.userId = user.id
     lead = await existing.save()
     // The team was told when the lead first arrived. Someone who now confirmed the number gets the welcome.
-    if (verified && !wasVerified) announce = { team: false, welcome: true }
+    if (verified && !wasVerified) {
+      announce = { team: false, welcome: true }
+      capiForLead(req, lead, property)
+    }
   } else {
     const agent = await pickAgent(property)
     lead = await Lead.create({
@@ -116,6 +140,12 @@ export async function createLead(req, data, { user, verified = false, source, co
     // Live update: Admin -> Inquiries (and the assigned agent's own leads list) picks it up without a refresh.
     broadcast('admin', 'lead:new', { id: lead.id, userName: lead.userName, intent: lead.intent })
     if (agent) broadcast(`agent:${agent.id}`, 'lead:new', { id: lead.id, userName: lead.userName })
+    // `!pending`, not `verified`: the contact form and phone-reveal never run an OTP step at all, and
+    // their browser Pixel event fires right on submit regardless of verification — matching that
+    // here is what keeps Pixel and this CAPI event sharing one event_id instead of drifting apart.
+    // The one flow that IS a placeholder (LeadForm's "code sent, not typed in yet") stays `pending`
+    // and is skipped here; it fires later, once verified, from the `existing` branch above.
+    if (!pending) capiForLead(req, lead, property)
   }
 
   if (announce) await announceLead(lead, property, { ...announce, enquiry, contactConsent, verified, since })

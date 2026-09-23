@@ -79,14 +79,19 @@ export function trackPageView() {
  * Fires a lead/conversion event on both platforms after a meaningful form
  * submission (inquiry, contact, signup). Safe to call even when neither
  * platform is configured — it's just a no-op then.
+ *
+ * `eventId`, when given, is the lead's own id (the `id` a successful `POST /leads` / sign-up
+ * returns) — pass it as `fbq`'s `eventID` so Meta's browser Pixel event and the server-side
+ * Conversions API event it fires for the same lead (see backend/src/services/leads.js) share one
+ * event_id and get deduplicated into a single conversion instead of double-counting.
  */
-export function fireLeadEvent(marketingConfig, formName, extra = {}) {
+export function fireLeadEvent(marketingConfig, formName, extra = {}, eventId) {
   if (typeof window === 'undefined') return
 
   // `extra` carries non-identifying context (city, property type, intent level) so the ad platforms
   // can build better audiences. Never pass a name, phone number or e-mail here.
   if (window.fbq && marketingConfig?.metaPixelId) {
-    window.fbq('track', 'Lead', { content_name: formName, ...extra })
+    window.fbq('track', 'Lead', { content_name: formName, ...extra }, eventId ? { eventID: eventId } : undefined)
   }
 
   if (window.gtag && marketingConfig?.googleAdsId) {
