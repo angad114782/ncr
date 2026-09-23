@@ -111,6 +111,24 @@ describe('admin API', () => {
       assert.ok(pending.body.pendingReview >= 1)
       await Property.updateOne({ _id: 'p13' }, { reviewStatus: 'approved', active: true })
     })
+
+    it('per-listing analytics: signed-in viewers (with phone) and leads', async () => {
+      await user.post('/api/me/events').send({ events: [{ type: 'view', data: { id: 'p1', city: 'Mumbai' } }, { type: 'view', data: { id: 'p1', city: 'Mumbai' } }] })
+      await t.request.post('/api/leads').send({ name: 'Vikram', phone: '9888800003', propertyId: 'p1', message: 'Interested' })
+
+      const res = await admin.get('/api/admin/properties/p1/analytics')
+      assert.equal(res.status, 200)
+      assert.equal(res.body.signedInOnly, true)
+      assert.equal(res.body.totalViews, 2)
+      assert.equal(res.body.visitors.length, 1)
+      assert.equal(res.body.visitors[0].views, 2)
+      assert.ok(res.body.visitors[0].phone, 'the viewer is identified by phone, not just a user id')
+      assert.ok(res.body.leads.some((l) => l.phone === '9888800003'))
+
+      assert.equal((await t.request.get('/api/admin/properties/p1/analytics')).status, 401)
+      assert.equal((await user.get('/api/admin/properties/p1/analytics')).status, 403)
+      assert.equal((await admin.get('/api/admin/properties/no-such-id/analytics')).status, 404)
+    })
   })
 
   describe('agents, users, content', () => {

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { Agent, Property } from '../models/index.js'
+import { Agent, Event, Lead, Property, User } from '../models/index.js'
 import { badRequest, notFound } from '../lib/errors.js'
 import { audit, contentChanged } from '../lib/misc.js'
 import { broadcast } from '../lib/events.js'
@@ -55,6 +55,41 @@ router.get('/:id', async (req, res) => {
   const p = await Property.findById(req.params.id)
   if (!p) throw notFound('Listing not found.')
   res.json({ property: out(p) })
+})
+
+/**
+ * Who has shown real interest in this one listing: signed-in visitors who viewed it (`Event`,
+ * `type: 'view'`, `data.id` — only ever recorded for a signed-in account, docs/rules.md §15, never
+ * for an anonymous browse) and everyone who enquired on it (`Lead`, which always has a phone number,
+ * verified or not). `signedInOnly` on the view count is the same caveat Search Analytics gives —
+ * most browsing is anonymous and never reaches the server, so this is a real sample, not a total.
+ */
+router.get('/:id/analytics', async (req, res) => {
+  const { id } = req.params
+  if (!(await Property.exists({ _id: id }))) throw notFound('Listing not found.')
+
+  const [viewed, leads] = await Promise.all([
+    Event.aggregate([
+      { $match: { type: 'view', 'data.id': id } },
+      { $sort: { at: -1 } },
+      { $group: { _id: '$userId', views: { $sum: 1 }, lastViewedAt: { $first: '$at' } } },
+      { $sort: { lastViewedAt: -1 } },
+    ]),
+    Lead.find({ propertyId: id }).sort({ createdAt: -1 }).limit(50).lean(),
+  ])
+
+  const users = viewed.length ? await User.find({ _id: { $in: viewed.map((v) => v._id) } }).select('name phone').lean() : []
+  const userById = new Map(users.map((u) => [String(u._id), u]))
+  const visitors = viewed
+    .map((v) => ({ name: userById.get(String(v._id))?.name ?? '', phone: userById.get(String(v._id))?.phone ?? '', views: v.views, lastViewedAt: v.lastViewedAt }))
+    .filter((v) => v.phone)
+
+  res.json({
+    signedInOnly: true,
+    totalViews: viewed.reduce((sum, v) => sum + v.views, 0),
+    visitors,
+    leads: leads.map((l) => ({ id: String(l._id), name: l.userName, phone: l.phone, phoneVerified: l.phoneVerified, status: l.status, intent: l.intent, createdAt: l.createdAt })),
+  })
 })
 
 router.post('/', async (req, res) => {

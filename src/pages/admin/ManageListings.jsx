@@ -7,6 +7,7 @@ import { propertyCsv } from '../../components/admin/propertyCsv'
 import { newId } from '../../utils/ids'
 import { propertyPath, slugify } from '../../utils/seo'
 import propertiesSeed from '../../data/properties.json'
+import PropertyAnalytics from './PropertyAnalytics'
 
 
 export default function ManageListings() {
@@ -57,6 +58,8 @@ export default function ManageListings() {
       items={properties}
       crud={crud}
       extraFilters={[{ value: 'pending', label: `Pending review${pending.length ? ` (${pending.length})` : ''}`, test: (p) => reviewOf(p) === 'pending' }]}
+      editOnRowClick
+      editExtra={(p) => <PropertyAnalytics propertyId={p.id} />}
       schema={schema}
       csv={{ config: propertyCsv, seedItems: propertiesSeed }}
       restore={() => restoreSeeds('properties')}

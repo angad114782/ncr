@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, Copy, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import GlassButton from '../glass/GlassButton'
@@ -6,9 +6,11 @@ import GlassSheet from '../glass/GlassSheet'
 import SchemaForm, { getPath } from './SchemaForm'
 import CsvToolbar from './CsvToolbar'
 import Toggle from './Toggle'
+import AdminPagination from './AdminPagination'
 import { USE_API } from '../../api/client'
 
 const isEmpty = (v) => v === undefined || v === null || (typeof v === 'string' && !v.trim()) || (Array.isArray(v) && v.length === 0)
+const PAGE_SIZE = 20
 
 /**
  * The one admin screen used for listings, blog posts, FAQs, testimonials, agents…
@@ -39,6 +41,8 @@ export default function CollectionAdmin({
   sheetWidth = 'max-w-3xl',
   itemLabel = (x) => x.title ?? x.question ?? x.name ?? x.id,
   onRowClick, // (item) => void — makes the whole row a big click target (e.g. Users → open their activity)
+  editOnRowClick = false, // true: clicking the row opens Edit (pencil becomes a plain, non-clickable icon)
+  editExtra, // (item) => node — rendered above the form fields, existing items only (e.g. per-listing analytics)
 }) {
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all') // all | active | inactive
@@ -47,6 +51,7 @@ export default function CollectionAdmin({
   const [error, setError] = useState('')
   const [confirm, setConfirm] = useState(null) // { message, run }
   const [notice, setNotice] = useState('')
+  const [page, setPage] = useState(1)
 
   const fields = typeof schema === 'function' ? schema(items) : schema
 
@@ -61,8 +66,17 @@ export default function CollectionAdmin({
     })
   }, [items, query, status, searchText, extraFilters])
 
+  // A filter/search that shrinks the list below the current page must not strand the view on an
+  // empty page — jump back to page 1 whenever what's visible changes shape.
+  useEffect(() => setPage(1), [query, status])
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paginated = useMemo(() => visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE), [visible, safePage])
+
   const activeCount = items.filter((i) => i.active !== false).length
-  const allSelected = visible.length > 0 && visible.every((i) => selected.has(i.id))
+  // Select-all means "this page" — the other matches stay selectable by paging to them, rather than
+  // silently bulk-acting on rows that are not even on screen.
+  const allSelected = paginated.length > 0 && paginated.every((i) => selected.has(i.id))
 
   const flash = (msg) => {
     setNotice(msg)
@@ -71,6 +85,7 @@ export default function CollectionAdmin({
 
   const openAdd = () => { setError(''); setDraft({ item: emptyItem(), isNew: true }) }
   const openEdit = (item) => { setError(''); setDraft({ item: JSON.parse(JSON.stringify(item)), isNew: false }) }
+  const effectiveRowClick = onRowClick ?? (editOnRowClick ? openEdit : undefined)
 
   const handleSave = (e) => {
     e.preventDefault()
@@ -105,7 +120,7 @@ export default function CollectionAdmin({
       else n.add(id)
       return n
     })
-  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(visible.map((i) => i.id)))
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(paginated.map((i) => i.id)))
   const ids = [...selected]
 
   const bulk = (action) => {
@@ -174,16 +189,16 @@ export default function CollectionAdmin({
               </tr>
             </thead>
             <tbody>
-              {visible.map((item) => (
+              {paginated.map((item) => (
                 <tr
                   key={item.id}
-                  className={`border-b border-[var(--glass-border)] last:border-0 align-middle ${onRowClick ? 'cursor-pointer hover:bg-[var(--glass-surface-weak)]' : ''}`}
-                  {...(onRowClick
+                  className={`border-b border-[var(--glass-border)] last:border-0 align-middle ${effectiveRowClick ? 'cursor-pointer hover:bg-[var(--glass-surface-weak)]' : ''}`}
+                  {...(effectiveRowClick
                     ? {
                         role: 'button',
                         tabIndex: 0,
-                        onClick: () => onRowClick(item),
-                        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(item) } },
+                        onClick: () => effectiveRowClick(item),
+                        onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); effectiveRowClick(item) } },
                       }
                     : {})}
                 >
@@ -204,7 +219,11 @@ export default function CollectionAdmin({
                           <button type="button" aria-label="Move down" onClick={() => crud.move(item.id, 1)} className="glass w-8 h-8 rounded-full flex items-center justify-center"><ArrowDown size={13} /></button>
                         </>
                       )}
-                      <button type="button" aria-label={`Edit ${itemLabel(item)}`} onClick={() => openEdit(item)} className="glass w-8 h-8 rounded-full flex items-center justify-center"><Pencil size={13} /></button>
+                      {editOnRowClick ? (
+                        <span aria-hidden="true" title="Click the row to edit" className="glass w-8 h-8 rounded-full flex items-center justify-center text-secondary/50"><Pencil size={13} /></span>
+                      ) : (
+                        <button type="button" aria-label={`Edit ${itemLabel(item)}`} onClick={() => openEdit(item)} className="glass w-8 h-8 rounded-full flex items-center justify-center"><Pencil size={13} /></button>
+                      )}
                       {duplicate && (
                         <button type="button" aria-label={`Duplicate ${itemLabel(item)}`} onClick={() => { crud.upsert(duplicate(item)); flash('Duplicated (saved as inactive).') }} className="glass w-8 h-8 rounded-full flex items-center justify-center"><Copy size={13} /></button>
                       )}
@@ -221,9 +240,12 @@ export default function CollectionAdmin({
         </div>
       </GlassCard>
 
+      <AdminPagination page={safePage} totalPages={totalPages} onChange={setPage} />
+
       <GlassSheet open={!!draft} onClose={() => setDraft(null)} title={draft?.isNew ? `Add ${singular}` : `Edit ${singular}`} maxWidth={sheetWidth}>
         {draft && (
           <form onSubmit={handleSave} className="flex flex-col gap-5">
+            {!draft.isNew && editExtra?.(draft.item)}
             <SchemaForm schema={fields} value={draft.item} onChange={(next) => setDraft((d) => ({ ...d, item: next }))} />
             {error && <p role="alert" className="text-[var(--color-danger)] text-sm">{error}</p>}
             <div className="flex gap-2 sticky bottom-0 -mx-2 px-2 py-2 rounded-[20px] bg-[var(--bg-base)]/90 backdrop-blur-md shadow-[0_-8px_20px_rgba(0,0,0,0.06)]">
