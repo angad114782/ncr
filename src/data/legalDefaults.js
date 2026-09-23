@@ -10,7 +10,7 @@
 export const LEGAL_DEFAULTS = {
   privacy: {
     title: 'Privacy Policy',
-    updated: '2026-09-21',
+    updated: '2026-09-23',
     intro:
       'We ask for as little as we need. This page explains what {brand} collects, why, who sees it and how you stay in control, in line with the Digital Personal Data Protection Act, 2023 (India).',
     sections: [
@@ -20,7 +20,9 @@ export const LEGAL_DEFAULTS = {
 
 What you do on this site: the homes you open, the searches and filters you use, homes you save or compare, and how many times you visit. This is kept on your own device (browser storage) and is used to show you relevant homes.
 
-When you create an account and agree, a short summary of that activity (for example "3 BHK flats for sale in Mumbai, budget around ₹1.2 Cr") is added to your enquiry so our team can help you better.`,
+When you create an account and agree, a short summary of that activity (for example "3 BHK flats for sale in Mumbai, budget around ₹1.2 Cr") is added to your enquiry so our team can help you better.
+
+Basic visit data from every visitor, signed in or not: your IP address and, from it, an approximate city/region/pincode (often your internet provider's registered address, not your street address). This is kept at most once per day per address — never a record of which pages you viewed — and is used only for a total-visitor count and to understand roughly where visitors come from.`,
       },
       {
         title: 'Why we use it',

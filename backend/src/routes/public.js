@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { Agent, Faq, Post, Property, Review, Testimonial } from '../models/index.js'
+import { Agent, Faq, Post, Property, Review, Testimonial, Visit } from '../models/index.js'
 import { notFound, AppError, badRequest } from '../lib/errors.js'
 import { escapeRegex, parse, readPhoneToken } from '../lib/security.js'
 import { leadCreate, propertyQuery, reviewPublicQuery } from '../lib/schemas.js'
@@ -7,6 +7,7 @@ import { out, paginate, publicAgent, publicPost, publicProperty } from '../lib/s
 import { PUBLIC_FILTER, findPropertyByParam, propertyPath } from '../services/property.js'
 import { publicSettings } from '../services/settings.js'
 import { createLead } from '../services/leads.js'
+import { geoForIp } from '../lib/geo.js'
 import { ipBlockGuard, leadLimiter } from '../middleware/index.js'
 
 const router = Router()
@@ -155,6 +156,36 @@ router.post('/leads', ipBlockGuard, leadLimiter, async (req, res) => {
   const ownNumber = Boolean(req.user && req.user.phone === d.phone) // a signed-in person's own (already OTP-verified) number
   const lead = await createLead(req, d, { user: req.user, verified: verifiedPhone === d.phone || ownNumber, source: d.source })
   res.status(201).json({ ok: true, id: lead.id, status: lead.status })
+})
+
+/* ------------------------------------------------------------------ visits */
+/**
+ * Real-visitor ping, once per browser session (the front end dedupes with sessionStorage). Never
+ * recorded for the admin's own browsing, so it stays a genuine visitor count. One row per ip per
+ * day (see `Visit` in models) — repeats the same day just bump `hits`.
+ */
+router.post('/visits/ping', async (req, res) => {
+  if (req.user?.role === 'admin') return res.json({ ok: true, counted: false })
+  const ip = req.ip
+  const day = new Date().toISOString().slice(0, 10)
+  const geo = await geoForIp(ip)
+  await Visit.updateOne(
+    { ip, day },
+    {
+      $inc: { hits: 1 },
+      $setOnInsert: {
+        path: String(req.body?.path ?? '').slice(0, 200),
+        ...(geo ? { city: geo.city, region: geo.region, pincode: geo.pincode, country: geo.country } : {}),
+      },
+    },
+    { upsert: true },
+  )
+  res.json({ ok: true, counted: true })
+})
+
+/** Public counter for the footer: real visitor-days, all-time. Never includes the admin (see above). */
+router.get('/visits/count', async (_req, res) => {
+  res.json({ total: await Visit.estimatedDocumentCount() })
 })
 
 export default router

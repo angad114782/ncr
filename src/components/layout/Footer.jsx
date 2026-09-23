@@ -1,10 +1,30 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, Mail, MapPin, Phone } from 'lucide-react'
+import { Building2, Mail, MapPin, Phone, Users } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
 import { formatAddress, hasAddress } from '../../data/company'
 import { listingsPath } from '../../utils/seo'
+import { USE_API, api } from '../../api/client'
 
 const socialLabels = { facebook: 'Facebook', instagram: 'Instagram', linkedin: 'LinkedIn', youtube: 'YouTube' }
+
+/** Real visitors so far, excluding the admin's own browsing (server-side, see backend/src/routes/public.js). */
+function VisitorCounter() {
+  const [total, setTotal] = useState(null)
+
+  useEffect(() => {
+    if (!USE_API) return
+    api('/visits/count').then((d) => setTotal(d.total)).catch(() => {})
+  }, [])
+
+  if (total === null) return null
+  return (
+    <p className="flex items-center gap-1.5 text-tertiary text-xs mt-3">
+      <Users size={12} className="text-[var(--color-accent)]" />
+      {total.toLocaleString('en-IN')} real visitor{total === 1 ? '' : 's'} so far
+    </p>
+  )
+}
 
 export default function Footer() {
   const { cities, propertyTypes, whatsappConfig, mailConfig, company, siteContent, fill } = useSettings()
@@ -87,6 +107,7 @@ export default function Footer() {
         <p className="text-tertiary text-xs mt-3" suppressHydrationWarning>
           &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
         </p>
+        <VisitorCounter />
       </div>
     </footer>
   )

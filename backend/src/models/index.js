@@ -313,3 +313,27 @@ const securityBlockSchema = makeSchema(
   { prefix: 'sb' },
 )
 export const SecurityBlock = model('SecurityBlock', securityBlockSchema)
+
+/**
+ * A real page-view from someone who isn't the admin — one row per IP per calendar day (upserted), so a
+ * visitor refreshing or browsing all day counts once, not per hit. Deliberately separate from `Event`
+ * (docs/rules.md §15): this is IP-level traffic for a site-wide counter/log, never linked to an account,
+ * and carries no browsing history beyond the first page seen that day. City/region/pincode are
+ * best-effort from the IP (`lib/geo.js`) — often approximate, never exact.
+ */
+const visitSchema = makeSchema(
+  {
+    ip: str({ required: true, index: true }),
+    day: str({ required: true, index: true }), // YYYY-MM-DD, the dedupe key together with ip
+    city: str({ default: '' }),
+    region: str({ default: '' }),
+    pincode: str({ default: '' }),
+    country: str({ default: '' }),
+    path: str({ default: '' }), // first page this ip was seen on that day
+    hits: { type: Number, default: 1 }, // page-loads from this ip that day
+  },
+  { prefix: 'v' },
+)
+visitSchema.index({ ip: 1, day: 1 }, { unique: true })
+visitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 400 }) // ~13 months retention
+export const Visit = model('Visit', visitSchema)

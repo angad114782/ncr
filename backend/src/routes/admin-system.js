@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { Agent, Audit, Consent, Event, Faq, Lead, LegalVersion, Post, Property, SecurityBlock, Setting, Testimonial, User } from '../models/index.js'
+import { Agent, Audit, Consent, Event, Faq, Lead, LegalVersion, Post, Property, SecurityBlock, Setting, Testimonial, User, Visit } from '../models/index.js'
 import { badRequest, notFound } from '../lib/errors.js'
 import { audit, contentChanged, rebuildNow, rebuildStatus } from '../lib/misc.js'
 import { listQuery, parse, settingBody } from '../lib/schemas.js'
@@ -137,6 +137,36 @@ router.get('/analytics/searches', async (req, res) => {
     byPurpose: byPurpose.map((r) => ({ label: r._id, count: r.n })),
     topQueries: topQueries.map((r) => ({ q: r._id, count: r.n })),
     trend,
+  })
+})
+
+/**
+ * Real-visitor log: one row per ip per calendar day, with best-effort city/region/pincode
+ * (`lib/geo.js`). Separate from Search Analytics above — this is anonymous, IP-level traffic (never
+ * linked to an account), the same source the public footer counter reads. `q` searches ip/city/
+ * region/pincode/country.
+ */
+router.get('/visitors', async (req, res) => {
+  const q = parse(listQuery, req.query)
+  const filter = {}
+  if (q.q) {
+    const rx = new RegExp(escapeRegex(q.q), 'i')
+    filter.$or = [{ ip: rx }, { city: rx }, { region: rx }, { pincode: rx }, { country: rx }, { path: rx }]
+  }
+  const since7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const [items, total, allTime, last7Days, byCity] = await Promise.all([
+    Visit.find(filter).sort({ updatedAt: -1 }).skip((q.page - 1) * q.limit).limit(q.limit).lean(),
+    Visit.countDocuments(filter),
+    Visit.estimatedDocumentCount(),
+    Visit.countDocuments({ createdAt: { $gte: since7 } }),
+    Visit.aggregate([{ $match: { city: { $ne: '' } } }, { $group: { _id: '$city', n: { $sum: 1 } } }, { $sort: { n: -1 } }, { $limit: 8 }]),
+  ])
+  res.json({
+    items: out(items),
+    allTime,
+    last7Days,
+    byCity: byCity.map((r) => ({ label: r._id, count: r.n })),
+    ...paginate(total, q.page, q.limit),
   })
 })
 
