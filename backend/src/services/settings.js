@@ -32,7 +32,7 @@ const STATIC_DEFAULTS = {
       { text: 'Want us to call you back? Talk to an expert today', link: '/contact' },
     ],
   },
-  marketing: { metaPixelId: '', googleAdsId: '', googleAdsConversionLabel: '' },
+  marketing: { metaPixelId: '', googleAnalyticsId: '', googleAdsId: '', googleAdsConversionLabel: '' },
   whatsapp: {
     displayPhone: '8619930583',
     phoneNumberId: '',

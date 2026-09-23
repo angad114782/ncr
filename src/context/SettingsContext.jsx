@@ -37,6 +37,7 @@ const DEFAULT_MAIL_CONFIG = {
 
 const DEFAULT_MARKETING_CONFIG = {
   metaPixelId: '',
+  googleAnalyticsId: '',
   googleAdsId: '',
   googleAdsConversionLabel: '',
 }

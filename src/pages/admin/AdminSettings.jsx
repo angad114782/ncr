@@ -389,8 +389,9 @@ export default function AdminSettings() {
           <h2 className="font-semibold text-lg">Marketing &amp; Ad Tracking</h2>
         </div>
         <p className="text-secondary text-sm mb-5">
-          Meta Pixel and Google Ads IDs — unlike WhatsApp/Mail below, these load for real as soon as you save them, and
-          fire a Lead/conversion event whenever a visitor submits the inquiry, contact, or signup form.
+          Meta Pixel, Google Analytics and Google Ads IDs — unlike WhatsApp/Mail below, these load for real as soon as
+          you save them, and fire a page-view / Lead / conversion event whenever a visitor browses or submits the
+          inquiry, contact, or signup form.
         </p>
 
         <form onSubmit={handleMarketingSave} className="flex flex-col gap-3.5">
@@ -403,6 +404,18 @@ export default function AdminSettings() {
             placeholder="e.g. 1234567890123456"
             value={marketingForm.metaPixelId}
             onChange={(e) => setMarketingForm({ ...marketingForm, metaPixelId: e.target.value.trim() })}
+          />
+
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-medium text-secondary px-1">Google Analytics Measurement ID</span>
+            <StatusBadge active={!!marketingForm.googleAnalyticsId} />
+          </div>
+          <GlassInput
+            icon={BarChart3}
+            placeholder="G-XXXXXXXXX"
+            hint="GA4 property → Admin → Data streams → your web stream → Measurement ID."
+            value={marketingForm.googleAnalyticsId}
+            onChange={(e) => setMarketingForm({ ...marketingForm, googleAnalyticsId: e.target.value.trim() })}
           />
 
           <div className="flex items-center justify-between mt-1">
