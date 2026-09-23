@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Search, SlidersHorizontal, X } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Search, SlidersHorizontal, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassInput from '../../components/glass/GlassInput'
 import GlassButton from '../../components/glass/GlassButton'
@@ -26,23 +27,44 @@ const sortOptions = [
 
 const BHK_OPTIONS = ['1', '2', '3', '4']
 
-const PAGE_LINK_BASE = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-medium spring shrink-0'
+const PILL_SIZE = 'w-9 h-9 sm:w-10 sm:h-10'
 
-/** Pagination is real links (`?page=N`) so crawlers can walk every page of results. */
-function PageLink({ to, children, current, disabled, rel, label }) {
-  if (disabled) {
-    return <span aria-disabled="true" aria-label={label} className={`${PAGE_LINK_BASE} glass opacity-30`}>{children}</span>
-  }
+/**
+ * A page number inside the pill track (see `Pagination`). The current page's fill is one shared
+ * `motion.span` with `layoutId` — framer-motion animates it sliding from wherever it last was to
+ * the new current pill instead of every button just swapping color, which is what actually reads
+ * as "advanced" rather than a plain highlighted button. Real links (`?page=N`), not buttons, so
+ * crawlers and back/forward both work normally.
+ */
+function PageLink({ to, current, label, children }) {
   return (
     <Link
       to={to}
-      rel={rel}
       aria-label={label}
       aria-current={current ? 'page' : undefined}
       state={{ keepScroll: true }}
       onClick={() => scrollToY(0)}
-      className={`${PAGE_LINK_BASE} ${current ? 'glass-strong text-[var(--color-accent)]' : 'glass text-secondary hover:scale-105'}`}
+      className={`relative ${PILL_SIZE} rounded-full flex items-center justify-center text-sm font-medium spring shrink-0 ${current ? 'text-white' : 'text-secondary hover:scale-105'}`}
     >
+      {current && (
+        <motion.span
+          layoutId="pagination-active-pill"
+          className="absolute inset-0.5 rounded-full"
+          style={{ background: 'var(--color-accent)' }}
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        />
+      )}
+      <span className="relative">{children}</span>
+    </Link>
+  )
+}
+
+/** Circular glass Prev/Next button, standalone (outside the pill track) — `rel` keeps crawlers walking the chain. */
+function PageArrow({ to, disabled, rel, label, children }) {
+  const base = `${PILL_SIZE} rounded-full flex items-center justify-center spring shrink-0`
+  if (disabled) return <span aria-disabled="true" aria-label={label} className={`${base} glass opacity-30`}>{children}</span>
+  return (
+    <Link to={to} rel={rel} aria-label={label} state={{ keepScroll: true }} onClick={() => scrollToY(0)} className={`${base} glass text-secondary hover:scale-105`}>
       {children}
     </Link>
   )
@@ -67,6 +89,73 @@ function paginationItems(current, total, siblings = 1) {
   if (!showLeftDots && showRightDots) return [...range(1, 3 + siblings * 2), '…', total]
   if (showLeftDots && !showRightDots) return [1, '…', ...range(total - (2 + siblings * 2), total)]
   return [1, '…', ...range(left, right), '…', total]
+}
+
+/** The whole pagination bar: sliding-pill numbers, arrows, and — once there are enough pages to need
+ *  one — a "jump to page" box (typing a page number and pressing Go/Enter navigates straight there). */
+function Pagination({ page, totalPages, urlFor, filters }) {
+  const navigate = useNavigate()
+  const [jump, setJump] = useState('')
+
+  const goToJump = (e) => {
+    e.preventDefault()
+    const n = Math.round(Number(jump))
+    if (n >= 1 && n <= totalPages && n !== page) {
+      scrollToY(0)
+      navigate(urlFor(filters, { page: n }), { state: { keepScroll: true } })
+    }
+    setJump('')
+  }
+
+  return (
+    <nav aria-label="Pagination" className="flex flex-col items-center gap-3 mt-8">
+      <div className="flex items-center gap-2">
+        <PageArrow to={urlFor(filters, { page: page - 1 })} disabled={page === 1} rel="prev" label="Previous page">
+          <ChevronLeft size={16} />
+        </PageArrow>
+
+        <div className="glass-strong rounded-full p-1 flex items-center gap-0.5">
+          {paginationItems(page, totalPages).map((item, i) =>
+            item === '…' ? (
+              <span key={`dots-${i}`} aria-hidden="true" className={`${PILL_SIZE} flex items-center justify-center text-secondary text-sm select-none`}>
+                …
+              </span>
+            ) : (
+              <PageLink key={item} to={urlFor(filters, { page: item })} current={page === item} label={`Page ${item}`}>
+                {item}
+              </PageLink>
+            ),
+          )}
+        </div>
+
+        <PageArrow to={urlFor(filters, { page: page + 1 })} disabled={page === totalPages} rel="next" label="Next page">
+          <ChevronRight size={16} />
+        </PageArrow>
+      </div>
+
+      {totalPages > 6 && (
+        <form onSubmit={goToJump} className="flex items-center gap-2 text-xs sm:text-sm text-secondary">
+          <span>
+            Page {page} of {totalPages} · Jump to
+          </span>
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            inputMode="numeric"
+            value={jump}
+            onChange={(e) => setJump(e.target.value)}
+            placeholder={String(page)}
+            aria-label="Jump to page"
+            className="glass-weak w-14 h-8 rounded-full text-center text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-accent)]/50"
+          />
+          <button type="submit" aria-label="Go to page" className="glass w-8 h-8 rounded-full flex items-center justify-center spring hover:scale-105">
+            <ArrowRight size={13} />
+          </button>
+        </form>
+      )}
+    </nav>
+  )
 }
 
 /**
@@ -429,27 +518,7 @@ function ListingsView({ filters }) {
                 ))}
               </div>
 
-              {totalPages > 1 && (
-                <nav aria-label="Pagination" className="flex items-center justify-center gap-1.5 sm:gap-2 mt-8">
-                  <PageLink to={urlFor(filters, { page: page - 1 })} disabled={page === 1} rel="prev" label="Previous page">
-                    <ChevronLeft size={16} />
-                  </PageLink>
-                  {paginationItems(page, totalPages).map((item, i) =>
-                    item === '…' ? (
-                      <span key={`dots-${i}`} aria-hidden="true" className={`${PAGE_LINK_BASE} text-secondary`}>
-                        …
-                      </span>
-                    ) : (
-                      <PageLink key={item} to={urlFor(filters, { page: item })} current={page === item} label={`Page ${item}`}>
-                        {item}
-                      </PageLink>
-                    ),
-                  )}
-                  <PageLink to={urlFor(filters, { page: page + 1 })} disabled={page === totalPages} rel="next" label="Next page">
-                    <ChevronRight size={16} />
-                  </PageLink>
-                </nav>
-              )}
+              {totalPages > 1 && <Pagination page={page} totalPages={totalPages} urlFor={urlFor} filters={filters} />}
             </>
           )}
         </div>
