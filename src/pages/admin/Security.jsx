@@ -124,10 +124,12 @@ export default function Security() {
                 variant="glass"
                 size="sm"
                 icon={ShieldOff}
-                disabled={busyId === item.id || (!item.permanent && !(item.blockedUntil && new Date(item.blockedUntil) > new Date()))}
+                disabled={!item.permanent && !(item.blockedUntil && new Date(item.blockedUntil) > new Date())}
+                loading={busyId === item.id}
+                loadingText="Unblocking…"
                 onClick={() => handleUnblock(item)}
               >
-                {busyId === item.id ? 'Unblocking…' : 'Unblock'}
+                Unblock
               </GlassButton>
             </GlassCard>
           ))}

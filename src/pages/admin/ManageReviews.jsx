@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, MessageSquareText, RefreshCw, Star, Trash2, X } from 'lucide-react'
+import { Check, Loader2, MessageSquareText, RefreshCw, Star, Trash2, X } from 'lucide-react'
 import GlassCard from '../../components/glass/GlassCard'
 import GlassButton from '../../components/glass/GlassButton'
 import { USE_API, api } from '../../api/client'
@@ -156,12 +156,18 @@ export default function ManageReviews() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {r.status !== 'approved' && (
-                  <button type="button" aria-label="Approve" title="Approve" disabled={busyId === r.id} onClick={() => decide(r.id, 'approve')} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-success)]"><Check size={13} /></button>
+                  <button type="button" aria-label="Approve" title="Approve" aria-busy={busyId === r.id} disabled={busyId === r.id} onClick={() => decide(r.id, 'approve')} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-success)] disabled:opacity-70">
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                  </button>
                 )}
                 {r.status !== 'rejected' && (
-                  <button type="button" aria-label="Reject" title="Reject" disabled={busyId === r.id} onClick={() => decide(r.id, 'reject', '')} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-warning)]"><X size={13} /></button>
+                  <button type="button" aria-label="Reject" title="Reject" aria-busy={busyId === r.id} disabled={busyId === r.id} onClick={() => decide(r.id, 'reject', '')} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-warning)] disabled:opacity-70">
+                    {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}
+                  </button>
                 )}
-                <button type="button" aria-label="Delete" title="Delete" disabled={busyId === r.id} onClick={() => remove(r.id)} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-danger)]"><Trash2 size={13} /></button>
+                <button type="button" aria-label="Delete" title="Delete" aria-busy={busyId === r.id} disabled={busyId === r.id} onClick={() => remove(r.id)} className="glass w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-danger)] disabled:opacity-70">
+                  {busyId === r.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                </button>
               </div>
             </GlassCard>
           ))}

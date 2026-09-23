@@ -99,7 +99,7 @@ export default function ReviewsSection({ targetType, targetId, className = '' })
             className="glass rounded-[12px] px-3 py-2 text-sm outline-none resize-none w-full"
           />
           <div className="flex items-center gap-2">
-            <GlassButton type="submit" size="sm" disabled={!rating || submitting}>{submitting ? 'Submitting…' : 'Submit'}</GlassButton>
+            <GlassButton type="submit" size="sm" disabled={!rating} loading={submitting} loadingText="Submitting…">Submit</GlassButton>
             <GlassButton type="button" variant="glass" size="sm" onClick={() => setOpen(false)}>Cancel</GlassButton>
           </div>
         </form>

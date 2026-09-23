@@ -179,7 +179,7 @@ export default function Contact() {
 
             {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-            <GlassButton type="submit" disabled={busy} className="w-full justify-center"><Send size={16} /> {c.buttonLabel}</GlassButton>
+            <GlassButton type="submit" loading={busy} loadingText="Sending…" className="w-full justify-center"><Send size={16} /> {c.buttonLabel}</GlassButton>
             {c.buttonNote && <p className="text-tertiary text-xs text-center">{c.buttonNote}</p>}
           </form>
         </GlassCard>

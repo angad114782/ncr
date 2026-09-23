@@ -315,7 +315,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
             </p>
           )}
 
-          <GlassButton type="submit" disabled={busy} className="mt-2 w-full justify-center">
+          <GlassButton type="submit" loading={busy} loadingText="Sending code…" className="mt-2 w-full justify-center">
             Send Me a Secure Code
           </GlassButton>
           <p className="text-tertiary text-xs text-center">
@@ -416,7 +416,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
 
             {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
-            <GlassButton type="submit" disabled={busy} className="w-full justify-center">
+            <GlassButton type="submit" loading={busy} loadingText="Verifying…" className="w-full justify-center">
               {mode === 'login' ? 'Confirm & Take Me In' : isAgentSignup ? 'Confirm & Open My Panel' : 'Confirm & Start Exploring'}
             </GlassButton>
 

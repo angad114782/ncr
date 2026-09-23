@@ -204,7 +204,7 @@ export default function LeadForm({ property }) {
 
           {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
 
-          <GlassButton type="submit" disabled={busy} className="w-full justify-center">
+          <GlassButton type="submit" loading={busy} loadingText="Verifying…" className="w-full justify-center">
             <Check size={16} /> Confirm &amp; Book My Callback
           </GlassButton>
           <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">
@@ -254,7 +254,7 @@ export default function LeadForm({ property }) {
 
       {error && <p className="text-[var(--color-danger)] text-sm px-1">{error}</p>}
 
-      <GlassButton type="submit" disabled={busy} className="w-full justify-center">
+      <GlassButton type="submit" loading={busy} loadingText="Sending code…" className="w-full justify-center">
         Get My Free Callback
       </GlassButton>
       <p className="text-tertiary text-xs text-center flex items-center justify-center gap-1">

@@ -555,8 +555,8 @@ export default function AdminSettings() {
 
             {USE_API && (
               <div className="flex flex-col gap-2.5">
-                <GlassButton type="button" variant="glass" className="w-full justify-center" disabled={waTest?.busy} onClick={handleWaTest}>
-                  <Send size={15} /> {waTest?.busy ? 'Sending…' : 'Send test messages to my number'}
+                <GlassButton type="button" variant="glass" className="w-full justify-center" loading={waTest?.busy} loadingText="Sending…" icon={Send} onClick={handleWaTest}>
+                  Send test messages to my number
                 </GlassButton>
                 <p className="text-tertiary text-xs px-1">Save first — the test uses the saved settings and sends both lead messages to the admin number you are logged in with.</p>
                 {waTest?.error && <p className="text-[var(--color-danger)] text-sm px-1">{waTest.error}</p>}
