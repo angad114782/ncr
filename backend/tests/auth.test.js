@@ -156,4 +156,38 @@ describe('auth: OTP, login, registration', () => {
     const other = await t.request.post('/api/leads').send({ name: 'Someone Else', phone: '9111100008', propertyId: 'p1', phoneToken: verified.body.phoneToken })
     assert.equal((await Lead.findById(other.body.id)).phoneVerified, false, 'the token only proves the number it was issued for')
   })
+
+  it('verify-phone with a name signs the visitor in: a brand-new account the first time, straight login after that', async () => {
+    const { Otp } = await import('../src/models/index.js')
+    const phone = '9111100009'
+    const client = request.agent(t.app)
+
+    await Otp.deleteMany({ phone })
+    const sent = await client.post('/api/auth/otp/send').send({ phone, purpose: 'verify' })
+    const first = await client.post('/api/auth/verify-phone').send({ phone, otp: sent.body.devOtp, name: 'New Buyer' })
+    assert.equal(first.status, 200)
+    assert.equal(first.body.user.name, 'New Buyer')
+    assert.equal(first.body.user.role, 'user')
+    const me = await client.get('/api/auth/me')
+    assert.equal(me.body.user.phone, phone, 'a session cookie was actually set')
+
+    await client.post('/api/auth/logout')
+    await Otp.deleteMany({ phone })
+    const sent2 = await t.request.post('/api/auth/otp/send').send({ phone, purpose: 'verify' })
+    const again = await request.agent(t.app).post('/api/auth/verify-phone').send({ phone, otp: sent2.body.devOtp })
+    assert.equal(again.status, 200)
+    assert.equal(again.body.user.name, 'New Buyer', 'the existing account is logged into, no name needed the second time')
+  })
+
+  it('verify-phone never starts a session for an agent or admin number — proves the phone only', async () => {
+    const { Otp } = await import('../src/models/index.js')
+    await Otp.deleteMany({ phone: ADMIN_PHONE })
+    const client = request.agent(t.app)
+    const sent = await client.post('/api/auth/otp/send').send({ phone: ADMIN_PHONE, purpose: 'verify' })
+    const res = await client.post('/api/auth/verify-phone').send({ phone: ADMIN_PHONE, otp: sent.body.devOtp, name: 'Whoever' })
+    assert.equal(res.status, 200)
+    assert.equal(res.body.user, undefined)
+    assert.ok(res.body.phoneToken)
+    assert.equal((await client.get('/api/auth/me')).status, 401, 'no session was started')
+  })
 })

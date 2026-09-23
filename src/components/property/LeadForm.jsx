@@ -7,7 +7,7 @@ import { useData } from '../../context/DataContext'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import { useInterest } from '../../context/InterestContext'
-import { USE_API, api } from '../../api/client'
+import { USE_API } from '../../api/client'
 
 const LOCAL_OTP_LENGTH = 4 // the mock code; with the server the length comes from its answer
 
@@ -17,7 +17,7 @@ function generateOtp() {
 
 export default function LeadForm({ property }) {
   const { addInquiry, submitLead } = useData()
-  const { user, sendOtp } = useAuth()
+  const { user, sendOtp, verifyPhoneAndLogin } = useAuth()
   const { profile } = useInterest()
   const { fireLeadEvent, siteContent } = useSettings()
   const navigate = useNavigate()
@@ -131,8 +131,16 @@ export default function LeadForm({ property }) {
     if (USE_API) {
       setBusy(true)
       try {
-        const { phoneToken } = await api('/auth/verify-phone', { method: 'POST', body: { phone: form.phone, otp: entered } })
-        await sendLead(phoneToken)
+        // Confirming the code also signs them in (into their account, or — with the name they just
+        // gave — a brand-new one), so a verified enquiry leaves the visitor logged in, not just a
+        // one-off note. See backend/src/routes/auth.js for exactly when (never an agent/admin number).
+        const verify = await verifyPhoneAndLogin(form.phone, entered, form.name.trim())
+        if (!verify.ok) {
+          setError(verify.error)
+          setBusy(false)
+          return
+        }
+        await sendLead(verify.phoneToken)
       } catch (err) {
         setError(err.message)
         setBusy(false)
@@ -154,6 +162,7 @@ export default function LeadForm({ property }) {
       message: form.message || `Interested in ${property?.title ?? 'this property'}. Budget: ${form.budget}.`,
       phoneVerified: true,
     })
+    if (!user) verifyPhoneAndLogin(form.phone, entered, form.name.trim())
 
     fireLeadEvent(property ? 'property_lead_form' : 'lead_form')
 

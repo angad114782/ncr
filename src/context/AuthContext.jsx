@@ -64,6 +64,22 @@ function LocalAuthProvider({ children }) {
     return { ok: true, user: newUser }
   }
 
+  /**
+   * Used by the lead form: the OTP was already checked locally by the caller, so this just signs
+   * the visitor in — into their account if one exists, or (a name given) a brand-new one. Never an
+   * agent/admin number (that's the wrong door for a buyer-facing form — see AuthSheet's own guard).
+   */
+  const verifyPhoneAndLogin = (phone, _otp, name) => {
+    const found = findByPhone(phone)
+    if (found) {
+      if (found.role !== 'user') return { ok: true, user: null }
+      if (found.active === false) return { ok: false, error: 'This account has been deactivated. Please contact support.' }
+      setUser(found)
+      return { ok: true, user: found }
+    }
+    return name ? signupWithPhone(name, phone) : { ok: true, user: null }
+  }
+
   const updateProfile = (patch) => {
     if (!user) return { ok: false, error: 'Not signed in.' }
 
@@ -143,6 +159,7 @@ function LocalAuthProvider({ children }) {
         allUsers,
         loginWithPhone,
         signupWithPhone,
+        verifyPhoneAndLogin,
         updateProfile,
         addUser,
         updateUserById,
@@ -211,6 +228,21 @@ function ApiAuthProvider({ children }) {
       const d = await api('/auth/register', { method: 'POST', body: payload })
       setUser(d.user)
       return { ok: true, user: d.user, agent: d.agent, leadId: d.leadId }
+    } catch (err) {
+      return { ok: false, error: messageOf(err), code: err.code }
+    }
+  }
+
+  /**
+   * Used by the lead form: proves the phone number (same as before) and, for an ordinary
+   * buyer/tenant number, also signs the visitor in — see backend/src/routes/auth.js for exactly
+   * when (never an agent/admin number, and only creates an account when `name` is given).
+   */
+  const verifyPhoneAndLogin = async (phone, otp, name) => {
+    try {
+      const d = await api('/auth/verify-phone', { method: 'POST', body: { phone, otp, name } })
+      if (d.user) setUser(d.user)
+      return { ok: true, user: d.user ?? null, phoneToken: d.phoneToken }
     } catch (err) {
       return { ok: false, error: messageOf(err), code: err.code }
     }
@@ -298,6 +330,7 @@ function ApiAuthProvider({ children }) {
         sendOtp,
         loginWithOtp,
         registerWithOtp,
+        verifyPhoneAndLogin,
         updateProfile,
         addUser,
         updateUserById,

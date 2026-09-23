@@ -95,11 +95,39 @@ router.post('/register', ipBlockGuard, phoneBlockGuard, authLimiter, async (req,
   res.status(201).json({ user: publicUser(user), agent: agent ? out(agent) : null, leadId: lead?.id ?? null })
 })
 
-/** Proves a phone number to the server without creating an account — used before a public enquiry. */
+/**
+ * Proves a phone number to the server for a public enquiry (the lead form) — and, for an ordinary
+ * buyer/tenant number, also signs the visitor in: into their account if one exists, or (a name was
+ * given) a brand-new one, so a verified enquiry leaves them signed in rather than a one-off note.
+ * This relies on the enquiry's own consent, not a separate sign-up checkbox (docs/rules.md §15) —
+ * filling the form and confirming the code already is the person's consent to be contacted.
+ * Never signs into an agent or admin account from here: a buyer-facing form is the wrong door for
+ * that (see AuthSheet's own login/signup for the equivalent agent-vs-buyer guard).
+ */
 router.post('/verify-phone', ipBlockGuard, phoneBlockGuard, authLimiter, async (req, res) => {
-  const { phone, otp } = parse(verifyPhone, req.body)
+  const { phone, otp, name } = parse(verifyPhone, req.body)
   await checkOtp(phone, 'verify', otp)
-  res.json({ ok: true, phoneToken: signPhoneToken(phone) })
+  const phoneToken = signPhoneToken(phone)
+
+  let user = await User.findOne({ phone })
+  if (user?.active === false) throw forbidden('This account has been deactivated. Please contact support.')
+
+  if (user && user.role !== 'user') {
+    return res.json({ ok: true, phoneToken }) // agent/admin number: prove it, but don't start a session here
+  }
+
+  if (user) {
+    startSession(res, user)
+    await touchLogin(user)
+    audit({ user, ip: req.ip }, 'login', 'user', user.id)
+  } else if (name) {
+    user = await User.create({ _id: newId('u'), name, phone, role: 'user', city: 'Mumbai' })
+    startSession(res, user)
+    await touchLogin(user)
+    audit({ user, ip: req.ip }, 'register', 'user', user.id, { role: 'user', source: 'lead_verify' })
+  }
+
+  res.json({ ok: true, phoneToken, user: user ? publicUser(user) : null })
 })
 
 router.post('/logout', (_req, res) => {

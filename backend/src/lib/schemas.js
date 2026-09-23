@@ -101,7 +101,9 @@ export const adminPropertyQuery = z.object({
 export const otpSend = z.object({ phone, purpose: z.enum(['login', 'register', 'verify']) })
 const consent = z.object({ accepted: z.literal(true, { error: 'Please accept to continue' }) })
 export const login = z.object({ phone, otp: z.string().trim().min(4).max(8) })
-export const verifyPhone = login
+// `name` is only used the first time this number is ever seen (see routes/auth.js) — creating the
+// account a lead-form OTP verification logs the visitor into.
+export const verifyPhone = login.extend({ name: text(80).min(2).optional() })
 
 const looseItem = z.record(z.string(), z.union([z.string().max(200), z.number(), z.boolean(), z.null()]))
 /** The visitor's on-device browsing profile — the server recomputes the intent from it. */
