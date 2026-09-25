@@ -163,7 +163,7 @@ Three roles: **user** (client — the sign-up default), **agent**, **admin**. La
 5. **Render must be pure.** Don't mutate shared state while rendering (React renders twice in dev / StrictMode). The auto-linker uses a claims `Map` keyed by text id for exactly this reason.
 6. New public route ⇒ add it to `App.jsx` **and** `scripts/site-data.mjs`, run `npm run build`, and check the page exists in `dist/`.
 7. Build-script modules that the app also imports (`listingsUrl.js`, `format.js`, `taxonomy.js`) must have **no extensionless local imports** — Node ESM can't resolve them.
-8. **Deploy requirement**: nginx must serve `try_files $uri $uri/ /index.html;` (see `deploy/nginx.example.conf`) or crawlers get the empty shell. Verify: `curl -A Googlebot https://propertyinncr.com/about | grep "<h1"`.
+8. **Deploy requirement**: nginx must serve the pre-rendered file **without a trailing-slash redirect** and fall back to `app-shell.html`, never `index.html` (the pre-rendered home page, canonical `/`). `deploy/nginx-site.snippet.conf` does this at server level (`/about/` → 301 `/about`, `/about` served from `about/index.html`); the equivalent `location /` rule is `try_files $uri $uri/index.html /app-shell.html;`. Never `$uri/` — it 301s `/about` → `/about/`, whose canonical points back (GSC: "Alternative page with proper canonical tag"). Verify: `curl -sI https://propertyinncr.com/about` is `200` and `curl -s https://propertyinncr.com/admin | grep canonical` prints nothing.
 
 ## 18. API mode & deployment
 

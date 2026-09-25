@@ -38,6 +38,7 @@
 | 2026-09-21 | Sample testimonials hidden (`showTestimonials: false`) | Fake reviews are illegal/untrustworthy; user must supply real ones |
 | 2026-09-21 | Contact form saves an inquiry and the conversion fires once, at submit | It previously discarded messages; ThankYou also firing doubled leads |
 | 2026-09-21 | Listing filters + page number live in the URL; canonical via `listingsPath()` | One URL per filter combo; fixes empty-grid-on-page-2 bug |
+| 2026-09-25 | URLs have **no trailing slash**; nginx serves `about/index.html` for `/about` and 301s `/about/` → `/about`; unknown URLs get `app-shell.html` | `$uri/` redirected every page to `/about/` (canonical pointed back → GSC "Alternative page with proper canonical tag", 88 URLs); the `/index.html` fallback made retired city URLs duplicates of the homepage |
 | 2026-09-21 | Sitemap generated at build by script | Property/blog/city URLs change; hand-editing drifts |
 | 2026-09-22 | Running strip lives on Home only (between navbar and hero); default messages are truthful nudges | User asked for an admin-run strip there ("physical" in the request was read as a scrolling / persuasive strip); no invented scarcity |
 | 2026-09-22 | OTP-flow buttons use benefit-first wording + reassurance line | User asked for more psychological CTAs; keep it honest (no fake urgency) |

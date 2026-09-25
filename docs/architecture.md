@@ -111,7 +111,7 @@ npm run build
 - **Clean listing URLs**: `/buy|rent[/{city}][/{type | N-bhk}]`; possession / `beds` (with a type) / `page` / `q` / `maxPrice` stay in the query string (`q` and `maxPrice` pages are `noindex`). Unknown segment → 404 page. `/listings?purpose=…` redirects to the clean URL.
 - **Interlinking**: `AutoLinkedText` + `BlogBody` (admin keyword rules + city names, once per page), `relatedPosts()`, `ExploreLinks`, `GuideLinks`, `PopularSearches`, footer, and the `/sitemap` HTML page. All are `<a href>` links present in the prerendered HTML.
 - **AIO / GEO files**: `public/llms.txt` (curated map), `llms-full.txt` (site text incl. blog Quick answers), `robots.txt` (AI crawlers allowed), `feed.xml` (RSS). Blog JSON-LD carries `abstract` + `speakable`; `<Seo>` emits `hreflang en-IN / x-default` and `og:locale en_IN`.
-- **Deploy**: `deploy/nginx.example.conf` (`try_files $uri $uri/ /index.html`, gzip, immutable `/assets` cache).
+- **Deploy**: `deploy/nginx.example.conf` (`try_files $uri $uri/index.html /app-shell.html`, gzip, immutable `/assets` cache).
 
 ## 4b. Personalisation & sign-up flow
 

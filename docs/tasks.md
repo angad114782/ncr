@@ -364,6 +364,7 @@ _Last updated: 2026-09-22_
 
 ### SEO audit fixes (this batch)
 - [x] **www → apex 301 redirect + `charset utf-8`** via `deploy/nginx-site.snippet.conf` (fixes: canonical points to a different page, missing self-referential hreflang on www, duplicate www/non-www). Applied by `bash deploy/setup-nginx.sh` (re-run it once — it only adds the missing include)
+- [x] **"Alternative page with proper canonical tag" (GSC, 88 URLs)**: nginx 301'd every page to a trailing-slash URL whose canonical pointed back; retired city URLs (`/buy/mumbai`, `/rent/pune/…`) got the pre-rendered home page (canonical `/`). Fixed in `deploy/nginx-site.snippet.conf` + `dist/app-shell.html`. `?beds=` / `?possession=` variants canonicalising to the clean page is intended
 - [x] Home **title 73 → 56 chars** and **description 200 → 139 chars**; both now editable in Admin → Site Content → Home page (`home.seoTitle` / `home.seoDescription`)
 - [x] No duplicate headings on Home (budget results and city rates no longer repeat card / city headings); "View All" links have unique text; ticker default link has no `?param`
 - [x] Real **favicon** (was the Vite template logo) and **apple-touch-icon** (`public/apple-touch-icon.png`)

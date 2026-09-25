@@ -11,6 +11,10 @@ import { getRedirects, getRoutes, root, SITE } from './site-data.mjs'
 
 const dist = resolve(root, process.env.DIST_DIR ?? 'dist') // scripts/release.mjs builds into dist-next first
 const template = readFileSync(resolve(dist, 'index.html'), 'utf8')
+// The untouched shell (no canonical, no content) for URLs that have no pre-rendered page — admin, dashboard,
+// unknown addresses. nginx falls back to it; falling back to index.html would serve the pre-rendered HOME page,
+// whose canonical ("/") and <h1> would make every such URL look like a duplicate of the homepage.
+writeFileSync(resolve(dist, 'app-shell.html'), template)
 const { render } = await import(pathToFileURL(resolve(root, 'dist-ssr/entry-server.js')).href)
 
 // React 19 hoists <title>, <meta> and <link> elements (what <Seo> renders) to the very start of the
