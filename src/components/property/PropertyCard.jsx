@@ -6,6 +6,7 @@ import Img from '../common/Img'
 import { propertyPath } from '../../utils/seo'
 import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
+import { bhkSummary } from '../../utils/listingText'
 
 /** `headingAs`: a listing that is repeated further down the page (budget results…) uses "p" so the page has no duplicate headings. */
 export default function PropertyCard({ property, headingAs: Heading = 'h3' }) {
@@ -87,7 +88,7 @@ export default function PropertyCard({ property, headingAs: Heading = 'h3' }) {
         <div className="flex items-center gap-4 text-sm text-secondary border-t border-[var(--glass-border)] pt-3">
           {property.beds > 0 && (
             <span className="flex items-center gap-1">
-              <BedDouble size={15} /> {property.beds}
+              <BedDouble size={15} /> {bhkSummary(property) || property.beds}
             </span>
           )}
           <span className="flex items-center gap-1">

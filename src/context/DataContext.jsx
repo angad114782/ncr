@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { displayListing } from '../utils/listingText'
 import usePersistedState from '../hooks/usePersistedState'
 import { newId } from '../utils/ids'
 import { ensureSlugs, resolveSlug } from '../utils/propertySlug'
@@ -146,7 +147,9 @@ function makeApiCrud(list, setList, { base, reload, reorderable = false, itemKey
 
 export function DataProvider({ children }) {
   const { user, ready: authReady } = useAuth()
-  const [properties, setProperties, propertiesReady] = useStore('re-properties', SEED.properties)
+  const [storedProperties, setProperties, propertiesReady] = useStore('re-properties', SEED.properties)
+  // Every listing's text is shown capitalised (title, place names, amenities, description, FAQs …), also for listings saved before that rule.
+  const properties = useMemo(() => storedProperties.map(displayListing), [storedProperties])
   const [inquiries, setInquiries] = useStore('re-inquiries', SEED.inquiries)
   const [savedIds, setSavedIds] = usePersistedState('re-saved', [])
   const [compareIds, setCompareIds] = usePersistedState('re-compare', [])

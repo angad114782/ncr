@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Gem, X } from 'lucide-react'
+import { BellOff, Check, Gem, Lock, PhoneCall, ShieldCheck, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 
 const HIDDEN_ON = /^\/(admin|dashboard|agent|contact|thank-you|privacy|terms|disclaimer)(\/|$)/
 const BOT = /bot|crawl|spider|slurp|lighthouse|pagespeed|gtmetrix|prerender/i
+// One reassuring icon per disclaimer point: data locked, only registered agents call, opt out any time.
+const POINT_ICONS = [Lock, PhoneCall, BellOff]
 const GOLD = 'linear-gradient(135deg, #F3D9B1 0%, #D9A876 45%, #B98552 100%)'
 
 const flag = (key, set) => {
@@ -19,8 +21,8 @@ const flag = (key, set) => {
 }
 
 /**
- * The luxury "welcome" card (on arrival) and "before you go" card (exit intent) that invite a visitor to log in
- * or sign up with their mobile number. Text: Admin → Site Content → Welcome & exit card.
+ * The data-privacy disclaimer card (on arrival) and the "before you go" card (exit intent) that invites a visitor
+ * to log in or sign up with their mobile number. Text: Admin → Site Content → Disclaimer & exit card.
  *  • each card shows at most once per browser session, never to a signed-in visitor, never on the panels or forms,
  *    never to crawlers, and never before `delaySeconds` — the page and its content are never behind it;
  *  • closing the welcome card can open the sign-up form (setting `onClose`);
@@ -33,6 +35,7 @@ export default function WelcomeModal({ onOpenAuth, authOpen, onOpenChange }) {
   const { pathname } = useLocation()
   const cfg = siteContent.welcome ?? {}
   const benefits = (siteContent.nudge?.benefits ?? []).slice(0, 3)
+  const points = (cfg.points ?? []).filter(Boolean)
   const [variant, setVariant] = useState(null) // 'welcome' | 'exit' | null
   const lastShownAt = useRef(0)
   const primaryRef = useRef(null)
@@ -108,6 +111,8 @@ export default function WelcomeModal({ onOpenAuth, authOpen, onOpenChange }) {
   }, [variant, close])
 
   const exit = variant === 'exit'
+  const list = exit ? benefits : points
+  const HeroIcon = exit ? Gem : ShieldCheck
   const eyebrow = exit ? cfg.exitEyebrow : cfg.eyebrow
   const title = exit ? cfg.exitTitle : cfg.title
   const text = exit ? cfg.exitText : cfg.text
@@ -142,7 +147,7 @@ export default function WelcomeModal({ onOpenAuth, authOpen, onOpenChange }) {
 
             <div className="px-7 pt-10 pb-7 sm:px-9 text-center">
               <span className="mx-auto mb-5 w-14 h-14 rounded-full flex items-center justify-center text-[#2A1C10]" style={{ background: GOLD, boxShadow: '0 8px 28px rgba(217,168,118,0.35)' }}>
-                <Gem size={24} strokeWidth={1.75} />
+                <HeroIcon size={24} strokeWidth={1.75} />
               </span>
               {eyebrow && <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#D9A876] mb-3">{eyebrow}</p>}
               <h2 id="welcome-title" className="text-[30px] sm:text-[34px] leading-[1.12] font-semibold tracking-tight mb-3" style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif" }}>
@@ -155,38 +160,63 @@ export default function WelcomeModal({ onOpenAuth, authOpen, onOpenChange }) {
               </div>
               <p className="text-[15px] leading-relaxed text-[#F6EBDD]/75 mb-5">{fill(text)}</p>
 
-              {benefits.length > 0 && (
+              {list.length > 0 && (
                 <ul className="text-left flex flex-col gap-2 mb-6 rounded-[18px] px-4 py-3.5" style={{ background: 'rgba(255,236,208,0.06)', boxShadow: 'inset 0 0 0 1px rgba(217,168,118,0.18)' }}>
-                  {benefits.map((b) => (
-                    <li key={b} className="flex items-start gap-2.5 text-[13.5px] leading-snug text-[#F6EBDD]/85">
-                      <Check size={15} className="mt-0.5 shrink-0 text-[#D9A876]" />
-                      <span>{fill(b)}</span>
-                    </li>
-                  ))}
+                  {list.map((b, i) => {
+                    const Icon = exit ? Check : POINT_ICONS[i] ?? Check
+                    return (
+                      <li key={b} className="flex items-start gap-3 text-[13.5px] leading-snug text-[#F6EBDD]/90">
+                        <span className="mt-0.5 w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-[#D9A876]" style={{ background: 'rgba(217,168,118,0.14)' }}>
+                          <Icon size={14} />
+                        </span>
+                        <span className="pt-1">{fill(b)}</span>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
 
               <div className="flex flex-col gap-2.5">
-                <button
-                  ref={primaryRef}
-                  type="button"
-                  onClick={() => go('login')}
-                  className="w-full rounded-full py-3.5 text-[15px] font-semibold text-[#2A1C10] transition-transform active:scale-[0.98] hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A876]"
-                  style={{ background: GOLD, boxShadow: '0 10px 30px rgba(217,168,118,0.32), inset 0 1px 0 rgba(255,255,255,0.5)' }}
-                >
-                  {cfg.loginLabel || 'Login'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => go('signup')}
-                  className="w-full rounded-full py-3.5 text-[15px] font-semibold text-[#F3D9B1] transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A876]"
-                  style={{ boxShadow: 'inset 0 0 0 1px rgba(217,168,118,0.55)' }}
-                >
-                  {cfg.signupLabel || 'Create a free account'}
-                </button>
-                <button type="button" onClick={close} className="mt-1 text-[13px] text-[#F6EBDD]/55 hover:text-[#F6EBDD] py-1.5 transition-colors">
-                  {cfg.closeLabel || 'Not now'}
-                </button>
+                {exit ? (
+                  <>
+                    <button
+                      ref={primaryRef}
+                      type="button"
+                      onClick={() => go('login')}
+                      className="w-full rounded-full py-3.5 text-[15px] font-semibold text-[#2A1C10] transition-transform active:scale-[0.98] hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A876]"
+                      style={{ background: GOLD, boxShadow: '0 10px 30px rgba(217,168,118,0.32), inset 0 1px 0 rgba(255,255,255,0.5)' }}
+                    >
+                      {cfg.loginLabel || 'Login'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => go('signup')}
+                      className="w-full rounded-full py-3.5 text-[15px] font-semibold text-[#F3D9B1] transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A876]"
+                      style={{ boxShadow: 'inset 0 0 0 1px rgba(217,168,118,0.55)' }}
+                    >
+                      {cfg.signupLabel || 'Create a free account'}
+                    </button>
+                    <button type="button" onClick={close} className="mt-1 text-[13px] text-[#F6EBDD]/55 hover:text-[#F6EBDD] py-1.5 transition-colors">
+                      {cfg.closeLabel || 'Not now'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      ref={primaryRef}
+                      type="button"
+                      onClick={close}
+                      className="w-full rounded-full py-3.5 text-[15px] font-semibold text-[#2A1C10] transition-transform active:scale-[0.98] hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9A876]"
+                      style={{ background: GOLD, boxShadow: '0 10px 30px rgba(217,168,118,0.32), inset 0 1px 0 rgba(255,255,255,0.5)' }}
+                    >
+                      {cfg.acceptLabel || 'I Understand'}
+                    </button>
+                    {cfg.footnote && <p className="mt-1 text-[11px] tracking-wide text-[#D9A876]/80">{fill(cfg.footnote)}</p>}
+                    <button type="button" onClick={() => go('login')} className="text-[13px] text-[#F6EBDD]/60 hover:text-[#F6EBDD] py-1.5 transition-colors">
+                      {cfg.loginLabel || 'Login'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

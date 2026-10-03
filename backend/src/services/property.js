@@ -3,6 +3,7 @@ import { badRequest, conflict } from '../lib/errors.js'
 import { slugCandidates, slugify } from '../lib/propertySlug.js'
 import { formatPriceShort } from '../lib/format.js'
 import { newId } from '../lib/ids.js'
+import { capitaliseListing, cleanConfigurations, cleanFaqs } from '../lib/listingText.js'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -28,18 +29,27 @@ export async function allocateSlug(property, selfId, wanted = '') {
   return `${base}-${Math.random().toString(36).slice(2, 7)}`
 }
 
-/** Normalises numbers / labels the same way the admin form does. */
+/**
+ * Normalises numbers / labels / capitalisation the same way the admin form does. A listing with BHK
+ * configurations takes its headline beds / area / price from the smallest one ("₹1.2 Cr onwards").
+ */
 export function normalizeListing(p) {
-  const price = Number(p.price) || 0
+  const configurations = cleanConfigurations(p.configurations)
+  const priced = configurations.filter((c) => c.price > 0)
+  const lowest = priced.length ? priced.reduce((a, c) => (c.price < a.price ? c : a)) : configurations[0]
+  const price = priced.length ? lowest.price : Number(p.price) || 0
+  const label = p.priceLabel?.trim()
   return {
-    ...p,
+    ...capitaliseListing(p),
     price,
-    priceLabel: p.priceLabel?.trim() || `${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
+    beds: lowest ? lowest.beds : p.beds,
+    areaSqft: lowest?.areaSqft || p.areaSqft,
+    configurations,
+    faqs: cleanFaqs(p.faqs),
+    priceLabel: label || `${priced.length > 1 ? 'From ' : ''}${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
     reraId: p.reraId?.trim?.() || null,
     postedDate: p.postedDate || today(),
     videoTour: Boolean(p.videoTour || p.videoUrl),
-    amenities: (p.amenities ?? []).map((a) => String(a).trim()).filter(Boolean),
-    nearby: (p.nearby ?? []).filter((n) => n?.name?.trim()),
   }
 }
 
@@ -54,6 +64,7 @@ export async function saveProperty(givenId, data, { create = false } = {}) {
     if (!create && !existing) return null
 
     const merged = normalizeListing({ ...(existing?.toObject() ?? {}), ...data })
+    if (!(merged.price > 0)) throw badRequest('Enter the price in rupees (greater than 0), or a price for each BHK size.')
     const wanted = data.slug !== undefined ? data.slug : existing?.slug
     const slug = await allocateSlug(merged, id, wanted)
 

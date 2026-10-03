@@ -28,7 +28,11 @@ export function listingFilter(q) {
   if (q.purpose) f.purpose = q.purpose
   if (q.city) f.city = exact(q.city)
   if (q.type) f.type = exact(q.type)
-  if (q.beds !== undefined) f.beds = q.beds >= 4 ? { $gte: 4 } : q.beds
+  // A project sold in 2, 3 and 4 BHK shows up under each of them (its own `beds` is the smallest).
+  if (q.beds !== undefined) {
+    const match = q.beds >= 4 ? { $gte: 4 } : q.beds
+    f.$and = [{ $or: [{ beds: match }, { 'configurations.beds': match }] }]
+  }
   if (q.possession) f.possessionStatus = exact(q.possession)
   if (q.maxPrice) f.price = { $lte: q.maxPrice }
   if (q.featured) f.featured = q.featured === 'true'

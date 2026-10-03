@@ -1,5 +1,6 @@
 import Papa from 'papaparse'
 import { isDataUrl, isImageLink } from './images'
+import { capitaliseListing, cleanConfigurations, cleanFaqs } from './listingText'
 
 export const PROPERTY_CSV_COLUMNS = [
   'id',
@@ -32,6 +33,8 @@ export const PROPERTY_CSV_COLUMNS = [
   'floorPlans',
   'amenities',
   'nearby',
+  'configurations',
+  'faqs',
   'description',
 ]
 
@@ -70,6 +73,8 @@ function propertyToRow(p) {
     floorPlans: linksOnly(p.floorPlans).join(';'),
     amenities: (p.amenities ?? []).join(';'),
     nearby: (p.nearby ?? []).map((n) => `${n.type}:${n.name}:${n.distance}`).join(';'),
+    configurations: (p.configurations ?? []).map((c) => `${c.beds}:${c.areaSqft || ''}:${c.price || ''}`).join(';'),
+    faqs: (p.faqs ?? []).map((f) => `${f.question}||${f.answer}`).join('##'),
     description: p.description,
   }
 }
@@ -77,6 +82,9 @@ function propertyToRow(p) {
 export function buildPropertyTemplateCsv(buySample, rentSample) {
   // Blank ids: importing the template adds new listings instead of overwriting p1 / p2.
   const rows = [propertyToRow(buySample), propertyToRow(rentSample)].map((r) => ({ ...r, id: '', slug: '' }))
+  // Show the multi-size and FAQ formats on the first example row.
+  rows[0].configurations = '2:1100:8500000;3:1550:11500000;4:2100:16000000'
+  rows[0].faqs = 'Is the project RERA registered?||Yes — the RERA number is shown on the listing.##Is a home loan available?||Yes, major banks approve loans for this project.'
   return Papa.unparse({ fields: PROPERTY_CSV_COLUMNS, data: rows })
 }
 
@@ -118,8 +126,32 @@ export function parsePropertyCsv(csvText) {
 
   data.forEach((row, i) => {
     const rowNum = i + 2 // +1 for header, +1 for 1-indexing
-    if (!row.title || !row.city || !row.price) {
-      errors.push(`Row ${rowNum}: missing required field (title, city, or price) — skipped`)
+    // configurations: "2:1200:8500000;3:1600:11500000" = BHK:area sq.ft:price, one block per size
+    const configurations = cleanConfigurations(
+      (row.configurations ?? '')
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((entry) => {
+          const [beds, areaSqft, price] = entry.split(':')
+          return { beds, areaSqft, price }
+        }),
+    )
+    // faqs: "Question one?||Answer one.##Question two?||Answer two."
+    const faqs = cleanFaqs(
+      (row.faqs ?? '')
+        .split('##')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((entry) => {
+          const [question, ...answer] = entry.split('||')
+          return { question: question?.trim(), answer: answer.join('||').trim() }
+        }),
+    )
+    const startPrice = Math.min(...configurations.filter((c) => c.price > 0).map((c) => c.price))
+    const price = row.price ? toNumber(row.price) : Number.isFinite(startPrice) ? startPrice : 0
+    if (!row.title || !row.city || !price) {
+      errors.push(`Row ${rowNum}: missing required field (title, city, and a price — or BHK configurations with prices) — skipped`)
       return
     }
     if (row.purpose !== 'Buy' && row.purpose !== 'Rent') {
@@ -135,22 +167,25 @@ export function parsePropertyCsv(csvText) {
       return
     }
 
-    properties.push({
+    const smallest = configurations[0]
+    properties.push(capitaliseListing({
       ...(row.id?.trim() ? { id: row.id.trim() } : {}),
       ...(row.slug?.trim() ? { slug: row.slug.trim() } : {}), // blank = generated from the title
       title: row.title.trim(),
       type: row.type?.trim() || 'Apartment',
       purpose: row.purpose,
-      price: toNumber(row.price),
-      priceLabel: row.priceLabel?.trim() || `₹${toNumber(row.price).toLocaleString('en-IN')}`,
+      price,
+      priceLabel: row.priceLabel?.trim() || `${configurations.length > 1 ? 'From ' : ''}₹${price.toLocaleString('en-IN')}`,
       city: row.city.trim(),
       locality: row.locality?.trim() || '',
       address: row.address?.trim() || '',
       lat: row.lat ? toNumber(row.lat, null) : null,
       lng: row.lng ? toNumber(row.lng, null) : null,
-      beds: toNumber(row.beds, 0),
+      beds: smallest ? smallest.beds : toNumber(row.beds, 0),
       baths: toNumber(row.baths, 0),
-      areaSqft: toNumber(row.areaSqft, 0),
+      areaSqft: smallest?.areaSqft || toNumber(row.areaSqft, 0),
+      configurations,
+      faqs,
       furnishing: row.furnishing?.trim() || 'Unfurnished',
       yearBuilt: toNumber(row.yearBuilt, new Date().getFullYear()),
       agentId: row.agentId?.trim() || '',
@@ -176,7 +211,7 @@ export function parsePropertyCsv(csvText) {
             })
         : [],
       description: row.description?.trim() || '',
-    })
+    }))
   })
 
   return { properties, errors }

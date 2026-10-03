@@ -253,19 +253,27 @@ export const SITE_DEFAULTS = {
     listIntro: 'Register as an agent once — then you can post your property straight away.',
   },
 
-  // The welcome card a first-time visitor sees on arrival, and the "before you go" card shown when they are about to
-  // leave. Both invite a login / sign-up with the mobile number; both are dismissible and appear once per visit.
-  // onClose: 'signup' = closing the welcome card opens the sign-up form; 'nothing' = it just closes.
+  // The disclaimer card a first-time visitor sees on arrival, and the "before you go" card shown when they are about
+  // to leave. Both are dismissible and appear once per visit. The arrival card is a data-privacy notice (`points`);
+  // the exit card invites a login / sign-up with the mobile number.
+  // onClose: 'signup' = closing the arrival card opens the sign-up form; 'nothing' = it just closes.
   welcome: {
     enabled: true,
     delaySeconds: 2,
-    eyebrow: 'Welcome',
-    title: 'Welcome to {brand}',
-    text: 'Sign in with only your mobile number — no password — to save homes, get matches on WhatsApp and book site visits.',
+    eyebrow: 'Disclaimer',
+    title: 'Your Data Is Our Priority',
+    text: 'Please take a moment to read how {brand} handles your information.',
+    points: [
+      'Your data is never sold or shared with any third party. It is shared only with agents registered with {brand}.',
+      'When you submit a form or an enquiry, only a registered {brand} agent will call you.',
+      'We may use your details to send you {brand} updates. You can opt out of these at any time.',
+    ],
+    footnote: 'No resale of your data  ·  Registered agents only  ·  Opt out anytime',
+    acceptLabel: 'I Understand',
     loginLabel: 'Login',
     signupLabel: 'Create a free account',
     closeLabel: 'Not now',
-    onClose: 'signup',
+    onClose: 'nothing',
     exitEnabled: true,
     exitEyebrow: 'Before you go',
     exitTitle: 'Keep your search — free',
@@ -318,4 +326,16 @@ export function normalizeSections(saved = []) {
     result.splice(at + 1, 0, { id, enabled: true })
   })
   return result
+}
+
+/**
+ * Saved site content (a visitor's browser, or the database) can still hold the old "Welcome to {brand}" sign-up card
+ * text, which would hide the new data disclaimer for ever (saved values win over defaults). If the arrival card is
+ * still the untouched old default, replace it with the current default; anything an admin edited is left alone.
+ */
+export function migrateSiteContent(sc) {
+  const w = sc?.welcome
+  if (!w || w.title !== 'Welcome to {brand}' || w.eyebrow !== 'Welcome') return sc
+  const d = SITE_DEFAULTS.welcome
+  return { ...sc, welcome: { ...w, eyebrow: d.eyebrow, title: d.title, text: d.text, points: d.points, footnote: d.footnote, acceptLabel: d.acceptLabel, onClose: d.onClose } }
 }

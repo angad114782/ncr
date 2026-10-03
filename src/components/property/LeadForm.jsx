@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useSettings } from '../../context/SettingsContext'
 import { useInterest } from '../../context/InterestContext'
 import { USE_API } from '../../api/client'
+import OtpTimer, { otpClock } from '../common/OtpTimer'
 
 const LOCAL_OTP_LENGTH = 4 // the mock code; with the server the length comes from its answer
 
@@ -43,6 +44,8 @@ export default function LeadForm({ property }) {
   const [otpDigits, setOtpDigits] = useState(Array(LOCAL_OTP_LENGTH).fill(''))
   const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
   const [busy, setBusy] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [clock, setClock] = useState(() => otpClock())
   const [error, setError] = useState('')
   const inputRefs = useRef([])
 
@@ -89,6 +92,7 @@ export default function LeadForm({ property }) {
         const len = d.length ?? 6
         setOtpLen(len)
         setSentOtp(d.devOtp ?? '')
+        setClock(otpClock(d.expiresInSeconds))
         setOtpDigits(Array(len).fill(''))
         setStep('otp')
         setTimeout(() => inputRefs.current[0]?.focus(), 100)
@@ -101,9 +105,28 @@ export default function LeadForm({ property }) {
     }
     const otp = generateOtp()
     setSentOtp(otp)
+    setClock(otpClock())
     setOtpDigits(Array(otpLen).fill(''))
     setStep('otp')
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
+  }
+
+  /** "Resend code": a fresh code for the same number, staying on the code step. */
+  const handleResend = async () => {
+    setError('')
+    setResending(true)
+    try {
+      const d = USE_API ? await sendOtp(form.phone, 'verify') : { devOtp: generateOtp() }
+      setSentOtp(d?.devOtp ?? '')
+      setClock(otpClock(d?.expiresInSeconds))
+      setOtpDigits(Array(otpLen).fill(''))
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } catch (err) {
+      setError(err.message)
+      if (err.status === 429) setClock((c) => ({ ...c, resendAt: Date.now() + 30000 }))
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleDigitChange = (index, value) => {
@@ -212,6 +235,8 @@ export default function LeadForm({ property }) {
           </div>
 
           {error && <p className="text-[var(--color-danger)] text-sm text-center">{error}</p>}
+
+          <OtpTimer expiresAt={clock.expiresAt} resendAt={clock.resendAt} onResend={handleResend} busy={resending} />
 
           <GlassButton type="submit" loading={busy} loadingText="Verifying…" className="w-full justify-center">
             <Check size={16} /> Confirm &amp; Book My Callback

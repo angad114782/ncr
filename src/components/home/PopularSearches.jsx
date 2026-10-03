@@ -3,6 +3,7 @@ import GlassCard from '../glass/GlassCard'
 import { useData } from '../../context/DataContext'
 import { useSettings } from '../../context/SettingsContext'
 import { listingsHeading, listingsPath } from '../../utils/seo'
+import { hasBhk } from '../../utils/listingText'
 
 // Buying-intent search links ("2 BHK Flats for Sale in Mumbai") built only from
 // combinations that actually have listings — so every link lands on results,
@@ -19,7 +20,7 @@ export default function PopularSearches() {
       if (set.length === 0) return
       links.push({ filters: { purpose, city }, count: set.length })
       ;[2, 3].forEach((n) => {
-        const bhk = set.filter((p) => p.beds === n)
+        const bhk = set.filter((p) => hasBhk(p, n))
         if (bhk.length > 0) links.push({ filters: { purpose, city, beds: String(n) }, count: bhk.length })
       })
     })

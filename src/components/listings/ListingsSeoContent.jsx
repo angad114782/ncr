@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import GlassCard from '../glass/GlassCard'
 import { useSettings } from '../../context/SettingsContext'
 import { formatPriceShort, listingsPath } from '../../utils/seo'
+import { hasBhk } from '../../utils/listingText'
 
 // Cumulative "under X" budgets — each links to /listings?...&maxPrice=X, which is
 // exactly the filter the listings page supports.
@@ -35,7 +36,7 @@ export default function ListingsSeoContent({ heading, filters, filtered, active,
   ).sort((a, b) => b[1] - a[1])
 
   const otherCities = cities.filter((c) => c !== city && active.some((p) => p.city === c && (!purpose || p.purpose === purpose)))
-  const otherBhk = [1, 2, 3, 4].filter((n) => String(n) !== beds && active.some((p) => (n === 4 ? p.beds >= 4 : p.beds === n)))
+  const otherBhk = [1, 2, 3, 4].filter((n) => String(n) !== beds && active.some((p) => hasBhk(p, n)))
   const otherTypes = types.filter((t) => t !== type && active.some((p) => p.type === t))
 
   return (

@@ -15,6 +15,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ensureSlugs } from '../src/utils/propertySlug.js'
+import { displayListing } from '../src/utils/listingText.js'
 import { DEFAULT_CITIES, DEFAULT_PROPERTY_TYPES } from '../src/data/taxonomy.js'
 import { COMPANY_DEFAULTS } from '../src/data/company.js'
 import { SITE_DEFAULTS } from '../src/data/siteDefaults.js'
@@ -30,7 +31,7 @@ function fromSamples() {
   return {
     source: 'samples',
     settings: { company: COMPANY_DEFAULTS, siteContent: SITE_DEFAULTS, cities: DEFAULT_CITIES, propertyTypes: DEFAULT_PROPERTY_TYPES },
-    properties: ensureSlugs(read('src/data/properties.json')).filter((p) => isActive(p) && (p.reviewStatus ?? 'approved') === 'approved'),
+    properties: ensureSlugs(read('src/data/properties.json').map(displayListing)).filter((p) => isActive(p) && (p.reviewStatus ?? 'approved') === 'approved'),
     agents: read('src/data/agents.json').filter((a) => isActive(a) && a.status !== 'pending' && a.status !== 'rejected'),
     posts: read('src/data/blog.json').filter(isActive),
     faqs: read('src/data/faqs.json').filter(isActive),

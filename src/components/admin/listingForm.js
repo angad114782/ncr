@@ -1,7 +1,10 @@
 // The listing editor's fields, defaults and normalisation — shared by the admin's Listings screen
 // and the agent panel's "My listings", so an agent fills in exactly the same form.
+import { createElement } from 'react'
 import { newId } from '../../utils/ids'
 import { formatPriceShort } from '../../utils/seo'
+import { capitaliseListing, cleanConfigurations, cleanFaqs } from '../../utils/listingText'
+import LocationPicker from './LocationPicker'
 
 const NEARBY_TYPES = ['School', 'Hospital', 'Metro', 'Mall']
 export const today = () => new Date().toISOString().slice(0, 10)
@@ -23,9 +26,9 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
     { key: 'city', label: 'City', type: 'select', required: true, options: cities, allowEmpty: true, emptyLabel: 'Select city…' },
     { key: 'locality', label: 'Locality / sector', placeholder: 'Bandra West' },
     { key: 'address', label: 'Full address', half: false },
-    { key: 'price', label: 'Price (₹)', type: 'number', required: true, min: 0, step: 1, hint: 'Full amount in rupees — used for sorting, filters and EMI. Rent = per month.' },
+    { key: 'price', label: 'Price (₹)', type: 'number', min: 0, step: 1, hint: 'Full amount in rupees — used for sorting, filters and EMI. Rent = per month. Leave blank if you list several BHK sizes below (the lowest price is used).' },
     { key: 'priceLabel', label: 'Price label', placeholder: 'auto e.g. ₹2.15 Cr', hint: 'Leave blank to generate from the price.' },
-    { key: 'beds', label: 'Bedrooms', type: 'number', min: 0, step: 1 },
+    { key: 'beds', label: 'Bedrooms (BHK)', type: 'number', min: 0, step: 1, hint: 'For a project with several sizes (2, 3, 4 BHK…) add them under “BHK configurations” below instead.' },
     { key: 'baths', label: 'Bathrooms', type: 'number', min: 0, step: 1 },
     { key: 'areaSqft', label: 'Area (sq.ft)', type: 'number', min: 0, step: 1 },
     { key: 'furnishing', label: 'Furnishing', type: 'select', options: furnishing },
@@ -38,8 +41,34 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
           { key: 'postedDate', label: 'Posted on', type: 'date' },
         ]
       : []),
-    { key: 'lat', label: 'Latitude', type: 'number', step: 'any', hint: 'Needed for the map and distance-to-hubs.' },
+    {
+      key: 'location',
+      type: 'custom',
+      render: ({ item, setItem }) =>
+        createElement(LocationPicker, {
+          lat: item.lat,
+          lng: item.lng,
+          hint: [item.locality, item.city].filter(Boolean).join(', '),
+          onChange: (lat, lng) => setItem({ ...item, lat, lng }),
+        }),
+    },
+    { key: 'lat', label: 'Latitude', type: 'number', step: 'any', hint: 'Filled by the map above — needed for the map and distance-to-hubs.' },
     { key: 'lng', label: 'Longitude', type: 'number', step: 'any' },
+    {
+      key: 'configurations',
+      label: 'BHK configurations',
+      type: 'objectList',
+      addLabel: 'Add BHK size',
+      max: 12,
+      hint: 'For a project sold in several sizes — each row is one BHK with its own area and price.',
+      itemTitle: (c, i) => (c.beds ? `${c.beds} BHK` : `Size ${i + 1}`),
+      newItem: () => ({ beds: 2, areaSqft: '', price: '' }),
+      fields: [
+        { key: 'beds', label: 'BHK', type: 'select', options: [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: `${n} BHK` })) },
+        { key: 'areaSqft', label: 'Area (sq.ft)', type: 'number', min: 0, step: 1 },
+        { key: 'price', label: 'Price (₹)', type: 'number', min: 0, step: 1 },
+      ],
+    },
     { key: 'description', label: 'Description', type: 'textarea', rows: 5 },
     { key: 'images', label: 'Photos', type: 'imageList', max: 15, hint: 'First photo is the cover. Choose files from your device or paste links.' },
     { key: 'floorPlans', label: 'Floor plans', type: 'imageList', max: 5 },
@@ -56,6 +85,19 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
         { key: 'type', label: 'Type', type: 'select', options: NEARBY_TYPES },
         { key: 'name', label: 'Name' },
         { key: 'distance', label: 'Distance', placeholder: '1.2 km' },
+      ],
+    },
+    {
+      key: 'faqs',
+      label: 'FAQs',
+      type: 'objectList',
+      addLabel: 'Add question',
+      max: 30,
+      itemTitle: (f, i) => f.question || `Question ${i + 1}`,
+      newItem: () => ({ question: '', answer: '' }),
+      fields: [
+        { key: 'question', label: 'Question', half: false },
+        { key: 'answer', label: 'Answer', type: 'textarea', rows: 3 },
       ],
     },
     ...(admin
@@ -76,29 +118,35 @@ export function emptyListing({ propertyTypes, furnishing, possession }) {
     id: newId('p'), slug: '', title: '', purpose: 'Buy', type: propertyTypes[0] ?? 'Apartment', city: '', locality: '', address: '',
     price: '', priceLabel: '', beds: 2, baths: 2, areaSqft: 1000, furnishing: furnishing[0] ?? '', possessionStatus: possession[0] ?? '',
     yearBuilt: new Date().getFullYear(), reraId: '', agentId: '', postedDate: today(), lat: '', lng: '', description: '',
-    images: [], floorPlans: [], videoUrl: '', amenities: [], nearby: [], featured: false, verified: false, videoTour: false, active: true,
+    images: [], floorPlans: [], videoUrl: '', amenities: [], nearby: [], configurations: [], faqs: [], featured: false, verified: false, videoTour: false, active: true,
   }
 }
 
-/** Normalises numbers / labels before a listing is saved. */
+/**
+ * Normalises numbers / labels / capitalisation before a listing is saved. A listing with BHK configurations takes
+ * its headline beds / area / price from the smallest one (the server applies the same rule).
+ */
 export function prepareListing(p) {
-  const price = Number(p.price) || 0
+  const configurations = cleanConfigurations(p.configurations)
+  const priced = configurations.filter((c) => c.price > 0)
+  const lowest = priced.length ? priced.reduce((a, c) => (c.price < a.price ? c : a)) : configurations[0]
+  const price = priced.length ? lowest.price : Number(p.price) || 0
   const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
   return {
-    ...p,
+    ...capitaliseListing(p),
     price,
-    priceLabel: p.priceLabel?.trim() || `${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
-    beds: Number(p.beds) || 0,
+    priceLabel: p.priceLabel?.trim() || `${priced.length > 1 ? 'From ' : ''}${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
+    beds: lowest ? lowest.beds : Number(p.beds) || 0,
     baths: Number(p.baths) || 0,
-    areaSqft: Number(p.areaSqft) || 0,
+    areaSqft: lowest?.areaSqft || Number(p.areaSqft) || 0,
+    configurations,
+    faqs: cleanFaqs(p.faqs),
     yearBuilt: Number(p.yearBuilt) || new Date().getFullYear(),
     lat: num(p.lat),
     lng: num(p.lng),
     reraId: p.reraId?.trim() || null,
     postedDate: p.postedDate || today(),
     videoTour: !!p.videoTour || !!p.videoUrl,
-    amenities: (p.amenities ?? []).map((a) => a.trim()).filter(Boolean),
-    nearby: (p.nearby ?? []).filter((n) => n.name?.trim()),
   }
 }
 

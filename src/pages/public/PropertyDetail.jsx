@@ -21,6 +21,9 @@ import GlassButton from '../../components/glass/GlassButton'
 import PropertyCard from '../../components/property/PropertyCard'
 import PropertyBadges from '../../components/property/PropertyBadges'
 import EMICalculator from '../../components/property/EMICalculator'
+import PropertyConfigurations from '../../components/property/PropertyConfigurations'
+import PropertyFaqs from '../../components/property/PropertyFaqs'
+import { bhkSummary } from '../../utils/listingText'
 import Lightbox from '../../components/property/Lightbox'
 import PriceInsight from '../../components/property/PriceInsight'
 import DistanceToHubs from '../../components/property/DistanceToHubs'
@@ -33,7 +36,7 @@ import { findByParam } from '../../utils/propertySlug'
 import { useInterest } from '../../context/InterestContext'
 import ExploreLinks from '../../components/common/ExploreLinks'
 import GuideLinks from '../../components/common/GuideLinks'
-import { SITE_URL, breadcrumbLd, crawlableImage, listingsPath, propertyPath } from '../../utils/seo'
+import { SITE_URL, breadcrumbLd, crawlableImage, faqLd, listingsPath, propertyPath } from '../../utils/seo'
 import Avatar from '../../components/common/Avatar'
 import ReviewsSection from '../../components/common/ReviewsSection'
 import { DetailSkeleton, Skeleton } from '../../components/common/Skeleton'
@@ -158,7 +161,8 @@ function PropertyDetailInner({ id }) {
     .filter((p) => !shownIds.has(p.id) && p.agentId === property.agentId)
     .slice(0, 3)
 
-  const bhk = property.beds > 0 ? `${property.beds} BHK ` : ''
+  const bhkText = bhkSummary(property)
+  const bhk = bhkText ? `${bhkText} ` : ''
   const forWhat = property.purpose === 'Rent' ? 'for Rent' : 'for Sale'
   const place = [property.locality, property.city].filter(Boolean).join(', ')
   const seoTitle = `${bhk}${property.type} ${forWhat} in ${place} — ${property.priceLabel}`
@@ -222,6 +226,7 @@ function PropertyDetailInner({ id }) {
             { name: property.title, path: propertyPath(property) },
           ]),
           listingLd,
+          ...((property.faqs ?? []).length ? [faqLd(property.faqs)] : []),
         ]}
       />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-secondary mb-4">
@@ -325,7 +330,7 @@ function PropertyDetailInner({ id }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
-                { icon: BedDouble, label: 'Bedrooms', value: property.beds },
+                { icon: BedDouble, label: 'Bedrooms', value: bhkText || property.beds },
                 { icon: Bath, label: 'Bathrooms', value: property.baths },
                 { icon: Ruler, label: 'Area', value: `${property.areaSqft} sqft` },
                 { icon: Sofa, label: 'Furnishing', value: property.furnishing },
@@ -337,6 +342,8 @@ function PropertyDetailInner({ id }) {
                 </div>
               ))}
             </div>
+
+            <PropertyConfigurations configurations={property.configurations} rent={property.purpose === 'Rent'} />
 
             <h3 className="font-semibold mb-2">Description</h3>
             <p className="text-secondary leading-relaxed mb-6">{property.description}</p>
@@ -354,6 +361,8 @@ function PropertyDetailInner({ id }) {
               <Calendar size={14} /> Built in {property.yearBuilt}
             </div>
           </GlassCard>
+
+          <PropertyFaqs faqs={property.faqs} />
 
           <LazyMap
             lat={property.lat}

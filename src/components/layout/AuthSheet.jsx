@@ -10,6 +10,7 @@ import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
 import { leadInterest } from '../../utils/interest'
 import { USE_API } from '../../api/client'
+import OtpTimer, { otpClock } from '../common/OtpTimer'
 
 const LOCAL_OTP_LENGTH = 4 // the mock code; with the server the length comes from its answer
 
@@ -31,6 +32,8 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
   const [otpDigits, setOtpDigits] = useState(Array(LOCAL_OTP_LENGTH).fill(''))
   const [sentOtp, setSentOtp] = useState('') // local mock code, or (dev servers) the code the API returned
   const [busy, setBusy] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [clock, setClock] = useState(() => otpClock())
   const [error, setError] = useState('')
   const { user, logout, loginWithPhone, signupWithPhone, sendOtp, loginWithOtp, registerWithOtp, findByPhone } = useAuth()
   const { fireLeadEvent, siteContent, fill, cities } = useSettings()
@@ -80,6 +83,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     const len = d?.length ?? LOCAL_OTP_LENGTH
     setOtpLen(len)
     setSentOtp(d?.devOtp ?? '')
+    setClock(otpClock(d?.expiresInSeconds))
     setOtpDigits(Array(len).fill(''))
     setStep('otp')
     setTimeout(() => inputRefs.current[0]?.focus(), 100)
@@ -122,6 +126,24 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
     }
     // Local mode: no server round-trip needed to know which one this is — a mock code either way.
     goToOtpStep(findByPhone(phone) ? 'login' : 'signup', { devOtp: generateOtp() })
+  }
+
+  /** "Resend code": a fresh code for the same number and the same flow (login / sign-up), without leaving the OTP step. */
+  const handleResend = async () => {
+    setError('')
+    setResending(true)
+    try {
+      const d = USE_API ? await sendOtp(phone, mode === 'signup' ? 'register' : 'login') : { devOtp: generateOtp() }
+      setSentOtp(d?.devOtp ?? '')
+      setClock(otpClock(d?.expiresInSeconds))
+      setOtpDigits(Array(otpLen).fill(''))
+      setTimeout(() => inputRefs.current[0]?.focus(), 100)
+    } catch (err) {
+      setError(err.message)
+      if (err.status === 429) setClock((c) => ({ ...c, resendAt: Date.now() + 30000 }))
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleDigitChange = (index, value) => {
@@ -206,15 +228,6 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
       setOtpDigits(Array(otpLen).fill(''))
       setSentOtp('')
       setError('This number has a buyer account, not an agent account. To list a property, register as an agent with a different mobile number.')
-      return
-    }
-    if (!listFlow && mode === 'login' && result.user.role === 'agent') {
-      // The reverse: this is the buyer/tenant door. An agent number is signed straight out again.
-      logout()
-      setStep('phone')
-      setOtpDigits(Array(otpLen).fill(''))
-      setSentOtp('')
-      setError('This number has an agent account. Agents sign in from “Add Listing” or “List My Property”.')
       return
     }
     if (USE_API && mode === 'signup') {
@@ -422,13 +435,7 @@ export default function AuthSheet({ open, onClose, initialMode = 'login', source
               {mode === 'login' ? 'Confirm & Take Me In' : isAgentSignup ? 'Confirm & Open My Panel' : 'Confirm & Start Exploring'}
             </GlassButton>
 
-            <button
-              type="button"
-              onClick={handleSendOtp}
-              className="text-sm text-[var(--color-accent)] font-medium text-center"
-            >
-              Didn’t get the code? Send it again
-            </button>
+            <OtpTimer expiresAt={clock.expiresAt} resendAt={clock.resendAt} onResend={handleResend} busy={resending} />
           </form>
         </div>
       )}

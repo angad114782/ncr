@@ -27,6 +27,8 @@ const imageList = (max) => z.array(imageRef).max(max)
 const optImage = z.preprocess((v) => (blank(v) ? '' : v), z.union([z.literal(''), imageRef])).optional()
 
 /* -------------------------------------------------------------- properties */
+// A listing needs a price — its own, or (a project in several sizes) one on each BHK size; saveProperty() enforces that.
+const priceOrSizes = z.preprocess((v) => (blank(v) ? 0 : v), z.coerce.number().min(0).max(1e11))
 const propertyBase = {
   slug,
   title: text(200).min(3, 'Title is too short'),
@@ -52,6 +54,8 @@ const propertyBase = {
   floorPlans: imageList(5).optional(),
   amenities: z.array(text(80)).max(60).optional(),
   nearby: z.array(z.object({ type: optText(40), name: text(120), distance: optText(40) })).max(30).optional(),
+  configurations: z.array(z.object({ beds: num(1, 20), areaSqft: num(0, 1e7), price: num(0, 1e11) })).max(12).optional(),
+  faqs: z.array(z.object({ question: text(300), answer: text(2000) })).max(30).optional(),
 }
 const adminOnlyProperty = {
   agentId: optText(60),
@@ -66,10 +70,10 @@ const adminOnlyProperty = {
 
 // What an AGENT may send. Anything else (featured, verified, active, agentId, reviewStatus…) is dropped.
 const { slug: _agentCannotSetSlug, ...agentBase } = propertyBase // the URL slug is generated for agents
-export const agentPropertyCreate = z.object({ ...agentBase, price: z.coerce.number().positive('Enter the price in rupees (greater than 0)') })
+export const agentPropertyCreate = z.object({ ...agentBase, price: priceOrSizes })
 export const agentPropertyUpdate = z.object(agentBase).partial()
 export const agentPropertyImport = z.object({ items: z.array(agentPropertyCreate).min(1).max(100) })
-export const adminPropertyCreate = z.object({ ...propertyBase, ...adminOnlyProperty, price: z.coerce.number().positive('Enter the price in rupees (greater than 0)') })
+export const adminPropertyCreate = z.object({ ...propertyBase, ...adminOnlyProperty, price: priceOrSizes })
 export const adminPropertyUpdate = z.object({ ...propertyBase, ...adminOnlyProperty }).partial()
 export const propertyImport = z.object({ items: z.array(adminPropertyCreate.extend({ id: optText(60) })).min(1).max(500) })
 

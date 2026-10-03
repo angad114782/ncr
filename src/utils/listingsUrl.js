@@ -11,6 +11,8 @@
 // Anything that is not a plain category (search text, price cap, page number) stays in the query
 // string and is kept out of the index.
 
+import { hasBhk } from './listingText.js'
+
 export const slugify = (s) =>
   String(s)
     .toLowerCase()
@@ -79,7 +81,7 @@ export function resolveListingsSegments({ purpose, a, b }, cities = [], types = 
   return out
 }
 
-const inBhk = (p, n) => (n === 4 ? p.beds >= 4 : p.beds === n)
+const inBhk = hasBhk
 
 /**
  * Every category landing page that actually has results — [{ filters, count, path, priority }].

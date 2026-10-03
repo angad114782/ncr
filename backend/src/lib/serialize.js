@@ -1,3 +1,5 @@
+import { displayListing } from './listingText.js'
+
 /** Turns a mongoose document / lean object (or a list of them) into the JSON the website reads: `id`, no `_id`. */
 export function out(doc) {
   if (Array.isArray(doc)) return doc.map(out)
@@ -17,7 +19,7 @@ const drop = (obj, keys) => {
 }
 
 /** A listing as visitors see it (no internal review fields). */
-export const publicProperty = (p) => drop(out(p), ['submittedBy', 'reviewNote', 'reviewStatus'])
+export const publicProperty = (p) => displayListing(drop(out(p), ['submittedBy', 'reviewNote', 'reviewStatus']))
 
 /** An agent as visitors see it (no user link, no status internals). */
 export const publicAgent = (a) => drop(out(a), ['userId', 'status', 'joined', 'active', 'createdAt', 'updatedAt'])

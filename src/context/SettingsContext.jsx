@@ -1,11 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import usePersistedState, { deepMerge } from '../hooks/usePersistedState'
 import { USE_API, api, reportApiError } from '../api/client'
 import { useAuth } from './AuthContext'
 import snapshot from '../data/snapshot.json'
 import { fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
 import { COMPANY_DEFAULTS } from '../data/company'
-import { SITE_DEFAULTS, fillTokens } from '../data/siteDefaults'
+import { SITE_DEFAULTS, fillTokens, migrateSiteContent } from '../data/siteDefaults'
 import { DEFAULT_CITIES, DEFAULT_PROPERTY_TYPES } from '../data/taxonomy'
 
 const SettingsContext = createContext(null)
@@ -172,7 +172,8 @@ export function SettingsProvider({ children }) {
   const [topBanner, setTopBanner] = store.topBanner
   const [ticker, setTicker] = store.ticker
   const [company, setCompany] = store.company
-  const [siteContent, setSiteContent] = store.siteContent
+  const [storedSiteContent, setSiteContent] = store.siteContent
+  const siteContent = useMemo(() => migrateSiteContent(storedSiteContent), [storedSiteContent])
 
   const updateWhatsappConfig = (patch) => setWhatsappConfig((prev) => ({ ...prev, ...patch }))
   const updateMailConfig = (patch) => setMailConfig((prev) => ({ ...prev, ...patch }))

@@ -15,6 +15,7 @@ import { useData } from '../../context/DataContext'
 import { useInterest } from '../../context/InterestContext'
 import { useSettings } from '../../context/SettingsContext'
 import { SITE_URL, breadcrumbLd, cityAliasesOf, faqLd, formatPriceShort, listingsHeading, listingsPath, propertyPath, resolveListingsSegments } from '../../utils/seo'
+import { hasBhk } from '../../utils/listingText'
 
 const PAGE_SIZE = 6
 
@@ -270,7 +271,7 @@ function ListingsView({ filters }) {
       if (purpose && p.purpose !== purpose) return false
       if (city && p.city !== city) return false
       if (type && p.type !== type) return false
-      if (beds && (beds === '4' ? p.beds < 4 : p.beds !== Number(beds))) return false
+      if (beds && !hasBhk(p, Number(beds))) return false
       if (possession && p.possessionStatus !== possession) return false
       if (maxPrice && p.price > Number(maxPrice)) return false
       if (q) {
