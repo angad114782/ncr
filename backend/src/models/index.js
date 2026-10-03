@@ -82,9 +82,10 @@ export const Property = model(
       images: { type: [String], default: [] },
       floorPlans: { type: [String], default: [] },
       amenities: { type: [String], default: [] },
-      nearby: { type: [{ _id: false, type: { type: String }, name: String, distance: String }], default: [] },
+      // lat / lng = the place's real position (found with Google Places); without them it is listed but not drawn on the map
+      nearby: { type: [{ _id: false, type: { type: String }, name: String, distance: String, lat: Number, lng: Number }], default: [] },
       // A project sold in several sizes (2, 3, 4 BHK …). The top-level beds / price / areaSqft hold the smallest one.
-      configurations: { type: [{ _id: false, beds: Number, areaSqft: Number, price: Number }], default: [] },
+      configurations: { type: [{ _id: false, beds: Number, baths: Number, areaSqft: Number, price: Number }], default: [] },
       faqs: { type: [{ _id: false, question: String, answer: String }], default: [] },
       active: { type: Boolean, default: true },
       // Listings posted by agents wait here until the admin approves them (missing = approved).

@@ -9,7 +9,7 @@ const keepUploads = (list = [], prev = []) => [...list, ...prev.filter(isDataUrl
 export const propertyCsv = {
   entity: 'listings',
   filename: 'properties',
-  keyHelp: 'Rows whose id matches an existing listing update it; others are added. Images / floorPlans are links separated by ";". nearby = Type:Name:Distance;… configurations = BHK:Area:Price;… (e.g. 2:1200:8500000;3:1600:11500000 — leave price blank to use a single price column). faqs = Question||Answer##Question||Answer. Text is capitalised automatically (uploaded images can’t be exported).',
+  keyHelp: 'Rows whose id matches an existing listing update it; others are added. Images / floorPlans are links separated by ";". nearby = Type:Name:Distance[:lat:lng];… configurations = BHK:Area:Price[:Bathrooms];… (e.g. 2:1200:8500000;3:1600:11500000 — leave price blank to use a single price column). faqs = Question||Answer##Question||Answer. Text is capitalised automatically (uploaded images can’t be exported).',
   toCsv: propertiesToCsv,
   template: (seed) => buildPropertyTemplateCsv(seed.find((p) => p.id === 'p1'), seed.find((p) => p.id === 'p2')),
   parse(text, existing) {

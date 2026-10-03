@@ -72,8 +72,8 @@ function propertyToRow(p) {
     images: linksOnly(p.images).join(';'),
     floorPlans: linksOnly(p.floorPlans).join(';'),
     amenities: (p.amenities ?? []).join(';'),
-    nearby: (p.nearby ?? []).map((n) => `${n.type}:${n.name}:${n.distance}`).join(';'),
-    configurations: (p.configurations ?? []).map((c) => `${c.beds}:${c.areaSqft || ''}:${c.price || ''}`).join(';'),
+    nearby: (p.nearby ?? []).map((n) => `${n.type}:${n.name}:${n.distance}${n.lat != null && n.lng != null ? `:${n.lat}:${n.lng}` : ''}`).join(';'),
+    configurations: (p.configurations ?? []).map((c) => `${c.beds}:${c.areaSqft || ''}:${c.price || ''}${c.baths ? `:${c.baths}` : ''}`).join(';'),
     faqs: (p.faqs ?? []).map((f) => `${f.question}||${f.answer}`).join('##'),
     description: p.description,
   }
@@ -126,15 +126,15 @@ export function parsePropertyCsv(csvText) {
 
   data.forEach((row, i) => {
     const rowNum = i + 2 // +1 for header, +1 for 1-indexing
-    // configurations: "2:1200:8500000;3:1600:11500000" = BHK:area sq.ft:price, one block per size
+    // configurations: "2:1200:8500000:2;3:1600:11500000:3" = BHK:area sq.ft:price[:bathrooms], one block per size
     const configurations = cleanConfigurations(
       (row.configurations ?? '')
         .split(';')
         .map((s) => s.trim())
         .filter(Boolean)
         .map((entry) => {
-          const [beds, areaSqft, price] = entry.split(':')
-          return { beds, areaSqft, price }
+          const [beds, areaSqft, price, baths] = entry.split(':')
+          return { beds, areaSqft, price, baths }
         }),
     )
     // faqs: "Question one?||Answer one.##Question two?||Answer two."
@@ -206,8 +206,8 @@ export function parsePropertyCsv(csvText) {
             .map((s) => s.trim())
             .filter(Boolean)
             .map((entry) => {
-              const [type, name, distance] = entry.split(':')
-              return { type: type?.trim(), name: name?.trim(), distance: distance?.trim() }
+              const [type, name, distance, lat, lng] = entry.split(':')
+              return { type: type?.trim(), name: name?.trim(), distance: distance?.trim(), lat: lat?.trim() || null, lng: lng?.trim() || null }
             })
         : [],
       description: row.description?.trim() || '',

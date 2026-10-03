@@ -1,12 +1,15 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import {
+  BadgeCheck,
   Bath,
   BedDouble,
+  Building2,
   Calendar,
   Check,
   Eye,
   Heart,
+  Hourglass,
   LayoutPanelLeft,
   Mail,
   MapPin,
@@ -24,6 +27,7 @@ import EMICalculator from '../../components/property/EMICalculator'
 import PropertyConfigurations from '../../components/property/PropertyConfigurations'
 import PropertyFaqs from '../../components/property/PropertyFaqs'
 import { bhkSummary } from '../../utils/listingText'
+import { nearbyDistance } from '../../utils/geo'
 import { formatPriceShort } from '../../utils/format'
 import Lightbox from '../../components/property/Lightbox'
 import PriceInsight from '../../components/property/PriceInsight'
@@ -47,7 +51,7 @@ import { useRevealPhone } from '../../hooks/useRevealPhone'
 // pre-rendered HTML) we render the address and nearby places as plain, crawlable text.
 const PropertyMap = lazy(() => import('../../components/property/PropertyMap'))
 
-function MapPlaceholder({ address, nearby = [] }) {
+function MapPlaceholder({ address, nearby = [], lat, lng }) {
   return (
     <GlassCard hover={false} className="p-3">
       <div className="flex items-center gap-2 px-2 pt-1 pb-3">
@@ -60,7 +64,7 @@ function MapPlaceholder({ address, nearby = [] }) {
           {nearby.map((n) => (
             <li key={n.name} className="glass-weak rounded-[12px] px-3 py-2 flex items-center justify-between gap-2 text-sm">
               <span className="truncate">{n.name} <span className="text-tertiary">· {n.type}</span></span>
-              <span className="text-tertiary text-xs shrink-0">{n.distance}</span>
+              <span className="text-tertiary text-xs shrink-0">{nearbyDistance(n, lat, lng)}</span>
             </li>
           ))}
         </ul>
@@ -169,6 +173,9 @@ function PropertyDetailInner({ id }) {
   const size = sizes.length >= 2 ? sizes[Math.min(cfgIndex, sizes.length - 1)] : null
   const shownPrice = size ? (size.price ? `${formatPriceShort(size.price)}${property.purpose === 'Rent' ? '/mo' : ''}` : 'Price on request') : property.priceLabel
   const shownArea = size?.areaSqft || property.areaSqft
+  const shownBaths = size?.baths || property.baths
+  const shownRaw = size ? size.price : property.price
+  const perSqft = property.purpose === 'Buy' && shownRaw > 0 && shownArea > 0 ? Math.round(shownRaw / shownArea) : 0
   const bhk = bhkText ? `${bhkText} ` : ''
   const forWhat = property.purpose === 'Rent' ? 'for Rent' : 'for Sale'
   const place = [property.locality, property.city].filter(Boolean).join(', ')
@@ -333,24 +340,49 @@ function PropertyDetailInner({ id }) {
 
             <PropertyBadges property={property} className="mb-4" />
 
-            <PropertyConfigurations configurations={sizes} index={cfgIndex} onChange={setCfgIndex} className="mb-4" />
-            <p className="text-3xl font-bold text-[var(--color-accent)] mb-1">{size && sizes.length > 1 && <span className="text-sm font-medium text-tertiary mr-2">{size.beds} BHK</span>}{shownPrice}</p>
-            <div className="mb-6" />
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              {[
-                { icon: BedDouble, label: 'Bedrooms', value: size ? `${size.beds} BHK` : bhkText || property.beds },
-                { icon: Bath, label: 'Bathrooms', value: property.baths },
-                { icon: Ruler, label: 'Area', value: shownArea ? `${shownArea} sqft` : '—' },
-                { icon: Sofa, label: 'Furnishing', value: property.furnishing },
-              ].map((s) => (
-                <div key={s.label} className="glass-weak rounded-[16px] p-3 text-center">
-                  <s.icon className="mx-auto mb-1 text-[var(--color-accent)]" size={18} />
-                  <p className="text-sm font-semibold truncate">{s.value}</p>
-                  <p className="text-tertiary text-xs">{s.label}</p>
+            {/* The home itself: pick a size (when the project has several) and see ITS price, area and rooms. */}
+            <section aria-label="Size and price" className="glass-weak rounded-[20px] p-4 sm:p-5 mb-6">
+              {sizes.length >= 2 && <p className="text-xs font-semibold uppercase tracking-wide text-tertiary mb-2.5">Choose a size</p>}
+              <PropertyConfigurations configurations={sizes} index={cfgIndex} onChange={setCfgIndex} className="mb-4" />
+              <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+                <div>
+                  <p className="text-tertiary text-xs mb-0.5">{size ? `${size.beds} BHK ${property.type}` : [bhkText, property.type].filter(Boolean).join(' ')} · {property.purpose === 'Rent' ? 'Rent' : 'Price'}</p>
+                  <p className="text-3xl font-bold text-[var(--color-accent)]">{shownPrice}</p>
                 </div>
-              ))}
-            </div>
+                {perSqft > 0 && <p className="text-secondary text-sm pb-1">≈ ₹{perSqft.toLocaleString('en-IN')} / sq.ft</p>}
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                {[
+                  { icon: BedDouble, label: 'Bedrooms', value: size ? `${size.beds} BHK` : bhkText || property.beds || '—' },
+                  { icon: Bath, label: 'Bathrooms', value: shownBaths || '—' },
+                  { icon: Ruler, label: 'Area', value: shownArea ? `${shownArea} sq.ft` : '—' },
+                ].map((x) => (
+                  <div key={x.label} className="glass rounded-[16px] p-3 text-center">
+                    <x.icon className="mx-auto mb-1 text-[var(--color-accent)]" size={18} />
+                    <p className="text-sm font-semibold truncate">{x.value}</p>
+                    <p className="text-tertiary text-xs">{x.label}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <h3 className="font-semibold mb-3">Property details</h3>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-sm mb-6">
+              {[
+                { icon: Building2, label: 'Property type', value: property.type },
+                { icon: Sofa, label: 'Furnishing', value: property.furnishing },
+                { icon: Hourglass, label: 'Possession', value: property.possessionStatus },
+                { icon: Calendar, label: 'Year built', value: property.yearBuilt },
+                ...(property.reraId ? [{ icon: BadgeCheck, label: 'RERA no.', value: property.reraId }] : []),
+              ]
+                .filter((r) => r.value)
+                .map((r) => (
+                  <div key={r.label} className="flex items-center justify-between gap-3 border-b border-[var(--glass-border)] pb-2.5">
+                    <dt className="flex items-center gap-2 text-secondary"><r.icon size={14} className="text-[var(--color-accent)]" /> {r.label}</dt>
+                    <dd className="font-medium text-right break-words">{r.value}</dd>
+                  </div>
+                ))}
+            </dl>
 
             <h3 className="font-semibold mb-2">Description</h3>
             <p className="text-secondary leading-relaxed mb-6">{property.description}</p>
@@ -364,9 +396,6 @@ function PropertyDetailInner({ id }) {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 text-secondary text-sm">
-              <Calendar size={14} /> Built in {property.yearBuilt}
-            </div>
           </GlassCard>
 
           <PropertyFaqs faqs={property.faqs} />

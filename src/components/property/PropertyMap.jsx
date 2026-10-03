@@ -1,5 +1,5 @@
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import {
@@ -14,7 +14,9 @@ import {
 } from 'lucide-react'
 import GlassCard from '../glass/GlassCard'
 import { useTheme } from '../../context/ThemeContext'
-import { destinationPoint, hashBearing } from '../../utils/geo'
+import { nearbyDistance } from '../../utils/geo'
+import { useSettings } from '../../context/SettingsContext'
+import { useGoogleMaps } from '../../utils/googleMaps'
 
 const nearbyIcons = {
   School: GraduationCap,
@@ -86,6 +88,53 @@ function MapResizeHandler({ trigger }) {
   return null
 }
 
+/** The same map drawn by Google Maps (used when a Google Maps API key is set in Admin → Settings → Tracking). */
+function GoogleMapView({ lat, lng, priceLabel, nearby, satellite, expanded }) {
+  const box = useRef(null)
+  const map = useRef(null)
+
+  useEffect(() => {
+    const g = window.google.maps
+    const m = new g.Map(box.current, { center: { lat, lng }, zoom: 14, streetViewControl: false, fullscreenControl: false, mapTypeControl: false, gestureHandling: 'cooperative' })
+    map.current = m
+    const bounds = new g.LatLngBounds({ lat, lng })
+    const width = Math.max(70, priceLabel.length * 8 + 30)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="40"><rect x="1" y="1" rx="15" width="${width - 2}" height="28" fill="#674E40" stroke="#fff" stroke-width="2"/><path d="M${width / 2 - 6} 29 l6 9 l6 -9z" fill="#674E40"/><text x="${width / 2}" y="20" font-family="Arial" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">${priceLabel.replace(/[<>&]/g, '')}</text></svg>`
+    new g.Marker({ position: { lat, lng }, map: m, zIndex: 1000, title: priceLabel, icon: { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, scaledSize: new g.Size(width, 40), anchor: new g.Point(width / 2, 38) } })
+    const info = new g.InfoWindow()
+    nearby.forEach((n) => {
+      const marker = new g.Marker({
+        position: { lat: n.lat, lng: n.lng },
+        map: m,
+        title: n.name,
+        icon: { path: g.SymbolPath.CIRCLE, scale: 9, fillColor: nearbyColors[n.type] ?? '#8E8E93', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      })
+      bounds.extend({ lat: n.lat, lng: n.lng })
+      marker.addListener('click', () => {
+        const box = document.createElement('div')
+        box.style.cssText = 'font:600 13px system-ui;color:#222'
+        box.textContent = n.name
+        const sub = document.createElement('div')
+        sub.style.cssText = 'font:400 12px system-ui;color:#666'
+        sub.textContent = `${n.type} · ${n.distance}`
+        box.appendChild(sub)
+        info.setContent(box)
+        info.open({ map: m, anchor: marker })
+      })
+    })
+    if (nearby.length) m.fitBounds(bounds, 48)
+    return () => { map.current = null }
+  }, [lat, lng, priceLabel, nearby])
+
+  useEffect(() => { map.current?.setMapTypeId(satellite ? 'hybrid' : 'roadmap') }, [satellite])
+  useEffect(() => {
+    const t = setTimeout(() => window.google?.maps && map.current && window.google.maps.event.trigger(map.current, 'resize'), 280)
+    return () => clearTimeout(t)
+  }, [expanded])
+
+  return <div ref={box} style={{ width: '100%', height: '100%' }} />
+}
+
 export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel = 'Property' }) {
   const { theme } = useTheme()
   const [satellite, setSatellite] = useState(true)
@@ -101,16 +150,13 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
     return () => clearTimeout(fallback)
   }, [tile.url])
 
-  const nearbyPositions = useMemo(
-    () =>
-      nearby.map((n) => {
-        const km = parseFloat(n.distance) || 1
-        const bearing = hashBearing(n.name)
-        const pos = destinationPoint(lat, lng, bearing, km)
-        return { ...n, ...pos }
-      }),
-    [nearby, lat, lng]
-  )
+  // Only places with a real position are drawn (a place without one is still listed below). Distances come
+  // from those positions, so they match what is on the map.
+  const shown = useMemo(() => nearby.map((n) => ({ ...n, distance: nearbyDistance(n, lat, lng) })), [nearby, lat, lng])
+  const nearbyPositions = useMemo(() => shown.filter((n) => Number.isFinite(n.lat) && Number.isFinite(n.lng) && n.lat !== null && n.lng !== null), [shown])
+  const { marketingConfig } = useSettings()
+  const google = useGoogleMaps(marketingConfig?.googleMapsApiKey)
+  const useGoogle = google === 'ready'
 
   if (lat == null || lng == null) return null
 
@@ -132,6 +178,9 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
       </div>
 
       <div className={`relative rounded-[16px] overflow-hidden transition-[height] duration-300 ${expanded ? 'h-[480px]' : 'h-64'}`}>
+        {useGoogle ? (
+          <GoogleMapView lat={lat} lng={lng} priceLabel={priceLabel} nearby={nearbyPositions} satellite={satellite} expanded={expanded} />
+        ) : (
         <MapContainer
           center={[lat, lng]}
           zoom={14}
@@ -165,8 +214,9 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
             )
           })}
         </MapContainer>
+        )}
 
-        {!tilesReady && (
+        {!useGoogle && !tilesReady && (
           <div className="absolute inset-0 z-[900] skeleton !rounded-none bg-[var(--bg-base-2)] pointer-events-none" aria-hidden="true" />
         )}
 
@@ -187,9 +237,9 @@ export default function PropertyMap({ lat, lng, address, nearby = [], priceLabel
         </div>
       </div>
 
-      {nearby.length > 0 && (
+      {shown.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 px-1">
-          {nearby.map((n) => {
+          {shown.map((n) => {
             const Icon = nearbyIcons[n.type] ?? MapPin
             return (
               <div key={n.name} className="glass-weak rounded-[12px] px-3 py-2 flex items-center gap-2 text-sm">

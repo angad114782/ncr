@@ -53,8 +53,8 @@ const propertyBase = {
   images: imageList(15).optional(),
   floorPlans: imageList(5).optional(),
   amenities: z.array(text(80)).max(60).optional(),
-  nearby: z.array(z.object({ type: optText(40), name: text(120), distance: optText(40) })).max(30).optional(),
-  configurations: z.array(z.object({ beds: num(1, 20), areaSqft: num(0, 1e7), price: num(0, 1e11) })).max(12).optional(),
+  nearby: z.array(z.object({ type: optText(40), name: text(120), distance: optText(40), lat: nullableNum(-90, 90), lng: nullableNum(-180, 180) })).max(30).optional(),
+  configurations: z.array(z.object({ beds: num(1, 20), baths: num(0, 50).optional(), areaSqft: num(0, 1e7), price: num(0, 1e11) })).max(12).optional(),
   faqs: z.array(z.object({ question: text(300), answer: text(2000) })).max(30).optional(),
 }
 const adminOnlyProperty = {

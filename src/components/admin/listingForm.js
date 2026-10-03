@@ -5,6 +5,7 @@ import { newId } from '../../utils/ids'
 import { formatPriceShort } from '../../utils/seo'
 import { capitaliseListing, cleanConfigurations, cleanFaqs } from '../../utils/listingText'
 import LocationPicker from './LocationPicker'
+import NearbyFinder from './NearbyFinder'
 
 const NEARBY_TYPES = ['School', 'Hospital', 'Metro', 'Mall']
 export const today = () => new Date().toISOString().slice(0, 10)
@@ -71,6 +72,7 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
       },
       fields: [
         { key: 'beds', label: 'BHK', type: 'select', options: [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: `${n} BHK` })) },
+        { key: 'baths', label: 'Bathrooms', type: 'number', min: 0, step: 1 },
         { key: 'areaSqft', label: 'Area (sq.ft)', type: 'number', min: 0, step: 1 },
         { key: 'price', label: 'Price (₹)', type: 'number', min: 0, step: 1 },
       ],
@@ -80,17 +82,20 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
     { key: 'floorPlans', label: 'Floor plans', type: 'imageList', max: 5 },
     { key: 'videoUrl', label: 'Video tour link (YouTube / Vimeo)', type: 'url', half: false, placeholder: 'https://…' },
     { key: 'amenities', label: 'Amenities', type: 'stringList', placeholder: 'e.g. Swimming Pool' },
+    { key: 'nearbyFinder', type: 'custom', render: ({ item, setItem }) => createElement(NearbyFinder, { item, setItem }) },
     {
       key: 'nearby',
       label: 'Nearby places',
       type: 'objectList',
       addLabel: 'Add place',
       itemTitle: (n, i) => n.name || `Place ${i + 1}`,
-      newItem: () => ({ type: 'School', name: '', distance: '' }),
+      newItem: () => ({ type: 'School', name: '', distance: '', lat: '', lng: '' }),
       fields: [
         { key: 'type', label: 'Type', type: 'select', options: NEARBY_TYPES },
         { key: 'name', label: 'Name' },
-        { key: 'distance', label: 'Distance', placeholder: '1.2 km' },
+        { key: 'distance', label: 'Distance', placeholder: '1.2 km', hint: 'Worked out from the position when there is one.' },
+        { key: 'lat', label: 'Latitude (optional)', type: 'number', step: 'any', hint: 'Without a position the place is listed but not drawn on the map.' },
+        { key: 'lng', label: 'Longitude (optional)', type: 'number', step: 'any' },
       ],
     },
     {

@@ -42,3 +42,15 @@ export function daysAgo(dateStr) {
   const diffMs = Date.now() - new Date(dateStr).getTime()
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
 }
+
+/** "850 m" / "1.4 km" — straight-line distance between two points. */
+export function distanceLabel(lat1, lng1, lat2, lng2) {
+  const km = haversineKm(lat1, lng1, lat2, lng2)
+  return km < 1 ? `${Math.max(10, Math.round(km * 100) * 10)} m` : `${km.toFixed(1)} km`
+}
+
+/** A nearby place with real coordinates shows its distance from the listing's pin; one without keeps the typed text. */
+export function nearbyDistance(n, lat, lng) {
+  const ok = [n?.lat, n?.lng, lat, lng].every((v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)))
+  return ok ? distanceLabel(Number(lat), Number(lng), Number(n.lat), Number(n.lng)) : n?.distance ?? ''
+}

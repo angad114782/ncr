@@ -26,7 +26,7 @@ export function sentenceCase(text) {
 /** The saved listing's BHK configurations: only rows with a BHK count, sorted small → large. */
 export function cleanConfigurations(list) {
   return (Array.isArray(list) ? list : [])
-    .map((c) => ({ beds: Number(c?.beds) || 0, areaSqft: Number(c?.areaSqft) || 0, price: Number(c?.price) || 0 }))
+    .map((c) => ({ beds: Number(c?.beds) || 0, areaSqft: Number(c?.areaSqft) || 0, price: Number(c?.price) || 0, baths: Number(c?.baths) || 0 }))
     .filter((c) => c.beds > 0)
     .sort((a, b) => a.beds - b.beds || a.price - b.price)
 }
@@ -53,6 +53,8 @@ export const cleanFaqs = (list) =>
     .map((f) => ({ question: sentenceCase(f?.question), answer: sentenceCase(f?.answer) }))
     .filter((f) => f.question && f.answer)
 
+const coord = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v))
+
 /** Capitalises every short text a listing shows (title, place names, amenities, …). */
 export function capitaliseListing(p) {
   return {
@@ -62,7 +64,7 @@ export function capitaliseListing(p) {
     address: titleCase(p.address),
     description: sentenceCase(p.description),
     amenities: (p.amenities ?? []).map(titleCase).filter(Boolean),
-    nearby: (p.nearby ?? []).map((n) => ({ ...n, name: titleCase(n.name), distance: String(n.distance ?? '').trim() })).filter((n) => n.name),
+    nearby: (p.nearby ?? []).map((n) => ({ ...n, name: titleCase(n.name), distance: String(n.distance ?? '').trim(), lat: coord(n.lat), lng: coord(n.lng) })).filter((n) => n.name),
   }
 }
 

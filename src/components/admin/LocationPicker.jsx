@@ -5,7 +5,7 @@ import L from 'leaflet'
 import { ExternalLink, Loader2, MapPin, Search } from 'lucide-react'
 import GlassButton from '../glass/GlassButton'
 import { useSettings } from '../../context/SettingsContext'
-import { useGoogleMaps } from './googleMaps'
+import { useGoogleMaps } from '../../utils/googleMaps'
 
 // Pick a listing's location instead of typing latitude / longitude: search a place, click the map, drag the pin,
 // or paste a Google Maps link / "lat, lng". With a Google Maps API key (Admin → Settings → Tracking) the map and the

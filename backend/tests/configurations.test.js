@@ -100,3 +100,25 @@ describe('stored listings are shown capitalised', () => {
     }
   })
 })
+
+describe('nearby places keep their real position; sizes keep their bathrooms', () => {
+  it('stores lat/lng on nearby places and baths on sizes', async () => {
+    const t = await startTestApp()
+    try {
+      const admin = await t.login(ADMIN_PHONE)
+      const res = await admin.post('/api/admin/properties').send({
+        title: 'Nearby Test Homes', purpose: 'Buy', city: 'Noida', lat: 28.6, lng: 77.3,
+        nearby: [{ type: 'Metro', name: 'sector 62 metro', distance: '1.1 km', lat: 28.6272, lng: 77.3649 }, { type: 'School', name: 'old school', distance: '2 km' }],
+        configurations: [{ beds: 2, baths: 2, areaSqft: 900, price: 7000000 }, { beds: 3, baths: 3, areaSqft: 1300, price: 9500000 }],
+      })
+      assert.equal(res.status, 201, JSON.stringify(res.body))
+      const p = res.body.property
+      assert.equal(p.nearby[0].name, 'Sector 62 Metro')
+      assert.equal(p.nearby[0].lat, 28.6272)
+      assert.equal(p.nearby[1].lat ?? null, null)
+      assert.deepEqual(p.configurations.map((c) => c.baths), [2, 3])
+    } finally {
+      await t.stop()
+    }
+  })
+})
