@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { ExternalLink } from 'lucide-react'
 import CollectionAdmin from '../../components/admin/CollectionAdmin'
-import { emptyListing, listingFields, prepareListing, reviewOf, today } from '../../components/admin/listingForm'
+import { emptyListing, hasPrice, listingFields, prepareListing, reviewOf, today } from '../../components/admin/listingForm'
+import { bhkSummary } from '../../utils/listingText'
 import { propertyCsv } from '../../components/admin/propertyCsv'
 import AgentStatusBanner from './AgentStatusBanner'
 import { ListSkeleton } from '../../components/common/Skeleton'
@@ -101,7 +102,7 @@ export default function AgentListings() {
         csv={{ config: propertyCsv, seedItems: propertiesSeed }}
         emptyItem={() => ({ ...emptyListing(formCtx), agentId: agent.id, active: false })}
         prepare={prepareListing}
-        validate={(p) => (Number(p.price) > 0 ? '' : 'Enter the price in rupees (greater than 0).')}
+        validate={(p) => (hasPrice(p) ? '' : 'Enter the price in rupees (greater than 0) — or a price for each BHK size.')}
         duplicate={(p) => ({ ...p, id: newId('p'), title: `${p.title} (copy)` })}
         searchText={(p) => `${p.title} ${p.city} ${p.locality} ${p.type} ${p.purpose}`}
         activeLabels={{ on: 'Live', off: 'Hidden' }}
@@ -121,7 +122,7 @@ export default function AgentListings() {
                 {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-14 h-10 rounded-[10px] object-cover shrink-0" /> : <span className="w-14 h-10 rounded-[10px] glass-weak shrink-0" />}
                 <div className="min-w-0">
                   <p className="font-medium line-clamp-1">{p.title}</p>
-                  <p className="text-tertiary text-xs truncate">{[p.locality, p.city].filter(Boolean).join(', ')}</p>
+                  <p className="text-tertiary text-xs truncate">{[bhkSummary(p), p.locality, p.city].filter(Boolean).join(' · ')}</p>
                 </div>
               </div>
             ),

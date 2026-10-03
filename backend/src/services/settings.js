@@ -39,6 +39,7 @@ const STATIC_DEFAULTS = {
     googleAnalyticsId: '',
     googleAdsId: '',
     googleAdsConversionLabel: '',
+    googleMapsApiKey: '', // a browser key (restricted to the site's domains in Google Cloud), used by the listing editor's map picker
   },
   whatsapp: {
     displayPhone: '8619930583',
@@ -123,7 +124,7 @@ export async function publicSettings() {
     ticker: s.ticker,
     topBanner: s.topBanner,
     // Only the browser-side ids — metaCapiAccessToken and metaTestEventCode never reach the public bootstrap.
-    marketing: { metaPixelId: s.marketing.metaPixelId, googleAnalyticsId: s.marketing.googleAnalyticsId, googleAdsId: s.marketing.googleAdsId, googleAdsConversionLabel: s.marketing.googleAdsConversionLabel },
+    marketing: { metaPixelId: s.marketing.metaPixelId, googleAnalyticsId: s.marketing.googleAnalyticsId, googleAdsId: s.marketing.googleAdsId, googleAdsConversionLabel: s.marketing.googleAdsConversionLabel, googleMapsApiKey: s.marketing.googleMapsApiKey },
     whatsapp: { displayPhone: s.whatsapp.displayPhone },
     mail: { fromEmail: s.mail.fromEmail, fromName: s.mail.fromName },
   }

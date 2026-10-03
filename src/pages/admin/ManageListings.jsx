@@ -1,10 +1,11 @@
 import { Check, ExternalLink, Star, X } from 'lucide-react'
 import CollectionAdmin from '../../components/admin/CollectionAdmin'
 import { useData } from '../../context/DataContext'
-import { emptyListing, listingFields, prepareListing, reviewOf } from '../../components/admin/listingForm'
+import { emptyListing, hasPrice, listingFields, prepareListing, reviewOf } from '../../components/admin/listingForm'
 import { useSettings } from '../../context/SettingsContext'
 import { propertyCsv } from '../../components/admin/propertyCsv'
 import { newId } from '../../utils/ids'
+import { bhkSummary } from '../../utils/listingText'
 import { propertyPath, slugify } from '../../utils/seo'
 import propertiesSeed from '../../data/properties.json'
 import PropertyAnalytics from './PropertyAnalytics'
@@ -66,7 +67,7 @@ export default function ManageListings() {
       emptyItem={emptyItem}
       prepare={prepare}
       validate={(p, { items }) => {
-        if (!(Number(p.price) > 0)) return 'Enter the price in rupees (greater than 0).'
+        if (!hasPrice(p)) return 'Enter the price in rupees (greater than 0) — or a price for each BHK size.'
         const slug = slugify(p.slug || '')
         const clash = slug && items.find((x) => x.id !== p.id && (x.slug === slug || x.previousSlugs?.includes(slug) || x.id === slug))
         return clash ? `Another listing (“${clash.title}”) already uses the URL “${slug}”. Change it, or leave the slug blank to generate a unique one.` : ''
@@ -95,7 +96,7 @@ export default function ManageListings() {
               {p.images?.[0] ? <img src={p.images[0]} alt="" className="w-14 h-10 rounded-[10px] object-cover shrink-0" /> : <span className="w-14 h-10 rounded-[10px] glass-weak shrink-0" />}
               <div className="min-w-0">
                 <p className="font-medium line-clamp-1">{p.title}{p.featured && <Star size={12} className="inline ml-1.5 -mt-0.5 fill-[var(--color-warning)] text-[var(--color-warning)]" />}</p>
-                <p className="text-tertiary text-xs truncate">{[p.locality, p.city].filter(Boolean).join(', ')}</p>
+                <p className="text-tertiary text-xs truncate">{[bhkSummary(p), p.locality, p.city].filter(Boolean).join(' · ')}</p>
               </div>
             </div>
           ),

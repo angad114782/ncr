@@ -4,9 +4,12 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-lea
 import L from 'leaflet'
 import { ExternalLink, Loader2, MapPin, Search } from 'lucide-react'
 import GlassButton from '../glass/GlassButton'
+import { useSettings } from '../../context/SettingsContext'
+import { useGoogleMaps } from './googleMaps'
 
 // Pick a listing's location instead of typing latitude / longitude: search a place, click the map, drag the pin,
-// or paste a Google Maps link / "lat, lng". No API key is needed (OpenStreetMap search + map tiles).
+// or paste a Google Maps link / "lat, lng". With a Google Maps API key (Admin → Settings → Tracking) the map and the
+// search are Google's; without one it falls back to OpenStreetMap, which needs no key.
 
 const INDIA_CENTRE = [28.5, 77.2] // NCR
 const TILES = {
@@ -52,6 +55,45 @@ function Fly({ point }) {
   return null
 }
 
+/** The same map as the Leaflet one, drawn by Google Maps. */
+function GoogleMapView({ point, layer, onPick }) {
+  const box = useRef(null)
+  const map = useRef(null)
+  const marker = useRef(null)
+  const pick = useRef(onPick)
+  pick.current = onPick
+
+  useEffect(() => {
+    const g = window.google.maps
+    map.current = new g.Map(box.current, {
+      center: point ?? { lat: INDIA_CENTRE[0], lng: INDIA_CENTRE[1] },
+      zoom: point ? 16 : 9,
+      mapTypeId: 'roadmap',
+      streetViewControl: false,
+      fullscreenControl: false,
+      mapTypeControl: false,
+    })
+    map.current.addListener('click', (e) => pick.current(e.latLng.lat(), e.latLng.lng()))
+    return () => { marker.current?.setMap(null); marker.current = null; map.current = null }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { map.current?.setMapTypeId(layer === 'satellite' ? 'hybrid' : 'roadmap') }, [layer])
+
+  useEffect(() => {
+    const g = window.google.maps
+    if (!map.current) return
+    if (!point) { marker.current?.setMap(null); marker.current = null; return }
+    if (!marker.current) {
+      marker.current = new g.Marker({ position: point, map: map.current, draggable: true })
+      marker.current.addListener('dragend', (e) => pick.current(e.latLng.lat(), e.latLng.lng()))
+    } else marker.current.setPosition(point)
+    map.current.panTo(point)
+    if (map.current.getZoom() < 15) map.current.setZoom(16)
+  }, [point?.lat, point?.lng]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return <div ref={box} className="h-full w-full" />
+}
+
 export default function LocationPicker({ lat, lng, hint = '', onChange }) {
   const point = inRange(Number(lat), Number(lng)) && lat !== '' && lat !== null && lng !== '' && lng !== null ? { lat: Number(lat), lng: Number(lng) } : null
   const [layer, setLayer] = useState('streets')
@@ -61,6 +103,9 @@ export default function LocationPicker({ lat, lng, hint = '', onChange }) {
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const reqId = useRef(0)
+  const { marketingConfig } = useSettings()
+  const google = useGoogleMaps(marketingConfig?.googleMapsApiKey)
+  const useGoogle = google === 'ready'
 
   const set = (la, ln) => {
     setNote('')
@@ -74,6 +119,13 @@ export default function LocationPicker({ lat, lng, hint = '', onChange }) {
     setBusy(true)
     setNote('')
     try {
+      if (useGoogle) {
+        const { results: found } = await new window.google.maps.Geocoder().geocode({ address: q, region: 'IN', componentRestrictions: { country: 'IN' } }).catch((err) => (err?.code === 'ZERO_RESULTS' ? { results: [] } : Promise.reject(err)))
+        if (id !== reqId.current) return
+        setResults(found.slice(0, 5).map((r) => ({ name: r.formatted_address, lat: r.geometry.location.lat(), lng: r.geometry.location.lng() })))
+        if (!found.length) setNote('No place found — try a nearby landmark, or click the map.')
+        return
+      }
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=in&q=${encodeURIComponent(q)}`, { headers: { Accept: 'application/json' } })
       const data = await res.json()
       if (id !== reqId.current) return
@@ -135,19 +187,23 @@ export default function LocationPicker({ lat, lng, hint = '', onChange }) {
       )}
 
       <div className="relative rounded-[16px] overflow-hidden h-[280px] border border-[var(--glass-border)]">
-        <MapContainer center={point ? [point.lat, point.lng] : INDIA_CENTRE} zoom={point ? 15 : 9} scrollWheelZoom className="h-full w-full">
-          <TileLayer key={layer} url={tile.url} attribution={tile.attribution} />
-          <Clicks onPick={set} />
-          <Fly point={point} />
-          {point && (
-            <Marker
-              position={[point.lat, point.lng]}
-              icon={pin}
-              draggable
-              eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); set(p.lat, p.lng) } }}
-            />
-          )}
-        </MapContainer>
+        {useGoogle ? (
+          <GoogleMapView point={point} layer={layer} onPick={set} />
+        ) : (
+          <MapContainer center={point ? [point.lat, point.lng] : INDIA_CENTRE} zoom={point ? 15 : 9} scrollWheelZoom className="h-full w-full">
+            <TileLayer key={layer} url={tile.url} attribution={tile.attribution} />
+            <Clicks onPick={set} />
+            <Fly point={point} />
+            {point && (
+              <Marker
+                position={[point.lat, point.lng]}
+                icon={pin}
+                draggable
+                eventHandlers={{ dragend: (e) => { const p = e.target.getLatLng(); set(p.lat, p.lng) } }}
+              />
+            )}
+          </MapContainer>
+        )}
         <div className="absolute top-2 right-2 z-[500] flex gap-1">
           {Object.keys(TILES).map((k) => (
             <button key={k} type="button" onClick={() => setLayer(k)} className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${layer === k ? 'bg-[var(--color-accent)] text-white' : 'bg-white/90 text-[#333]'}`}>
@@ -169,6 +225,7 @@ export default function LocationPicker({ lat, lng, hint = '', onChange }) {
           </a>
         )}
       </div>
+      {google === 'error' && <p className="text-[var(--color-danger)] text-xs px-1">The Google Maps key was refused (check it is valid, billing is on, and “Maps JavaScript API” + “Geocoding API” are enabled for this website). Using the free map instead.</p>}
       {note && <p className="text-[var(--color-danger)] text-xs px-1">{note}</p>}
     </div>
   )

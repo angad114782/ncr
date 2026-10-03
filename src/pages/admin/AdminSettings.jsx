@@ -470,6 +470,18 @@ export default function AdminSettings() {
             onChange={(e) => setMarketingForm({ ...marketingForm, googleAdsConversionLabel: e.target.value.trim() })}
           />
 
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-medium text-secondary px-1">Google Maps API key</span>
+            <StatusBadge active={!!marketingForm.googleMapsApiKey} />
+          </div>
+          <GlassInput
+            icon={MapPin}
+            placeholder="AIza…"
+            hint="Used by the location picker in the listing editor (admin and agents). In Google Cloud Console enable “Maps JavaScript API” and “Geocoding API”, turn billing on, and restrict the key to your website (HTTP referrers, e.g. propertyinncr.com/* and www.propertyinncr.com/*). Leave blank to use the free OpenStreetMap picker."
+            value={marketingForm.googleMapsApiKey ?? ''}
+            onChange={(e) => setMarketingForm({ ...marketingForm, googleMapsApiKey: e.target.value.trim() })}
+          />
+
           <GlassButton type="submit" className="w-full justify-center mt-2">
             {marketingSaved ? <><Check size={16} /> Saved</> : 'Save Tracking Config'}
           </GlassButton>

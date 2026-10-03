@@ -62,7 +62,13 @@ export function listingFields({ cities, propertyTypes, furnishing, possession, a
       max: 12,
       hint: 'For a project sold in several sizes — each row is one BHK with its own area and price.',
       itemTitle: (c, i) => (c.beds ? `${c.beds} BHK` : `Size ${i + 1}`),
-      newItem: () => ({ beds: 2, areaSqft: '', price: '' }),
+      // The first size added to a single-size listing keeps that listing's own BHK / area / price as row one
+      // (nothing is lost), then a new row for the next free BHK size (3 after 2, …).
+      addItems: (list = [], item = {}) => {
+        const next = { beds: Math.min(6, Math.max(1, ...list.map((c) => Number(c.beds) || 0), Number(item.beds) || 0) + 1), areaSqft: '', price: '' }
+        const own = !list.length && Number(item.beds) > 0 && Number(item.price) > 0 ? [{ beds: Number(item.beds), areaSqft: Number(item.areaSqft) || '', price: Number(item.price) }] : []
+        return own.length ? [...own, next] : list.length ? [next] : [{ ...next, beds: Math.max(1, Number(item.beds) || 2) }]
+      },
       fields: [
         { key: 'beds', label: 'BHK', type: 'select', options: [1, 2, 3, 4, 5, 6].map((n) => ({ value: n, label: `${n} BHK` })) },
         { key: 'areaSqft', label: 'Area (sq.ft)', type: 'number', min: 0, step: 1 },
@@ -135,7 +141,8 @@ export function prepareListing(p) {
   return {
     ...capitaliseListing(p),
     price,
-    priceLabel: p.priceLabel?.trim() || `${priced.length > 1 ? 'From ' : ''}${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
+    // with BHK sizes the label always follows the lowest price (a hand-typed one would go stale); otherwise a typed label wins
+    priceLabel: (!priced.length && p.priceLabel?.trim()) || `${priced.length > 1 ? 'From ' : ''}${formatPriceShort(price)}${p.purpose === 'Rent' ? '/mo' : ''}`,
     beds: lowest ? lowest.beds : Number(p.beds) || 0,
     baths: Number(p.baths) || 0,
     areaSqft: lowest?.areaSqft || Number(p.areaSqft) || 0,
@@ -149,6 +156,9 @@ export function prepareListing(p) {
     videoTour: !!p.videoTour || !!p.videoUrl,
   }
 }
+
+/** A listing needs a price of its own, or (a project in several sizes) a price on at least one BHK size. */
+export const hasPrice = (p) => Number(p.price) > 0 || (p.configurations ?? []).some((c) => Number(c?.price) > 0)
 
 /** Listings an agent posted wait here until the admin approves them (`reviewStatus` missing = approved). */
 export const reviewOf = (p) => p.reviewStatus ?? 'approved'

@@ -38,7 +38,7 @@ export function normalizeListing(p) {
   const priced = configurations.filter((c) => c.price > 0)
   const lowest = priced.length ? priced.reduce((a, c) => (c.price < a.price ? c : a)) : configurations[0]
   const price = priced.length ? lowest.price : Number(p.price) || 0
-  const label = p.priceLabel?.trim()
+  const label = priced.length ? '' : p.priceLabel?.trim() // with BHK sizes the label always follows the lowest price
   return {
     ...capitaliseListing(p),
     price,

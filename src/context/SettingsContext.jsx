@@ -42,6 +42,7 @@ const DEFAULT_MARKETING_CONFIG = {
   googleAnalyticsId: '',
   googleAdsId: '',
   googleAdsConversionLabel: '',
+  googleMapsApiKey: '', // Admin → Settings → Tracking: turns the listing editor's location picker into a Google map
 }
 
 

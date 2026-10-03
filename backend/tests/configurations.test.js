@@ -51,6 +51,17 @@ describe('listings with BHK configurations and FAQs', () => {
     assert.equal(one.body.items.some((x) => x.id === p.id), false)
   })
 
+  it('a stale hand-typed price label is replaced once the listing has priced sizes', async () => {
+    const res = await admin.post('/api/admin/properties').send({
+      title: 'Stale Label Towers', purpose: 'Buy', city: 'Noida', priceLabel: '24.25 Lac',
+      configurations: [{ beds: 2, areaSqft: 735, price: 2425000 }, { beds: 3, areaSqft: 755, price: 3399000 }],
+    })
+    assert.equal(res.status, 201, JSON.stringify(res.body))
+    assert.equal(res.body.property.priceLabel, 'From ₹24.3 L')
+    assert.equal(res.body.property.beds, 2)
+    assert.equal(res.body.property.areaSqft, 735)
+  })
+
   it('accepts a project with no single price when sizes carry prices', async () => {
     const res = await admin.post('/api/admin/properties').send({ title: 'No Single Price', purpose: 'Buy', city: 'Noida', configurations: [{ beds: 3, areaSqft: 1500, price: 9000000 }] })
     assert.equal(res.status, 201, JSON.stringify(res.body))

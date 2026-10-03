@@ -24,6 +24,7 @@ import EMICalculator from '../../components/property/EMICalculator'
 import PropertyConfigurations from '../../components/property/PropertyConfigurations'
 import PropertyFaqs from '../../components/property/PropertyFaqs'
 import { bhkSummary } from '../../utils/listingText'
+import { formatPriceShort } from '../../utils/format'
 import Lightbox from '../../components/property/Lightbox'
 import PriceInsight from '../../components/property/PriceInsight'
 import DistanceToHubs from '../../components/property/DistanceToHubs'
@@ -97,6 +98,7 @@ function PropertyDetailInner({ id }) {
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [copied, setCopied] = useState(false)
   const [showFloorPlan, setShowFloorPlan] = useState(false)
+  const [cfgIndex, setCfgIndex] = useState(0) // which BHK tab is open on a multi-size project
 
   // `id` is the URL segment: the slug, an old slug, or (old links like /property/p6) the id.
   const property = findByParam(properties, id)
@@ -162,6 +164,11 @@ function PropertyDetailInner({ id }) {
     .slice(0, 3)
 
   const bhkText = bhkSummary(property)
+  // A project sold in several sizes shows one tab per BHK; the price, area and EMI follow the open tab.
+  const sizes = property.configurations ?? []
+  const size = sizes.length >= 2 ? sizes[Math.min(cfgIndex, sizes.length - 1)] : null
+  const shownPrice = size ? (size.price ? `${formatPriceShort(size.price)}${property.purpose === 'Rent' ? '/mo' : ''}` : 'Price on request') : property.priceLabel
+  const shownArea = size?.areaSqft || property.areaSqft
   const bhk = bhkText ? `${bhkText} ` : ''
   const forWhat = property.purpose === 'Rent' ? 'for Rent' : 'for Sale'
   const place = [property.locality, property.city].filter(Boolean).join(', ')
@@ -326,13 +333,15 @@ function PropertyDetailInner({ id }) {
 
             <PropertyBadges property={property} className="mb-4" />
 
-            <p className="text-3xl font-bold text-[var(--color-accent)] mb-6">{property.priceLabel}</p>
+            <PropertyConfigurations configurations={sizes} index={cfgIndex} onChange={setCfgIndex} className="mb-4" />
+            <p className="text-3xl font-bold text-[var(--color-accent)] mb-1">{size && sizes.length > 1 && <span className="text-sm font-medium text-tertiary mr-2">{size.beds} BHK</span>}{shownPrice}</p>
+            <div className="mb-6" />
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {[
-                { icon: BedDouble, label: 'Bedrooms', value: bhkText || property.beds },
+                { icon: BedDouble, label: 'Bedrooms', value: size ? `${size.beds} BHK` : bhkText || property.beds },
                 { icon: Bath, label: 'Bathrooms', value: property.baths },
-                { icon: Ruler, label: 'Area', value: `${property.areaSqft} sqft` },
+                { icon: Ruler, label: 'Area', value: shownArea ? `${shownArea} sqft` : '—' },
                 { icon: Sofa, label: 'Furnishing', value: property.furnishing },
               ].map((s) => (
                 <div key={s.label} className="glass-weak rounded-[16px] p-3 text-center">
@@ -342,8 +351,6 @@ function PropertyDetailInner({ id }) {
                 </div>
               ))}
             </div>
-
-            <PropertyConfigurations configurations={property.configurations} rent={property.purpose === 'Rent'} />
 
             <h3 className="font-semibold mb-2">Description</h3>
             <p className="text-secondary leading-relaxed mb-6">{property.description}</p>
@@ -441,7 +448,7 @@ function PropertyDetailInner({ id }) {
             <LeadForm property={property} />
           </GlassCard>
 
-          <EMICalculator propertyPrice={property.purpose === 'Buy' ? property.price : property.price * 200} />
+          <EMICalculator key={size?.beds ?? 'one'} propertyPrice={(size?.price || property.price) * (property.purpose === 'Buy' ? 1 : 200)} />
         </div>
       </div>
 

@@ -9,7 +9,7 @@ import { ICON_NAMES, getIcon } from '../../utils/icons'
 // content …) is described as data instead of hand-written JSX.
 //
 // field = { key, label, type, half?, required?, placeholder?, hint?, options?, rows?,
-//           fields?, newItem?, addLabel?, render?, showIf? }
+//           fields?, newItem?, addItems?(list, parentItem) → rows to append, addLabel?, render?, showIf? }
 // `key` may be a dotted path ("ceo.name"). Types: text · url · number · date · textarea ·
 // select · toggle · multiselect · image · imageList · stringList · objectList · icon · custom
 
@@ -72,7 +72,7 @@ function MultiSelectField({ label, value = [], onChange, options = [], hint }) {
   )
 }
 
-function ObjectListField({ label, value = [], onChange, fields, newItem, addLabel = 'Add item', itemTitle, max = 30 }) {
+function ObjectListField({ label, value = [], onChange, fields, newItem, addItems, parent, addLabel = 'Add item', itemTitle, max = 30 }) {
   const update = (i, next) => onChange(value.map((x, idx) => (idx === i ? next : x)))
   const move = (i, dir) => {
     const j = i + dir
@@ -97,7 +97,7 @@ function ObjectListField({ label, value = [], onChange, fields, newItem, addLabe
           <SchemaForm schema={fields} value={item} onChange={(next) => update(i, next)} />
         </div>
       ))}
-      <div><GlassButton type="button" variant="glass" size="sm" icon={Plus} disabled={value.length >= max} onClick={() => onChange([...value, newItem ? newItem() : {}])}>{addLabel}</GlassButton></div>
+      <div><GlassButton type="button" variant="glass" size="sm" icon={Plus} disabled={value.length >= max} onClick={() => onChange([...value, ...(addItems ? addItems(value, parent) : [newItem ? newItem(value) : {}])])}>{addLabel}</GlassButton></div>
     </div>
   )
 }
@@ -162,7 +162,7 @@ function Field({ field, item, onSet }) {
     case 'stringList':
       return <StringListField label={field.label} value={value ?? []} onChange={set} placeholder={field.placeholder} max={field.max} addLabel={field.addLabel} multiline={field.multiline} />
     case 'objectList':
-      return <ObjectListField label={field.label} value={value ?? []} onChange={set} fields={field.fields} newItem={field.newItem} addLabel={field.addLabel} itemTitle={field.itemTitle} max={field.max} />
+      return <ObjectListField label={field.label} value={value ?? []} onChange={set} fields={field.fields} newItem={field.newItem} addItems={field.addItems} parent={item} addLabel={field.addLabel} itemTitle={field.itemTitle} max={field.max} />
     case 'custom':
       return field.render({ item, value, set, setItem: (next) => onSet(null, next) })
     default:
