@@ -28,10 +28,10 @@ describe('IP geolocation (lib/geo.js)', () => {
     globalThis.fetch = async (url) => {
       calls++
       assert.match(url, /ip-api\.com\/json\/203\.0\.113\.9/)
-      return { json: async () => ({ status: 'success', city: 'Gurugram', regionName: 'Haryana', zip: '122001', country: 'India' }) }
+      return { json: async () => ({ status: 'success', city: 'Gurugram', regionName: 'Haryana', zip: '122001', country: 'India', hosting: false }) }
     }
     const geo = await geoForIp('203.0.113.9')
-    assert.deepEqual(geo, { city: 'Gurugram', region: 'Haryana', pincode: '122001', country: 'India' })
+    assert.deepEqual(geo, { city: 'Gurugram', region: 'Haryana', pincode: '122001', country: 'India', hosting: false })
     assert.equal(calls, 1)
   })
 

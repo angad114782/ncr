@@ -2,6 +2,8 @@ import { after, before, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { ADMIN_PHONE, startTestApp } from './helpers.js'
 
+const BROWSER = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1'
+
 describe('visits (real-visitor counter + admin log)', () => {
   let t, admin
   before(async () => {
@@ -14,10 +16,10 @@ describe('visits (real-visitor counter + admin log)', () => {
     const { Visit } = await import('../src/models/index.js')
     await Visit.deleteMany({})
 
-    const first = await t.request.post('/api/visits/ping').send({ path: '/listings' })
+    const first = await t.request.post('/api/visits/ping').set('User-Agent', BROWSER).send({ path: '/listings' })
     assert.equal(first.status, 200)
     assert.equal(first.body.counted, true)
-    const second = await t.request.post('/api/visits/ping').send({ path: '/property/p1' })
+    const second = await t.request.post('/api/visits/ping').set('User-Agent', BROWSER).send({ path: '/property/p1' })
     assert.equal(second.status, 200)
 
     assert.equal(await Visit.countDocuments(), 1, 'one ip, one day -> one row')
@@ -39,7 +41,7 @@ describe('visits (real-visitor counter + admin log)', () => {
   it('the public counter reflects real (non-admin) visits only', async () => {
     const { Visit } = await import('../src/models/index.js')
     await Visit.deleteMany({})
-    await t.request.post('/api/visits/ping').send({})
+    await t.request.post('/api/visits/ping').set('User-Agent', BROWSER).send({})
     await admin.post('/api/visits/ping').send({}) // must not move the counter
 
     const res = await t.request.get('/api/visits/count')
@@ -50,7 +52,7 @@ describe('visits (real-visitor counter + admin log)', () => {
   it('admin sees the visitor log with city/region/pincode fields, and only the admin', async () => {
     const { Visit } = await import('../src/models/index.js')
     await Visit.deleteMany({})
-    await t.request.post('/api/visits/ping').send({ path: '/' })
+    await t.request.post('/api/visits/ping').set('User-Agent', BROWSER).send({ path: '/' })
 
     assert.equal((await t.request.get('/api/admin/visitors')).status, 401)
 
@@ -62,5 +64,24 @@ describe('visits (real-visitor counter + admin log)', () => {
     assert.equal(typeof res.body.allTime, 'number')
     assert.equal(typeof res.body.last7Days, 'number')
     assert.ok(Array.isArray(res.body.byCity))
+  })
+
+  it('bots (by user-agent, or by a datacenter IP) are not counted', async () => {
+    const { Visit } = await import('../src/models/index.js')
+    await Visit.deleteMany({})
+
+    for (const ua of ['', 'Googlebot/2.1', 'python-requests/2.31', 'HeadlessChrome/120']) {
+      const res = await t.request.post('/api/visits/ping').set('User-Agent', ua).send({ path: '/' })
+      assert.equal(res.body.counted, false, `UA "${ua}"`)
+    }
+    assert.equal(await Visit.countDocuments(), 0)
+
+    const realFetch = globalThis.fetch
+    globalThis.fetch = async () => ({ json: async () => ({ status: 'success', city: 'Ashburn', regionName: 'Virginia', zip: '20149', country: 'United States', hosting: true }) })
+    try {
+      // a public IP, so the lookup runs (the test client's own address is local and never looked up)
+      const res = await t.request.post('/api/visits/ping').set('User-Agent', BROWSER).set('X-Forwarded-For', '202.8.42.168').send({ path: '/' })
+      assert.equal(res.status, 200)
+    } finally { globalThis.fetch = realFetch }
   })
 })
