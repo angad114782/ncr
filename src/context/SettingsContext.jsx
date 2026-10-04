@@ -3,7 +3,7 @@ import usePersistedState, { deepMerge } from '../hooks/usePersistedState'
 import { USE_API, api, reportApiError } from '../api/client'
 import { useAuth } from './AuthContext'
 import snapshot from '../data/snapshot.json'
-import { fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
+import { fireContactEvent as fireContactEventUtil, fireLeadEvent as fireLeadEventUtil } from '../utils/tracking'
 import { COMPANY_DEFAULTS } from '../data/company'
 import { SITE_DEFAULTS, fillTokens, migrateSiteContent } from '../data/siteDefaults'
 import { DEFAULT_CITIES, DEFAULT_PROPERTY_TYPES } from '../data/taxonomy'
@@ -197,6 +197,7 @@ export function SettingsProvider({ children }) {
   const removePropertyType = (name) => setPropertyTypes((prev) => prev.filter((t) => t !== name))
 
   const fireLeadEvent = (formName, extra, eventId) => fireLeadEventUtil(marketingConfig, formName, extra, eventId)
+  const fireContactEvent = (channel, extra) => fireContactEventUtil(marketingConfig, channel, extra)
 
   /** Replace {brand} {ceoName} {ceoTitle} {years} in admin-written copy. */
   const fill = (text) => fillTokens(text, company)
@@ -229,6 +230,7 @@ export function SettingsProvider({ children }) {
         resetSiteContent: () => setSiteContent(SITE_DEFAULTS),
         fill,
         fireLeadEvent,
+        fireContactEvent,
       }}
     >
       {children}

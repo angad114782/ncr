@@ -24,7 +24,11 @@ export const config = {
   publicApiUrl: (process.env.PUBLIC_API_URL ?? '').replace(/\/+$/, ''),
   // The website's public address, used in messages that link to a page (e.g. the property a lead asked about).
   // SITE_URL, else the first CLIENT_ORIGINS entry without "www".
-  siteUrl: (process.env.SITE_URL || list(process.env.CLIENT_ORIGINS ?? 'http://localhost:5173').find((o) => !/\/\/www\./i.test(o)) || list(process.env.CLIENT_ORIGINS)[0] || '').replace(/\/+$/, ''),
+  // A live link must never say localhost: in production a localhost/empty result falls back to the real domain.
+  siteUrl: (() => {
+    const url = (process.env.SITE_URL || list(process.env.CLIENT_ORIGINS ?? 'http://localhost:5173').find((o) => !/\/\/www\./i.test(o)) || list(process.env.CLIENT_ORIGINS)[0] || '').replace(/\/+$/, '')
+    return env === 'production' && (!url || /localhost|127\.0\.0\.1/.test(url)) ? 'https://propertyinncr.com' : url
+  })(),
   otpDevMode: bool(process.env.OTP_DEV_MODE, false),
   otpLength: Number(process.env.OTP_LENGTH) || 6,
   otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES) || 5,

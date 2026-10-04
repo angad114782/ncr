@@ -107,3 +107,19 @@ export function fireLeadEvent(marketingConfig, formName, extra = {}, eventId) {
     window.gtag('event', 'generate_lead', { send_to: marketingConfig.googleAnalyticsId, event_category: formName, ...extra })
   }
 }
+
+/**
+ * Fires when a visitor taps Call or WhatsApp (`channel`), so Meta/Google can count how many calls and chats an
+ * ad produced — these never go through a form, so `fireLeadEvent` never sees them. Meta's standard `Contact`
+ * event plus GA4's `contact`; the Ads conversion is left to `fireLeadEvent`'s real leads. Never pass a phone
+ * number here. No-op when nothing is configured.
+ */
+export function fireContactEvent(marketingConfig, channel, extra = {}) {
+  if (typeof window === 'undefined') return
+  if (window.fbq && marketingConfig?.metaPixelId) {
+    window.fbq('track', 'Contact', { content_name: channel, ...extra })
+  }
+  if (window.gtag && marketingConfig?.googleAnalyticsId) {
+    window.gtag('event', 'contact', { send_to: marketingConfig.googleAnalyticsId, method: channel, ...extra })
+  }
+}

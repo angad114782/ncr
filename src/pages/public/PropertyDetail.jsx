@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   BadgeCheck,
   Bath,
@@ -95,8 +95,12 @@ export default function PropertyDetail() {
 
 function PropertyDetailInner({ id }) {
   const { properties, activeProperties, agents, savedIds, toggleSaved, trackRecentlyViewed, dataReady } = useData()
-  const { siteContent, fill } = useSettings()
+  const { siteContent, fill, fireContactEvent } = useSettings()
   const navigate = useNavigate()
+  // ?lp=1 = an ad landing link: the visitor came for THIS project, so the number is shown straight away and the
+  // 'other properties' sections that lead them off to other listings are left out.
+  const [searchParams] = useSearchParams()
+  const lp = searchParams.get('lp') === '1'
   const { track } = useInterest()
   const [activeImg, setActiveImg] = useState(0)
   const [lightboxIndex, setLightboxIndex] = useState(null)
@@ -109,6 +113,7 @@ function PropertyDetailInner({ id }) {
   const agent = property ? agents.find((a) => a.id === property.agentId) : null
   // Called unconditionally (before the early returns below) — React's rules of hooks.
   const revealPhone = useRevealPhone(agent, property)
+  const showNumber = lp || revealPhone.revealed
 
   useEffect(() => {
     if (property) {
@@ -179,7 +184,8 @@ function PropertyDetailInner({ id }) {
   const bhk = bhkText ? `${bhkText} ` : ''
   const forWhat = property.purpose === 'Rent' ? 'for Rent' : 'for Sale'
   const place = [property.locality, property.city].filter(Boolean).join(', ')
-  const seoTitle = `${bhk}${property.type} ${forWhat} in ${place} — ${property.priceLabel}`
+  // The project's own name leads, so someone searching "Trehan Vista" finds this page by name.
+  const seoTitle = `${property.title} — ${bhk}${property.type} ${forWhat} in ${place} — ${property.priceLabel}`
   const seoDescription = [
     `${bhk}${property.type} ${forWhat.toLowerCase()} in ${place} at ${property.priceLabel}.`,
     property.areaSqft ? `${property.areaSqft} sq.ft, ${property.furnishing}, ${property.possessionStatus}.` : '',
@@ -295,8 +301,8 @@ function PropertyDetailInner({ id }) {
           )}
         </div>
         {showFloorPlan && property.floorPlans?.length > 0 && (
-          <div className="rounded-[16px] overflow-hidden h-64 mt-3">
-            <img src={property.floorPlans[0]} alt="Floor plan" className="w-full h-full object-cover" />
+          <div className="rounded-[16px] overflow-hidden mt-3">
+            <img src={property.floorPlans[0]} alt="Floor plan" className="w-full h-auto block" />
           </div>
         )}
       </GlassCard>
@@ -426,8 +432,8 @@ function PropertyDetailInner({ id }) {
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                {revealPhone.revealed ? (
-                  <a href={`tel:${agent.phone}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm">
+                {showNumber ? (
+                  <a href={`tel:${agent.phone}`} onClick={() => lp && fireContactEvent('call', { content_name: property.title, content_ids: [property.id] })} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm">
                     <Phone size={14} /> {agent.phone}
                   </a>
                 ) : (
@@ -445,8 +451,9 @@ function PropertyDetailInner({ id }) {
                 <a href={`mailto:${agent.email}`} className="glass-weak rounded-[12px] px-4 py-2.5 flex items-center gap-2 text-sm truncate">
                   <Mail size={14} /> {agent.email}
                 </a>
-                {revealPhone.revealed ? (
+                {showNumber ? (
                   <a
+                    onClick={() => lp && fireContactEvent('whatsapp', { content_name: property.title, content_ids: [property.id] })}
                     href={`https://wa.me/91${agent.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(fill(siteContent.contact.waProperty).replace(/\{property\}/g, property.title))}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -471,7 +478,7 @@ function PropertyDetailInner({ id }) {
             </GlassCard>
           )}
 
-          <GlassCard hover={false} className="p-5">
+          <GlassCard id="enquire" hover={false} className="p-5 scroll-mt-32">
             <h3 className="font-semibold mb-1">Interested? Talk to an Expert</h3>
             <p className="text-secondary text-xs mb-4">Free guidance · site visits · no obligation</p>
             <LeadForm property={property} />
@@ -483,7 +490,7 @@ function PropertyDetailInner({ id }) {
 
       <ReviewsSection targetType="property" targetId={property.id} className="mt-6" />
 
-      {similarInCity.length > 0 && (
+      {!lp && similarInCity.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">More Properties in {property.city}</h2>
@@ -499,7 +506,7 @@ function PropertyDetailInner({ id }) {
         </section>
       )}
 
-      {similarByBudget.length > 0 && (
+      {!lp && similarByBudget.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Similar Properties in Your Budget</h2>
@@ -519,7 +526,7 @@ function PropertyDetailInner({ id }) {
         </section>
       )}
 
-      {moreOfType.length > 0 && (
+      {!lp && moreOfType.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">More {property.type}s You May Like</h2>
@@ -535,7 +542,7 @@ function PropertyDetailInner({ id }) {
         </section>
       )}
 
-      {agent && moreFromAgent.length > 0 && (
+      {!lp && agent && moreFromAgent.length > 0 && (
         <section className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">More from {agent.name}</h2>
@@ -551,8 +558,8 @@ function PropertyDetailInner({ id }) {
         </section>
       )}
 
-      <ExploreLinks property={property} className="mt-12" />
-      <GuideLinks className="mt-12" />
+      {!lp && <ExploreLinks property={property} className="mt-12" />}
+      {!lp && <GuideLinks className="mt-12" />}
     </div>
   )
 }

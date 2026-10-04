@@ -1,13 +1,26 @@
 import { motion } from 'framer-motion'
-import { MessageCircle, Phone } from 'lucide-react'
+import { useMatch } from 'react-router-dom'
+import { MessageCircle, Phone, Send } from 'lucide-react'
 import { useSettings } from '../../context/SettingsContext'
+import { useData } from '../../context/DataContext'
+import { findByParam } from '../../utils/propertySlug'
 
 export default function ContactRail({ showMobileBar = true }) {
-  const { whatsappConfig, siteContent, fill } = useSettings()
+  const { whatsappConfig, siteContent, fill, fireContactEvent } = useSettings()
+  const { properties } = useData()
+  // On a property page the bar talks about THAT project: the WhatsApp text names it, and an "Enquire" button
+  // jumps to the lead form (which sits far down the page on a phone).
+  const match = useMatch('/property/:id')
+  const property = match ? findByParam(properties, match.params.id) : null
   const digits = whatsappConfig.displayPhone.replace(/\D/g, '')
   const PHONE = `+91 ${whatsappConfig.displayPhone}`
   const PHONE_HREF = `tel:+91${digits}`
-  const WHATSAPP_HREF = `https://wa.me/91${digits}?text=${encodeURIComponent(fill(siteContent.contact.waGeneral))}`
+  const waText = property
+    ? fill(siteContent.contact.waProperty).replace(/\{property\}/g, property.title)
+    : fill(siteContent.contact.waGeneral)
+  const WHATSAPP_HREF = `https://wa.me/91${digits}?text=${encodeURIComponent(waText)}`
+  const onContact = (channel) => fireContactEvent(channel, property ? { content_name: property.title, content_ids: [property.id] } : {})
+  const goToForm = () => document.getElementById('enquire')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
   return (
     <>
@@ -22,14 +35,25 @@ export default function ContactRail({ showMobileBar = true }) {
         >
           <a
             href={PHONE_HREF}
+            onClick={() => onContact('call')}
             aria-label={`Call ${PHONE}`}
             className="flex-1 flex items-center justify-center gap-2 rounded-full py-3 font-semibold text-white spring active:scale-95"
             style={{ background: 'var(--color-accent)' }}
           >
             <Phone size={18} /> Call
           </a>
+          {property && (
+            <button
+              type="button"
+              onClick={goToForm}
+              className="flex-1 flex items-center justify-center gap-2 rounded-full py-3 font-semibold spring active:scale-95 glass border border-[var(--color-accent)] text-[var(--color-accent)]"
+            >
+              <Send size={17} /> Enquire
+            </button>
+          )}
           <a
             href={WHATSAPP_HREF}
+            onClick={() => onContact('whatsapp')}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Chat on WhatsApp"
@@ -50,6 +74,7 @@ export default function ContactRail({ showMobileBar = true }) {
       >
         <a
           href={PHONE_HREF}
+          onClick={() => onContact('call')}
           aria-label={`Call ${PHONE}`}
           className="group relative w-14 h-14 rounded-full glass-strong flex items-center justify-center spring hover:scale-105 text-[var(--color-accent)]"
         >
@@ -60,6 +85,7 @@ export default function ContactRail({ showMobileBar = true }) {
         </a>
         <a
           href={WHATSAPP_HREF}
+          onClick={() => onContact('whatsapp')}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
