@@ -1,5 +1,6 @@
 node_modules
 .env
+atlas-credentials ncr.env
 .env.*
 !.env.example
 uploads/*

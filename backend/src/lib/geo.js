@@ -12,7 +12,7 @@ const cache = new Map() // ip -> { at, geo }
 const isPrivate = (ip) =>
   !ip || ip === '::1' || ip === '127.0.0.1' || /^::ffff:127\./.test(ip) || /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(ip.replace(/^::ffff:/, ''))
 
-/** `{ city, region, pincode, country } | null` — null for a private/local IP or when the lookup fails. */
+/** `{ city, region, pincode, country, hosting } | null` (`hosting`: the IP belongs to a datacenter/cloud host, not a home or mobile network) — null for a private/local IP or when the lookup fails. */
 export async function geoForIp(ip) {
   if (isPrivate(ip)) return null
   const cached = cache.get(ip)
@@ -22,10 +22,10 @@ export async function geoForIp(ip) {
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 3000)
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,city,regionName,zip,country`, { signal: controller.signal })
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,city,regionName,zip,country,hosting`, { signal: controller.signal })
     clearTimeout(timer)
     const body = await res.json()
-    if (body.status === 'success') geo = { city: body.city || '', region: body.regionName || '', pincode: body.zip || '', country: body.country || '' }
+    if (body.status === 'success') geo = { city: body.city || '', region: body.regionName || '', pincode: body.zip || '', country: body.country || '', hosting: Boolean(body.hosting) }
   } catch {
     geo = null // never blocks the request this is called from
   }

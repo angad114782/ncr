@@ -165,14 +165,19 @@ router.post('/leads', ipBlockGuard, leadLimiter, async (req, res) => {
 /* ------------------------------------------------------------------ visits */
 /**
  * Real-visitor ping, once per browser session (the front end dedupes with sessionStorage). Never
- * recorded for the admin's own browsing, so it stays a genuine visitor count. One row per ip per
+ * recorded for the admin's own browsing, known bot user-agents or datacenter IPs, so it stays a genuine visitor count. One row per ip per
  * day (see `Visit` in models) — repeats the same day just bump `hits`.
  */
+const BOT_UA = /bot|crawl|spider|slurp|scrape|headless|phantom|puppeteer|playwright|selenium|lighthouse|python-requests|curl\/|wget|httpclient|axios|node-fetch|go-http|java\/|okhttp|facebookexternalhit|preview|monitor|uptime/i
+
 router.post('/visits/ping', async (req, res) => {
   if (req.user?.role === 'admin') return res.json({ ok: true, counted: false })
+  const ua = String(req.get('user-agent') ?? '')
+  if (!ua || BOT_UA.test(ua)) return res.json({ ok: true, counted: false })
   const ip = req.ip
   const day = new Date().toISOString().slice(0, 10)
   const geo = await geoForIp(ip)
+  if (geo?.hosting) return res.json({ ok: true, counted: false }) // datacenter/cloud IP (e.g. Ashburn/Sterling VA): a crawler, not a person; a failed lookup (geo null) still counts
   await Visit.updateOne(
     { ip, day },
     {
